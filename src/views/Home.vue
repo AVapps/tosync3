@@ -1,68 +1,121 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
+    <ion-header>
       <ion-toolbar>
-        <ion-title>Blank</ion-title>
+        <ion-title class="ion-text-center">TO.sync</ion-title>
       </ion-toolbar>
     </ion-header>
-    
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
+          <ion-title size="large">Tab 1</ion-title>
         </ion-toolbar>
       </ion-header>
-    
-      <div id="container">
-        <strong>Ready to create an app?</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+
+      <div class="cards-grid">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Card Subtitle</ion-card-subtitle>
+            <ion-card-title>Card Title</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            Keep close to Nature's heart... and break clear away, once in awhile,
+            and climb a mountain or spend a week in the woods. Wash your spirit clean.
+            <ion-button @click="openCrewWebPlus()">CrewWebPlus</ion-button>
+            <p>{{ event.type }}</p>
+            <p>{{ event.url }}</p>
+          </ion-card-content>
+        </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Card Subtitle</ion-card-subtitle>
+            <ion-card-title>Card Title</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            Keep close to Nature's heart... and break clear away, once in awhile,
+            and climb a mountain or spend a week in the woods. Wash your spirit clean.
+          </ion-card-content>
+        </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Card Subtitle</ion-card-subtitle>
+            <ion-card-title>Card Title</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            Keep close to Nature's heart... and break clear away, once in awhile,
+            and climb a mountain or spend a week in the woods. Wash your spirit clean.
+          </ion-card-content>
+        </ion-card>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
 <script>
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonCard,
+  IonCardHeader,
+  IonCardContent,
+  IonCardSubtitle,
+  IonCardTitle,
+  IonButton } from '@ionic/vue'
+
+import { defineComponent, ref } from 'vue'
+
+import { CrewWebPlus } from '@/lib/CrewWebPlus.js'
 
 export default defineComponent({
   name: 'Home',
   components: {
-    IonContent,
     IonHeader,
-    IonPage,
+    IonToolbar,
     IonTitle,
-    IonToolbar
+    IonContent,
+    IonPage,
+    IonCard,
+    IonCardHeader,
+    IonCardContent,
+    IonCardSubtitle,
+    IonCardTitle,
+    IonButton
+  },
+  setup() {
+    const event = ref({
+      type: false,
+      url: false
+    })
+    const crewWeb = new CrewWebPlus()
+
+    const openCrewWebPlus = () => {
+      console.log('Open Browser')
+      crewWeb.open()
+      crewWeb.on('login', () => {
+        console.log('HOME.VUE => on login handler')
+        crewWeb.downloadPDFFile()
+      })
+    }
+
+    return {
+      openCrewWebPlus,
+      event
+    }
   }
-});
+})
 </script>
 
-<style scoped>
-#container {
-  text-align: center;
-  
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
+<style scoped lang="scss">
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 0px;
 
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
-}
-
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-  
-  color: #8c8c8c;
-  
-  margin: 0;
-}
-
-#container a {
-  text-decoration: none;
+  @media only screen and (max-width : 576px) {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

@@ -11,9 +11,22 @@
   },
   "dependencies": {
     "@capacitor/core": "2.4.6",
+    "@capacitor/ios": "^2.4.6",
+    "@ionic-native/core": "^5.31.1",
+    "@ionic-native/in-app-browser": "^5.31.1",
     "@ionic/vue": "^5.4.0",
     "@ionic/vue-router": "^5.4.0",
+    "@popperjs/core": "^2.6.0",
+    "@vueuse/core": "^4.0.12",
+    "cordova-plugin-inappbrowser": "^4.1.0",
     "core-js": "^3.6.5",
+    "dexie": "^3.0.3",
+    "dexie-mongoify": "^1.3.0",
+    "eventemitter3": "^4.0.7",
+    "lodash": "^4.17.20",
+    "luxon": "^1.25.0",
+    "simpl-schema": "^1.10.2",
+    "v-calendar": "^3.0.0-alpha.3",
     "vue": "^3.0.0-0",
     "vue-router": "^4.0.0-0"
   },
@@ -29,6 +42,8 @@
     "@vue/test-utils": "^2.0.0-0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^7.0.0-0",
+    "node-sass": "^5.0.0",
+    "sass-loader": "^10.1.1",
     "vue-jest": "^5.0.0-0"
   },
   "description": "An Ionic project"
