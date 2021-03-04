@@ -1,10 +1,10 @@
 import SimpleSchema from 'simpl-schema'
-import Utils from '/imports/api/client/lib/Utils.js'
+import { TAGS } from '@/lib/Utils.js'
 
 export const dutySubEventSchema = new SimpleSchema({
   tag: {
     type: String,
-    allowedValues: Utils.tags
+    allowedValues: TAGS
   },
   slug: {
     type: String,

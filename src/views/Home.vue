@@ -8,32 +8,30 @@
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">Tab 1</ion-title>
+          <ion-title size="large">Accueil</ion-title>
         </ion-toolbar>
       </ion-header>
 
       <div class="cards-grid">
         <ion-card>
           <ion-card-header>
-            <ion-card-subtitle>Card Subtitle</ion-card-subtitle>
-            <ion-card-title>Card Title</ion-card-title>
+            <ion-card-title>Télécharger mon planning</ion-card-title>
+            <ion-card-subtitle></ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            Keep close to Nature's heart... and break clear away, once in awhile,
-            and climb a mountain or spend a week in the woods. Wash your spirit clean.
-            <ion-button @click="openCrewWebPlus()">CrewWebPlus</ion-button>
-            <p>{{ event.type }}</p>
-            <p>{{ event.url }}</p>
+            <ion-button @click="openCrewWebPlus()">Connexion</ion-button>
+            <ion-button @click="getPDF()">getPDF</ion-button>
+            <ion-button @click="show()">show</ion-button>
+            <ion-button @click="hide()">hide</ion-button>
           </ion-card-content>
         </ion-card>
         <ion-card>
           <ion-card-header>
-            <ion-card-subtitle>Card Subtitle</ion-card-subtitle>
-            <ion-card-title>Card Title</ion-card-title>
+            <ion-card-title>Importer un fichier</ion-card-title>
+            <ion-card-subtitle>Planning téléchargé depuis planning.to.aero</ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            Keep close to Nature's heart... and break clear away, once in awhile,
-            and climb a mountain or spend a week in the woods. Wash your spirit clean.
+            <file-picker></file-picker>
           </ion-card-content>
         </ion-card>
         <ion-card>
@@ -64,6 +62,7 @@ import {
   IonCardSubtitle,
   IonCardTitle,
   IonButton } from '@ionic/vue'
+import FilePicker from '@/components/FilePicker'
 
 import { defineComponent, ref } from 'vue'
 
@@ -82,7 +81,8 @@ export default defineComponent({
     IonCardContent,
     IonCardSubtitle,
     IonCardTitle,
-    IonButton
+    IonButton,
+    FilePicker
   },
   setup() {
     const event = ref({
@@ -90,19 +90,38 @@ export default defineComponent({
       url: false
     })
     const crewWeb = new CrewWebPlus()
+    window.crewWeb = crewWeb
 
-    const openCrewWebPlus = () => {
+    const openCrewWebPlus = async () => {
       console.log('Open Browser')
       crewWeb.open()
-      crewWeb.on('login', () => {
-        console.log('HOME.VUE => on login handler')
-        crewWeb.downloadPDFFile()
-      })
+      await crewWeb.waitForLogin()
+      crewWeb.browser.hide()
+    }
+
+    async function getPDF() {
+      try {
+        const data = await crewWeb.getPDFFile()
+        console.log(data.length)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    function show() {
+      crewWeb.show()
+    }
+
+    function hide() {
+      crewWeb.hide()
     }
 
     return {
       openCrewWebPlus,
-      event
+      getPDF,
+      event,
+      show,
+      hide
     }
   }
 })

@@ -23,6 +23,10 @@ import '@ionic/vue/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
+import { Events } from '@/model/Events'
+
+window.Events = Events
+
 const app = createApp(App)
   .use(IonicVue)
   .use(router);

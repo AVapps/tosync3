@@ -2,7 +2,7 @@
   <ion-page>  
     <ion-content :fullscreen="true">
       <div id="calendar-wrapper">
-        <calendar v-model="date"></calendar>
+        <calendar :display-mode="calendarMode"></calendar>
       </div>
     </ion-content>
   </ion-page>
@@ -10,11 +10,11 @@
 
 <script>
 import { IonContent, IonPage } from '@ionic/vue'
-import { Calendar } from 'v-calendar'
+import Calendar from '@/components/Calendar/Calendar.vue'
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: 'Home',
+  name: 'Planning',
   components: {
     Calendar,
     IonContent,
@@ -22,7 +22,7 @@ export default defineComponent({
   },
   data() {
     return {
-      date: new Date(),
+      calendarMode: 'calendar'
     }
   }
 })
@@ -30,9 +30,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 #calendar-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100%;
+  height: 100%;
+  padding: 10px;
 }
 </style>

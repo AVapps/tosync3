@@ -1,5 +1,5 @@
 import SimpleSchema from 'simpl-schema'
-import Utils from '/imports/api/client/lib/Utils.js'
+import { TAGS } from '@/lib/Utils.js'
 
 export const eventSchema = new SimpleSchema({
   _id: {
@@ -10,7 +10,7 @@ export const eventSchema = new SimpleSchema({
   },
   tag: {
     type: String,
-    allowedValues: Utils.tags
+    allowedValues: TAGS
   },
   slug: {
     type: String,

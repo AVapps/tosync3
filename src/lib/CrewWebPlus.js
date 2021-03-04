@@ -11,7 +11,6 @@ export class CrewWebPlus extends EventEmitter {
   constructor() {
     super()
     this.browser = null
-    this._downloadPDF = false
     this.isLoggedIn = false
     if (!("TextEncoder" in window)) {
       this.encoder = null
@@ -19,11 +18,9 @@ export class CrewWebPlus extends EventEmitter {
     } else {
       this.encoder = new TextEncoder()
     }
-
   }
 
   open() {
-    this._downloadPDF = true
     if (this.browser) {
       this.browser.show()
     } else {
@@ -32,13 +29,13 @@ export class CrewWebPlus extends EventEmitter {
   }
 
   createBrowserWindow() {
-    this.browser = InAppBrowser.create(SIGN_ON_URL, '_blank', 'location=no')
+    this.browser = InAppBrowser.create(SIGN_ON_URL, '_blank', 'location=no,closebuttoncolor=#00d66c,closebuttoncaption=Fermer,hidenavigationbuttons=yes')
 
     // this.browser.on('loadstart').subscribe((evt) => {
     //   console.log('[inappbrowser]', evt.type, evt.url)
     // })
 
-    this.browser.on('loadstop').subscribe((evt) => {
+    this.loadstopSub = this.browser.on('loadstop').subscribe((evt) => {
       console.log('[inappbrowser]', evt.type, evt.url)
       if (evt.url.indexOf(HOME_URL) !== -1) {
         // this.emit('navigate.home')
@@ -51,29 +48,43 @@ export class CrewWebPlus extends EventEmitter {
       // }
     })
 
-    this.browser.on('message').subscribe((evt) => {
+    this.messageSub = this.browser.on('message').subscribe((evt) => {
       console.log('[inappbrowser]', evt.type, evt.data.method)
       if (evt.data && evt.data.method) {
         this.emit(evt.data.method, evt.data.result)
       }
     })
 
-    this.browser.on('exit').subscribe(() => {
+    this.exitSub = this.browser.on('exit').subscribe(() => {
       console.log('[inappbrowser]', 'EXITED')
-      this.browser = null
+      this.tearDownBrowser()
     })
   }
 
-  async downloadPDFFile() {
+  show() {
+    if (this.browser) this.browser.show()
+  }
+
+  hide() {
+    if (this.browser) this.browser.hide()
+  }
+
+  tearDownBrowser() {
+    [this.loadstopSub, this.messageSub, this.exitSub].forEach(sub => {
+      if (sub && typeof sub.unsubscribe === 'function') {
+        sub.unsubscribe()
+      }
+    })
+    this.browser = null
+  }
+
+  async getPDFFile() {
     if (!this.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
-    this._downloadPDF = true
-    const result = await this.fetchPDF()
-    this._downloadPDF = false
-    console.log(result)
+    const result = await this._fetchPDF()
     return this.encoder.encode(result)
   }
 
-  fetchPDF() {
+  async _fetchPDF() {
     const code = `fetch('${PDF_URL}')
       .then(function(response) {
         return response.arrayBuffer();
@@ -100,6 +111,14 @@ export class CrewWebPlus extends EventEmitter {
     })
   }
 
+  async waitForLogin() {
+    if (this.isLoggedIn) {
+      return Promise.resolve()
+    } else {
+      return this.wait('login')
+    }
+  }
+
   async navigate(url) {
     const navigationProm = new Promise((resolve) => {
       const sub = this.browser.on('loadstart').subscribe((evt) => {
@@ -123,3 +142,11 @@ export class CrewWebPlus extends EventEmitter {
     })
   }
 }
+
+// function wait(ms) {
+//   return new Promise((resolve) => {
+//     setTimeout(function () {
+//       resolve()
+//     }, ms)
+//   })
+// }

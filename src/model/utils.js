@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { DateTime } from 'luxon'
 import { first as _first, last as _last } from 'lodash'
 
 export function getDutyStart(events) {
