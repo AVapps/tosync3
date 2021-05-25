@@ -1,5 +1,7 @@
 import { DateTime, Settings } from 'luxon'
+import _ from 'lodash'
 import { Events } from '@/model/Events'
+import { ALLDAY_TAGS, tagLabel } from '@/lib/Utils'
 
 const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
@@ -86,4 +88,48 @@ export function getBlankCalendarDays() {
 
 export async function getEvents({ userId, start, end }) {
   return Events.getInterval(userId, start, end)
+}
+
+export function getDayParams(events) {
+  // console.log('getDayParams', events)
+  const hasRotation = _.some(events, evt => {
+    return _.includes(['rotation', 'sv'], evt.tag)
+  })
+  if (hasRotation) {
+    return {
+      tag: 'rotation',
+      allday: false,
+      label: 'Rotation'
+    }
+  }
+
+  if (!events.length || !_.has(_.first(events), 'tag')) {
+    return { tag: 'blanc', allday: true, label: 'Blanc' }
+  }
+
+  const specialCategoryEvent = _.find(events, evt => _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag))
+  const tag = specialCategoryEvent ? specialCategoryEvent.tag : _.first(events).tag
+  return { tag, allday: isAlldayTag(tag), label: tagLabel(tag) }
+}
+
+export function isAlldayTag(tag) {
+  return _.includes(ALLDAY_TAGS, tag)
+}
+
+export function eventClass(evt, date) {
+  const classes = [evt.tag]
+
+  if (isAlldayTag(evt.tag)) {
+    classes.push('allday')
+  }
+
+  if (evt.start < date) {
+    classes.push('span-left')
+  }
+
+  if (evt.end > date.endOf('day')) {
+    classes.push('span-right')
+  }
+
+  return classes
 }

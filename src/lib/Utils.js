@@ -226,6 +226,7 @@ export const CODES_INSTRUCTION = {
 
 	// Vols
 	'CEL': { type: 'vol', tags: ['controle'], title: "Contrôle en ligne" },
+	'EXP_T_VOL': { type: 'vol', tags: ['vss'], title: "Expérience récente" },
 	'PICUS': { type: 'vol', tags: [], title: "Vols PICUS pour l'OPL" },
 	'VFZFTT_T': { type: 'vol', tags: ['vf', 'cdb', 'stage'], title: "Vol de familiarisation ZFTT" },
 	'VF_T': { type: 'vol', tags: ['vf', 'cdb', 'stage'], title: "Vol de familiarisation" },
@@ -349,6 +350,7 @@ export function translate(summary) {
 }
 
 export function slug(event, username, index) {
+	username = username || event.userId
 	const prefix = username + DateTime.fromMillis(event.start).toISODate({ format: 'basic' })
 	const suffix = event.tag + (index || "")
 

@@ -1,8 +1,8 @@
 <template>
-  <ion-page>  
+  <ion-page>
     <ion-content :fullscreen="true">
       <div id="calendar-wrapper">
-        <calendar :display-mode="calendarMode"></calendar>
+        <virtual-calendar :display-mode="calendarMode"></virtual-calendar>
       </div>
     </ion-content>
   </ion-page>
@@ -10,13 +10,13 @@
 
 <script>
 import { IonContent, IonPage } from '@ionic/vue'
-import Calendar from '@/components/Calendar/Calendar.vue'
+import VirtualCalendar from '@/components/Calendar/VirtualCalendar.vue'
 import { defineComponent } from 'vue'
 
 export default defineComponent({
   name: 'Planning',
   components: {
-    Calendar,
+    VirtualCalendar,
     IonContent,
     IonPage
   },

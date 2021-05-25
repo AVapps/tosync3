@@ -28,13 +28,28 @@ export function getDutyStart(events) {
 export function getDutyEnd(events) {
   const last = _last(events);
   switch (last.tag) {
-    case "vol":
+    case "vol": {
       const realEnd = last.real && last.real.end ? last.real.end : last.end;
       return DateTime.fromMillis(realEnd).plus({ minutes: 30 }).toMillis();
+    }
     case "simu":
-    case "simuInstruction":
+    case "simuInstruction": {
       return DateTime.fromMillis(last.end).plus({ minutes: 30 }).toMillis();
+    }
     default:
       return last.end;
   }
+}
+
+export function getIntervalDates(start, end) {
+  if (start > end) {
+    throw new Error('[utils.getIntervalDates] Start time is greater than end time !')
+  }
+  const dates = []
+  let d = start
+  while (d <= end) {
+    dates.push(d.toISODate())
+    d = d.plus({ day: 1 })
+  }
+  return dates
 }

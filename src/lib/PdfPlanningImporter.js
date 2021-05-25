@@ -66,7 +66,7 @@ export class PdfPlanningImporter {
       if (evt.rotationId) {
         if (evt.events && evt.events.length) {
           _.forEach(evt.events, sub => {
-            sub.slug = slug(sub)
+            sub.slug = slug(sub, this.userId)
             this.savedFlightsSlugMap.set(sub.slug, sub)
           })
         } else {
@@ -122,7 +122,7 @@ export class PdfPlanningImporter {
   }
 
   importRotation(rot) {
-    rot.slug = slug(rot)
+    rot.slug = slug(rot, this.userId)
     if (rot.isIncomplete) {
       this.importIncompleteRotation(rot)
     } else {
@@ -162,7 +162,7 @@ export class PdfPlanningImporter {
             && _.first(savedSV.events).from === firstSV.from) {
             match = true
           }
-          if (firstSV.start - savedSV.end > 8 * 60 * 60 * 1000
+          if (firstSV.start - savedSV.end > 8 * 60 * 60 * 1000 // 8 hours
             && _.last(savedSV.events).to === firstSV.from) {
             match = true
             this.foundIds.add(savedSV._id)
@@ -175,17 +175,12 @@ export class PdfPlanningImporter {
 
     if (foundRot) {
       console.log(`FOUND ${foundRot.slug} for`, rot)
-      const union = {
-        tag: 'rotation',
-        start: foundRot.start,
-        end: rot.end,
-      }
-      union.slug = slug(union)
-      _.set(this.updateLog.update, [foundRot._id, '$set'], union)
-      _.forEach(rot.sv, sv => {
-        sv.rotationId = foundRot._id
-        this.importSV(sv)
-      })
+      rot.start = foundRot.start
+      rot.slug = slug(rot, this.userId)
+      this.updateLog.remove.push(foundRot)
+      // add old SVS to new rot
+
+      this.insertRotation(rot)
     } else {
       this.insertRotation(rot)
     }
@@ -194,7 +189,7 @@ export class PdfPlanningImporter {
   insertRotation(rot) {
     console.log(`NOT FOUND ${rot.slug} : inserting...`)
     this.updateLog.rotationInsert.push({
-      rotation: rotationSchema.clean(rot),
+      rotation: _.omit(rotationSchema.clean(rot), '_id', '_rev'),
       sv: _.map(rot.sv, sv => this.importSV(sv))
     })
   }
@@ -207,7 +202,7 @@ export class PdfPlanningImporter {
   completeSV(sv) {
     _.forEach(sv.events, evt => {
       if (evt.tag === 'vol') {
-        evt.slug = slug(evt)
+        evt.slug = slug(evt, this.userId)
         const savedVol = this.findSavedFlight(evt)
         if (savedVol) {
           if (evt.isRealise) { // Utiliser les heures programmmées du vol enregistré
@@ -224,7 +219,7 @@ export class PdfPlanningImporter {
       }
     })
     sv.tag = sv.type
-    sv.slug = slug(sv)
+    sv.slug = slug(sv, this.userId)
     if (_.has(sv, 'peq.Pilot')) {
       _.set(sv, 'peq.pnt', _.get(sv, 'peq.Pilot'))
     }
@@ -237,7 +232,7 @@ export class PdfPlanningImporter {
   }
 
   completeSol(sol) {
-    sol.slug = slug(sol)
+    sol.slug = slug(sol, this.userId)
     if (_.has(sol, 'peq.DHD')) {
       _.set(sol, 'peq.mep', _.get(sol, 'peq.DHD'))
     }
@@ -288,15 +283,22 @@ export class PdfPlanningImporter {
   matchUpdateFoundEvent(evt, found, schema) {
     this.foundIds.add(found._id)
     printEvent(evt)
-    const cleanedFound = _.omit(schema.clean(found), '_id', 'userId')
+    const cleanedFound = _.omit(schema.clean(found), '_id', '_rev', 'userId')
     const cleanedEvt = schema.clean(evt)
     if (_.isMatch(cleanedFound, cleanedEvt)) {
       console.log('- MATCHES: nothing to update')
     } else {
       console.log('- DOES NOT MATCH: update')
-      _.set(this.updateLog.update, [found._id, '$set'], cleanedEvt)
+      if (evt.start !== found.start || evt.end !== found.end) {
+        this.updateLog.insert.push(cleanedEvt)
+        this.updateLog.remove.push(found)
+      } else {
+        cleanedEvt._id = found._id
+        cleanedEvt._rev = found._rev
+        _.set(this.updateLog.update, [found._id, '$set'], cleanedEvt)
+      }
     }
-    return { ref: cleanedEvt, _id: found._id }
+    return { ref: cleanedEvt, _id: found._id, _rev: found._rev }
   }
 
   findSavedEvent(evt) {
@@ -306,7 +308,7 @@ export class PdfPlanningImporter {
       return this.findSavedFlight(evt)
     }
 
-    const slug = evt.slug || slug(evt)
+    const slug = evt.slug || slug(evt, this.userId)
     console.log('SLUG for', slug, evt)
 
     if (this.savedEventsSlugMap.has(slug)) {
@@ -319,7 +321,7 @@ export class PdfPlanningImporter {
   }
 
   findSavedFlight(vol) {
-    const slug = vol.slug || slug(vol)
+    const slug = vol.slug || slug(vol, this.userId)
     if (this.savedFlightsSlugMap.has(slug)) {
       const found = this.savedFlightsSlugMap.get(slug)
       console.log('> Flight FOUND BY SLUG <', vol, found)

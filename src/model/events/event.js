@@ -5,6 +5,9 @@ export const eventSchema = new SimpleSchema({
   _id: {
     type: String,
   },
+  _rev: {
+    type: String,
+  },
   userId: {
     type: String,
   },
