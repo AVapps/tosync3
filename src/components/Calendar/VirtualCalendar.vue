@@ -37,13 +37,12 @@
       <swiper
         @swiper="onSwiper"
         @activeIndexChange="onActiveIndexChange"
-        @slideChangeTransitionEnd="onSlideChangeTransitionEnd"
         :virtual="true"
         :initial-slide="initialSlide"
-        :slides-per-view="1"
         :space-between="10"
         :updateOnWindowResize="true"
         :run-callbacks-on-init="false"
+        :observer="true"
       >
         <swiper-slide
           v-for="(slide, index) in slides"
@@ -66,7 +65,14 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/swiper.scss'
 SwiperCore.use([Virtual])
 
-import { reactive, ref, onMounted, nextTick, provide } from 'vue'
+import {
+  reactive,
+  ref,
+  onMounted,
+  nextTick,
+  provide,
+  onBeforeUpdate
+} from 'vue'
 
 import CalendarMonth from './CalendarMonth'
 
@@ -103,6 +109,12 @@ export default {
       d = d.plus({ month: 1 })
     }
 
+    const slidesComponents = ref([])
+
+    onBeforeUpdate(() => {
+      slidesComponents.value = []
+    })
+
     const slides = reactive(
       monthsList.map(month => ({
         month,
@@ -130,7 +142,17 @@ export default {
       })
     }
 
-    const onSlideChangeTransitionEnd = sw => {}
+    // const isBusy = ref(false)
+
+    // const onTransitionStart = sw => {
+    //   isBusy.value = true
+    //   console.log('onTransitionStart')
+    // }
+
+    // const onTransitionEnd = sw => {
+    //   isBusy.value = false
+    //   console.log('onTransitionEnd', slidesComponents.value)
+    // }
 
     let swiper
     const onSwiper = sw => {
@@ -167,7 +189,10 @@ export default {
     return {
       onSwiper,
       onActiveIndexChange,
+      // onTransitionStart,
+      // onTransitionEnd,
       slides,
+      // slidesComponents,
       activeMonthLabel,
       initialSlide: currentSlide(),
       goToPrevMonth,
@@ -177,6 +202,7 @@ export default {
       chevronBack,
       chevronForward,
       ellipseOutline
+      // isBusy
     }
   }
 }

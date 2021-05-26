@@ -20,7 +20,7 @@
           </ion-card-header>
           <ion-card-content>
             <ion-button @click="openCrewWebPlus()">Connexion</ion-button>
-            <ion-button @click="getPDF()">getPDF</ion-button>
+            <ion-button @click="importPDF()">importPDF</ion-button>
             <ion-button @click="show()">show</ion-button>
             <ion-button @click="hide()">hide</ion-button>
           </ion-card-content>
@@ -28,7 +28,9 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>Importer un fichier</ion-card-title>
-            <ion-card-subtitle>Planning téléchargé depuis planning.to.aero</ion-card-subtitle>
+            <ion-card-subtitle
+              >Planning téléchargé depuis planning.to.aero</ion-card-subtitle
+            >
           </ion-card-header>
           <ion-card-content>
             <file-picker></file-picker>
@@ -40,8 +42,9 @@
             <ion-card-title>Card Title</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            Keep close to Nature's heart... and break clear away, once in awhile,
-            and climb a mountain or spend a week in the woods. Wash your spirit clean.
+            Keep close to Nature's heart... and break clear away, once in
+            awhile, and climb a mountain or spend a week in the woods. Wash your
+            spirit clean.
           </ion-card-content>
         </ion-card>
       </div>
@@ -61,12 +64,14 @@ import {
   IonCardContent,
   IonCardSubtitle,
   IonCardTitle,
-  IonButton } from '@ionic/vue'
+  IonButton
+} from '@ionic/vue'
 import FilePicker from '@/components/FilePicker'
 
 import { defineComponent, ref } from 'vue'
 
 import { CrewWebPlus } from '@/lib/CrewWebPlus.js'
+import { importPdfFile } from '@/lib/PlanningImporter.js'
 
 export default defineComponent({
   name: 'Home',
@@ -99,10 +104,11 @@ export default defineComponent({
       crewWeb.browser.hide()
     }
 
-    async function getPDF() {
+    async function importPDF() {
       try {
         const data = await crewWeb.getPDFFile()
-        console.log(data.length)
+        const planning = await importPdfFile(data)
+        console.log(data.length, planning)
       } catch (error) {
         console.log(error)
       }
@@ -118,7 +124,7 @@ export default defineComponent({
 
     return {
       openCrewWebPlus,
-      getPDF,
+      importPDF,
       event,
       show,
       hide
@@ -133,7 +139,7 @@ export default defineComponent({
   grid-template-columns: repeat(2, 1fr);
   grid-gap: 0px;
 
-  @media only screen and (max-width : 576px) {
+  @media only screen and (max-width: 576px) {
     grid-template-columns: 1fr;
   }
 }

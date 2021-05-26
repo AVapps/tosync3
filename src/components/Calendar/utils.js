@@ -17,11 +17,12 @@ export const WEEKDAYS = {
   7: { short: 'Di', long: 'Dimanche' },
 }
 
-export function updateDaysForMonth(days, month) {
+export function getDaysForMonth(month) {
   const start = month.startOf('month').startOf('week')
-  const end = month.endOf('month').endOf('week')
-  let cursor = start
-  const now = DateTime.local()
+  const end = month.endOf('month').endOf('week').startOf('day')
+  let cursor = start.startOf('day')
+  const today = DateTime.local().toISODate()
+  const days = []
 
   for (let i = 0; i <= 41; i++) {
     const day = {
@@ -29,7 +30,7 @@ export function updateDaysForMonth(days, month) {
       allday: false,
       label: '',
       date: cursor,
-      iso: cursor.toFormat("yyyy-MM-dd"),
+      iso: cursor.toISODate(),
       weekday: WEEKDAYS[cursor.weekday].short,
       day: cursor.day,
       dof: cursor.weekday,
@@ -40,19 +41,62 @@ export function updateDaysForMonth(days, month) {
     day.classes.push('calendar-dow-' + day.dof)
     day.classes.push('calendar-day-' + day.iso)
 
-    if (cursor.startOf('day') < now.startOf('day')) {
+    if (day.iso < today) {
       day.classes.push('past')
-    } else if (cursor.hasSame(now, 'day')) {
+    } else if (day.iso === today) {
       day.classes.push('today')
     }
 
-    if (cursor.startOf('month') < month.startOf('month')) {
-      day.classes.push('adjacent-month', 'prev-month')
-    } else if (cursor.startOf('month') > month.startOf('month')) {
-      day.classes.push('adjacent-month', 'next-month')
+    if (cursor.month !== month.month) {
+      day.classes.push('adjacent-month')
     }
 
-    if (cursor.startOf('day') > end.startOf('day')) {
+    if (cursor > end) {
+      day.classes.push('hidden')
+    }
+
+    days.push(day)
+
+    cursor = cursor.plus({ day: 1 })
+  }
+
+  return days
+}
+
+export function updateDaysForMonth(days, month) {
+  const start = month.startOf('month').startOf('week')
+  const end = month.endOf('month').endOf('week').startOf('day')
+  let cursor = start.startOf('day')
+  const today = DateTime.local().toISODate()
+
+  for (let i = 0; i <= 41; i++) {
+    const day = {
+      tag: '',
+      allday: false,
+      label: '',
+      date: cursor,
+      iso: cursor.toISODate(),
+      weekday: WEEKDAYS[cursor.weekday].short,
+      day: cursor.day,
+      dof: cursor.weekday,
+      classes: [],
+      events: []
+    }
+
+    day.classes.push('calendar-dow-' + day.dof)
+    day.classes.push('calendar-day-' + day.iso)
+
+    if (day.iso < today) {
+      day.classes.push('past')
+    } else if (day.iso === today) {
+      day.classes.push('today')
+    }
+
+    if (cursor.month !== month.month) {
+      day.classes.push('adjacent-month')
+    }
+
+    if (cursor > end) {
       day.classes.push('hidden')
     }
 

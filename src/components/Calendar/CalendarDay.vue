@@ -174,7 +174,6 @@ export default defineComponent({
     display: grid;
     grid-auto-columns: 1fr;
     gap: 2px;
-    font-family: 'DM Mono', Menlo, 'Roboto Mono', monospace;
 
     .av-calendar-event {
       padding: 0.25rem;

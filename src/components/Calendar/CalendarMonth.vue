@@ -27,15 +27,11 @@
 </template>
 
 <script>
-import { watch, reactive, inject, nextTick } from 'vue'
+import { ref, inject, nextTick, watch, watchEffect } from 'vue'
 import CalendarDay from './CalendarDay'
-import {
-  updateDaysForMonth,
-  getBlankCalendarDays,
-  WEEKDAYS,
-  getEvents
-} from './utils'
+import { getDaysForMonth, updateDaysForMonth, WEEKDAYS } from './utils'
 import { DateTime, Settings } from 'luxon'
+import { useMainStore } from '@/store'
 
 const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
@@ -48,34 +44,30 @@ export default {
   },
   props: ['month'],
   setup(props) {
-    const days = reactive(getBlankCalendarDays())
+    console.time(`setup CalendarMonth ${props.month?.toISODate()}`)
+    const days = ref()
     const datasource = inject('datasource')
+    const store = useMainStore()
 
     // TODO : implement global state
     const state = {
       userId: 'IEN'
     }
 
-    watch(
-      () => props.month,
-      async (month, prevMonth) => {
-        console.log('update month', month?.toISODate(), prevMonth?.toISODate())
-        updateDaysForMonth(days, month)
-        await nextTick()
-        try {
-          if (month instanceof DateTime) {
-            await datasource.subscribe(state.userId, month)
-          }
-          if (prevMonth instanceof DateTime) {
-            await datasource.unsubscribe(state.userId, prevMonth)
-          }
-        } catch (e) {
-          // TODO : handle error
-          console.error(e)
+    watchEffect(async () => {
+      days.value = getDaysForMonth(props.month)
+      await nextTick()
+      try {
+        if (props.month instanceof DateTime) {
+          await datasource.subscribe(state.userId, props.month)
         }
-      },
-      { immediate: true }
-    )
+      } catch (e) {
+        // TODO : handle error
+        console.error(e)
+      }
+    })
+
+    console.timeEnd(`setup CalendarMonth ${props.month?.toISODate()}`)
 
     return {
       days,
@@ -90,6 +82,7 @@ export default {
   display: grid;
   grid-template: auto 1fr / 100%;
   height: 100%;
+  font-family: 'DM Sans', sans-serif;
 
   .av-calendar-weekdays {
     display: grid;
