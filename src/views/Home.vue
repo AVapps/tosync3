@@ -15,14 +15,14 @@
       <div class="cards-grid">
         <ion-card>
           <ion-card-header>
-            <ion-card-title>Télécharger mon planning</ion-card-title>
-            <ion-card-subtitle></ion-card-subtitle>
+            <ion-card-title>Crew Web Plus</ion-card-title>
+            <ion-card-subtitle
+              >Connectez-vous à Crew Web Plus pour importer votre
+              planning</ion-card-subtitle
+            >
           </ion-card-header>
           <ion-card-content>
-            <ion-button @click="openCrewWebPlus()">Connexion</ion-button>
-            <ion-button @click="importPDF()">importPDF</ion-button>
-            <ion-button @click="show()">show</ion-button>
-            <ion-button @click="hide()">hide</ion-button>
+            <crew-web-widget />
           </ion-card-content>
         </ion-card>
         <ion-card>
@@ -66,12 +66,11 @@ import {
   IonCardTitle,
   IonButton
 } from '@ionic/vue'
+
+import CrewWebWidget from '@/components/CrewWebWidget.vue'
 import FilePicker from '@/components/FilePicker'
 
-import { defineComponent, ref } from 'vue'
-
-import { CrewWebPlus } from '@/lib/CrewWebPlus.js'
-import { importPdfFile } from '@/lib/PlanningImporter.js'
+import { defineComponent } from 'vue'
 
 export default defineComponent({
   name: 'Home',
@@ -87,48 +86,11 @@ export default defineComponent({
     IonCardSubtitle,
     IonCardTitle,
     IonButton,
+    CrewWebWidget,
     FilePicker
   },
   setup() {
-    const event = ref({
-      type: false,
-      url: false
-    })
-    const crewWeb = new CrewWebPlus()
-    window.crewWeb = crewWeb
-
-    const openCrewWebPlus = async () => {
-      console.log('Open Browser')
-      crewWeb.open()
-      await crewWeb.waitForLogin()
-      crewWeb.browser.hide()
-    }
-
-    async function importPDF() {
-      try {
-        const data = await crewWeb.getPDFFile()
-        const planning = await importPdfFile(data)
-        console.log(data.length, planning)
-      } catch (error) {
-        console.log(error)
-      }
-    }
-
-    function show() {
-      crewWeb.show()
-    }
-
-    function hide() {
-      crewWeb.hide()
-    }
-
-    return {
-      openCrewWebPlus,
-      importPDF,
-      event,
-      show,
-      hide
-    }
+    return {}
   }
 })
 </script>
