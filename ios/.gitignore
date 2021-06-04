@@ -3,6 +3,8 @@
 # And the CLI then renames it
 
 App/build
+App/Build
+DerivedData
 App/Pods
 App/public
 App/Podfile.lock

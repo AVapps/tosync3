@@ -1,30 +1,79 @@
 <template>
   <div class="crewweb-widget">
-    <ion-button v-if="!state.connected" @click="openCrewWebPlus()">
+    <ion-button
+      v-if="!state.connected"
+      @click="openCrewWebPlus()"
+      class="connect-button"
+      shape="round"
+    >
       Connexion
     </ion-button>
 
     <template v-if="state.connected">
-      <ion-button fill="outline" @click="show()">
-        <ion-icon :icon="eyeOutline"></ion-icon>
+      <ion-chip color="success">
+        <ion-icon :icon="ellipse" size="small"></ion-icon>
+        <ion-label>Connecté</ion-label>
+      </ion-chip>
+      <ion-button @click="show()" fill="clear" shape="round" size="small">
+        <ion-icon :icon="openOutline"></ion-icon>
         &nbsp; Afficher Crew Web Plus
       </ion-button>
-      <ion-button
-        v-if="state.needsRosterValidation"
-        @click="signRoster()"
-        color="secondary"
+
+      <template v-if="state.hasPendingChanges">
+        <ion-chip color="warning">
+          <ion-icon :icon="alertCircleOutline"></ion-icon>
+          <ion-label>Modification planning</ion-label>
+        </ion-chip>
+        <ion-button
+          @click="signChanges()"
+          fill="clear"
+          shape="round"
+          size="small"
+          color="warning"
+        >
+          <ion-icon :icon="openOutline"></ion-icon>
+          &nbsp; Valider les modifications
+        </ion-button>
+      </template>
+
+      <template v-if="state.needsRosterValidation">
+        <ion-chip color="warning">
+          <ion-icon :icon="alertCircleOutline"></ion-icon>
+          <ion-label>Planning à valider</ion-label>
+        </ion-chip>
+        <ion-button
+          @click="signRoster()"
+          fill="clear"
+          shape="round"
+          size="small"
+          color="warning"
+        >
+          <ion-icon :icon="openOutline"></ion-icon>
+          &nbsp; Valider mon planning
+        </ion-button>
+      </template>
+
+      <ion-chip
+        v-if="!state.needsRosterValidation && !state.hasPendingChanges"
+        color="success"
       >
         <ion-icon :icon="checkmarkCircleOutline"></ion-icon>
-        &nbsp; Valider mon planning
-      </ion-button>
+        <ion-label>Planning validé</ion-label>
+      </ion-chip>
     </template>
   </div>
 </template>
 
 <script>
 import { defineComponent, reactive } from 'vue'
-import { IonButton, IonIcon } from '@ionic/vue'
-import { eyeOutline, checkmarkCircleOutline } from 'ionicons/icons'
+import { IonButton, IonChip, IonLabel, IonIcon } from '@ionic/vue'
+import {
+  eyeOutline,
+  checkmarkCircleOutline,
+  alertCircleOutline,
+  openOutline,
+  ellipse
+} from 'ionicons/icons'
 
 import { useMainStore } from '@/store'
 import { CrewWebPlus } from '@/lib/CrewWebPlus.js'
@@ -34,6 +83,8 @@ export default defineComponent({
   name: 'ThemeSwitcher',
   components: {
     IonButton,
+    IonChip,
+    IonLabel,
     IonIcon
   },
   setup() {
@@ -88,6 +139,24 @@ export default defineComponent({
       }
     }
 
+    async function signChanges() {
+      try {
+        const newState = await crewWeb.signRoster()
+        Object.assign(state, newState)
+      } catch (err) {
+        console.log(err)
+        return
+      }
+
+      if (
+        state.connected &&
+        !state.needsRosterValidation &&
+        !state.hasPendingChanges
+      ) {
+        importPDF()
+      }
+    }
+
     function show() {
       crewWeb.show()
     }
@@ -100,11 +169,15 @@ export default defineComponent({
       openCrewWebPlus,
       importPDF,
       signRoster,
+      signChanges,
       state,
       show,
       hide,
       eyeOutline,
-      checkmarkCircleOutline
+      checkmarkCircleOutline,
+      alertCircleOutline,
+      openOutline,
+      ellipse
     }
   }
 })
@@ -113,8 +186,14 @@ export default defineComponent({
 <style lang="scss">
 .crewweb-widget {
   display: grid;
+  grid-template-columns: auto 1fr;
   gap: 0.5rem;
-  place-items: center center;
+  place-items: center start;
+
+  .connect-button {
+    grid-column-start: 1;
+    grid-column-end: 3;
+    justify-self: center;
+  }
 }
 </style>
-

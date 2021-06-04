@@ -1,5 +1,6 @@
 import { InAppBrowser } from '@ionic-native/in-app-browser'
 import EventEmitter from 'eventemitter3'
+import { Keychain } from '@ionic-native/keychain'
 
 // const ROOT_URL = 'https://planning.to.aero/'
 const SIGN_ON_URL = 'https://planning.to.aero/SAML/SingleSignOn'
@@ -9,6 +10,7 @@ const LOGOUT_URL = 'https://planning.to.aero/Login/Logout'
 const PLANNING_URL = '/FlightProgram'
 const PDF_URL = '/FlightProgram/GetPdf'
 const SIGN_ROSTER_URL = '/FlightProgram/SignRoster'
+const CHANGES_URL = '/Changes'
 
 export class CrewWebPlus extends EventEmitter {
   constructor() {
@@ -20,9 +22,9 @@ export class CrewWebPlus extends EventEmitter {
     this.needsRosterValidation = false
     this._signPending = false
 
-    if (!("TextEncoder" in window)) {
+    if (!('TextEncoder' in window)) {
       this.encoder = null
-      throw new Error(`Votre navigateur n'est pas compatible avec l'API TextEncoder !`)
+      throw new Error('Votre navigateur n\'est pas compatible avec l\'API TextEncoder !')
     } else {
       this.encoder = new TextEncoder()
     }
@@ -44,13 +46,13 @@ export class CrewWebPlus extends EventEmitter {
       .subscribe((evt) => {
         console.log('[inappbrowser]', evt.type, evt.url)
       })
-    
+
     this.loaderrorSub = this.browser
       .on('loaderror')
       .subscribe((evt) => {
         console.log('[inappbrowser]', evt.type, evt.url, evt.code, evt.message)
         if (evt.url.indexOf(SIGN_ROSTER_URL) !== -1) {
-          this.emit('signRoster.error')
+          this.emit('signRoster.error', evt)
         }
       })
 
@@ -133,6 +135,15 @@ export class CrewWebPlus extends EventEmitter {
     return this.getUserState()
   }
 
+  async signChanges() {
+    if (!this.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
+    this.show()
+    await this.navigate(CHANGES_URL)
+    await this.waitFor('signChanges')
+    this.hide()
+    return this.getUserState()
+  }
+
   async getPDFFile() {
     if (!this.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
     const result = await this._fetchPDF()
@@ -163,9 +174,9 @@ export class CrewWebPlus extends EventEmitter {
     await this.navigate(HOME_URL)
     const homeinfo = await this._getHomeInfo()
     console.log(homeinfo)
-    
+
     if (homeinfo.rosterchanges) {
-      this.hasPendingChanges = !!homeinfo.rosterchanges?.content 
+      this.hasPendingChanges = !!homeinfo.rosterchanges?.content
     }
 
     if (homeinfo.rostervalidation) {
@@ -194,7 +205,7 @@ export class CrewWebPlus extends EventEmitter {
     state;`
 
     return new Promise(resolve => {
-      this.browser.executeScript({ code }, ([ result ]) => {
+      this.browser.executeScript({ code }, ([result]) => {
         resolve(result)
       })
     })
@@ -249,8 +260,8 @@ export class CrewWebPlus extends EventEmitter {
     document.body.style.paddingBottom = '3rem'
     const fontEl = document.body.querySelector('font')
     if (fontEl) {
-      font.style.display = 'inline-block'
-      font.style.width = '100%'
+      fontEl.style.display = 'inline-block'
+      fontEl.style.width = '100%'
     }`
     return this.executeScript({ code })
   }
@@ -260,8 +271,8 @@ export class CrewWebPlus extends EventEmitter {
       this.once(eventName, (...args) => {
         resolve(...args)
       })
-      this.once([eventName, 'error'].join('.'), (...args) => {
-        reject(...args)
+      this.once([eventName, 'error'].join('.'), ({ message }) => {
+        reject(new Error(message))
       })
     })
   }
