@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { watch } from 'vue'
+import { Storage } from '@capacitor/storage'
 
 const USER_ID_KEY = 'tosync.userId'
 const CONFIG_KEY = 'tosync.config'
@@ -15,7 +16,7 @@ export const useMainStore = defineStore({
   }),
   // optional getters
   getters: {
-    
+
   },
   // optional actions
   actions: {
@@ -24,23 +25,51 @@ export const useMainStore = defineStore({
       this.userId = userId
     },
 
-    init() {
-      this.userId = localStorage.getItem(USER_ID_KEY)
+    async init() {
+      try {
+        const { value } = await Storage.get({ key: USER_ID_KEY })
+        this.userId = value
+        console.log('userId', value)
+      } catch (err) {
+        console.error('Couldn\'t retrieve userId.')
+      }
       watch(
         () => this.userId,
-        userId => localStorage.setItem(USER_ID_KEY, userId)
+        async userId => {
+          try {
+            await Storage.set({
+              key: USER_ID_KEY,
+              value: userId
+            })
+          } catch (err) {
+            console.error('Couldn\'t save userId.')
+          }
+        }
       )
 
-      const config = localStorage.getItem(CONFIG_KEY)
-      if (config) {
-        this.config = JSON.parse(config)
+      try {
+        const { value } = await Storage.get({ key: CONFIG_KEY })
+        this.config = JSON.parse(value)
+        console.log('CONFIG', this.config)
+      } catch (err) {
+        console.error('Couldn\'t retrieve config.')
       }
       watch(
         () => this.config,
-        config => localStorage.setItem(CONFIG_KEY, JSON.stringify(config)),
+        async config => {
+          try {
+            await Storage.set({
+              key: CONFIG_KEY,
+              value: JSON.stringify(config)
+            })
+          } catch (err) {
+            console.error('Couldn\'t save config.')
+          }
+        },
         { deep: true }
       )
-      if (!this.config.hasOwnProperty('theme')) {
+
+      if (!Object.prototype.hasOwnProperty.call(this.config, 'theme')) {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
         this.config.theme = prefersDark.matches ? 'dark' : 'light'
       }
