@@ -1,6 +1,6 @@
 import { InAppBrowser } from '@ionic-native/in-app-browser'
 import EventEmitter from 'eventemitter3'
-import { Keychain } from '@ionic-native/keychain'
+import { Keychain as CapKeychain } from '@ionic-native/keychain'
 
 // const ROOT_URL = 'https://planning.to.aero/'
 const SIGN_ON_URL = 'https://planning.to.aero/SAML/SingleSignOn'
@@ -11,6 +11,8 @@ const PLANNING_URL = '/FlightProgram'
 const PDF_URL = '/FlightProgram/GetPdf'
 const SIGN_ROSTER_URL = '/FlightProgram/SignRoster'
 const CHANGES_URL = '/Changes'
+
+const CREDENTIALS_KEY = 'tosync.cw.credentials'
 
 export class CrewWebPlus extends EventEmitter {
   constructor() {
@@ -28,18 +30,38 @@ export class CrewWebPlus extends EventEmitter {
     } else {
       this.encoder = new TextEncoder()
     }
+
+    this.on('tosync.saveCredentials', credentials => {
+      console.log('storing credentials for later use', credentials)
+      this.setCredentials(credentials)
+    })
+
+    this.on('tosync.oktaAuthResponse', ({ ok, status, statusText }) => {
+      if (!ok && this.credentials) {
+        this.removeCredentials().catch(err => console.error(err))
+      }
+    })
+
+    this.on('tosync.hideCrewWeb', credentials => {
+      this.hide()
+    })
+
+    this.on('tosync.log', data => {
+      console.log(data)
+    })
   }
 
-  open() {
-    if (this.browser) {
-      this.browser.show()
-    } else {
+  async open() {
+    if (!this.browser) {
       this.createBrowserWindow()
+    }
+    if (!this.credentials) {
+      this.browser.show()
     }
   }
 
   createBrowserWindow() {
-    this.browser = InAppBrowser.create(SIGN_ON_URL, '_blank', 'location=no,toolbar=no')
+    this.browser = InAppBrowser.create(SIGN_ON_URL, '_blank', 'location=no,toolbar=no,hidden=yes')
 
     this.loadstartSub = this.browser
       .on('loadstart')
@@ -58,9 +80,9 @@ export class CrewWebPlus extends EventEmitter {
 
     this.loadstopSub = this.browser
       .on('loadstop')
-      .subscribe((evt) => {
+      .subscribe(async (evt) => {
         console.log('[inappbrowser]', evt.type, evt.url, evt)
-        this.addCustomToolbar()
+        this.addCustomToolbar().catch(err => console.error(err))
 
         if (evt.url.indexOf(HOME_URL) !== -1) {
           this.isLoggedIn = true
@@ -78,8 +100,12 @@ export class CrewWebPlus extends EventEmitter {
 
         if (evt.url.indexOf(OKTA_LOGIN_URL) !== -1) {
           this.isLoggedIn = false
-          console.log('INJECTING saveCredentialsScript')
-          this.injectSaveCredentialsScript()
+          console.log('INJECTING okta login watcher...')
+          await this.injectOktaLoginWatcher()
+          if (this.credentials) {
+            console.log('Trying auto-login...')
+            this.tryLogin().catch(err => console.error(err))
+          }
         }
       })
 
@@ -88,15 +114,6 @@ export class CrewWebPlus extends EventEmitter {
       .subscribe((evt) => {
         console.log('[inappbrowser]', evt.type, evt.data?.method, evt.data?.result)
         if (evt.data && evt.data.method) {
-          if (evt.data.method === 'tosync.saveCredentials') {
-            console.log('storing credentials for later use', evt.data.result)
-            this.credentials = evt.data.result
-          }
-
-          if (evt.data.method === 'tosync.hideCrewWeb') {
-            this.hide()
-          }
-
           this.emit(evt.data.method, evt.data.result)
         }
       })
@@ -115,6 +132,66 @@ export class CrewWebPlus extends EventEmitter {
 
   hide() {
     if (this.browser) this.browser.hide()
+  }
+
+  setCredentials({ login, password }) {
+    if (login && password) {
+      this.credentials = { login, password }
+    }
+  }
+
+  async saveCredentials() {
+    if (!this.isLoggedIn) throw new Error('You must be logged in to access this function.')
+    if (this.credentials) {
+      return CapKeychain.setJson(CREDENTIALS_KEY, this.credentials, true)
+    }
+  }
+
+  async loadCredentials() {
+    const credentials = await CapKeychain.getJson(CREDENTIALS_KEY, 'Identification requise pour utiliser vos identifiants CrewWebPlus.')
+    if (credentials?.login && credentials?.password) {
+      this.credentials = credentials
+      return true
+    } else {
+      return false
+    }
+  }
+
+  async removeCredentials() {
+    this.credentials = null
+    return CapKeychain.remove(CREDENTIALS_KEY)
+  }
+
+  // Called when reaching Okta login page and credentials are available
+  async tryLogin() {
+    const code = `
+    console.log('trying to login...', document.readyState);
+    function loginOkta() {
+      console.log('loginOkta started...');
+      document.getElementById('okta-signin-username').value = '${this.credentials.login}';
+      document.getElementById('okta-signin-password').value = '${this.credentials.password}';
+      document.getElementById('okta-signin-submit').click();
+      window.TOSYNC = { loginOkta : true };
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loginOkta);
+    } else {
+      loginOkta();
+    }`
+
+    const promise = new Promise((resolve, reject) => {
+      this.once('tosync.oktaAuthResponse', ({ ok, status, statusText }) => {
+        if (ok) {
+          resolve()
+        } else {
+          this.show()
+          reject(statusText)
+        }
+      })
+    })
+
+    await this.executeScript({ code })
+    return promise
   }
 
   tearDownBrowser() {
@@ -211,6 +288,34 @@ export class CrewWebPlus extends EventEmitter {
     })
   }
 
+  async injectOktaLoginWatcher() {
+    const code = `
+      (function(ns, fetch){
+        if (typeof fetch !== 'function') return;
+        ns.fetch = function() {
+          const login = document.getElementById('okta-signin-username').value;
+          const password = document.getElementById('okta-signin-password').value;
+          const out = fetch.apply(this, arguments);
+          out.then((resp) => {
+            if (resp.url === 'https://transaviafr.okta-emea.com/api/v1/authn') {
+              webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify({
+                method: 'tosync.oktaAuthResponse',
+                result: { ok: resp.ok, status: resp.status, statusText: resp.statusText, url: resp.url }
+              }));
+              if (resp.ok) {
+                webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify({
+                  method: 'tosync.saveCredentials',
+                  result: { login, password }
+                }));
+              }
+            }
+          })
+          return out;
+        }
+      }(window, window.fetch))`
+    return this.executeScript({ code })
+  }
+
   async injectSaveCredentialsScript() {
     const code = `
     console.log('trying to listenForSubmit...', document.readyState);
@@ -285,15 +390,26 @@ export class CrewWebPlus extends EventEmitter {
     }
   }
 
-  async navigate(url) {
-    const navigationProm = new Promise((resolve) => {
-      const sub = this.browser.on('loadstart').subscribe((evt) => {
+  async waitForURL(url) {
+    const navigationProm = new Promise((resolve, reject) => {
+      const loadSub = this.browser.on('loadstop').subscribe((evt) => {
         if (evt.url.indexOf(url) !== -1) {
-          sub.unsubscribe()
+          loadSub.unsubscribe()
           resolve()
         }
       })
+      const errorSub = this.browser.on('loaderror').subscribe((evt) => {
+        if (evt.url.indexOf(url) !== -1) {
+          errorSub.unsubscribe()
+          reject(evt.message)
+        }
+      })
     })
+    return navigationProm
+  }
+
+  async navigate(url) {
+    const navigationProm = this.waitForURL(url)
     this.executeScript({
       code: `window.location.assign('${url}');`
     })

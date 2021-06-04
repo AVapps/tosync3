@@ -65,8 +65,15 @@
 </template>
 
 <script>
-import { defineComponent, reactive } from 'vue'
-import { IonButton, IonChip, IonLabel, IonIcon } from '@ionic/vue'
+import { defineComponent, reactive, watchEffect } from 'vue'
+import {
+  IonButton,
+  IonChip,
+  IonLabel,
+  IonIcon,
+  alertController,
+  toastController
+} from '@ionic/vue'
 import {
   eyeOutline,
   checkmarkCircleOutline,
@@ -78,6 +85,8 @@ import {
 import { useMainStore } from '@/store'
 import { CrewWebPlus } from '@/lib/CrewWebPlus.js'
 import { importPdfFile } from '@/lib/PlanningImporter.js'
+
+import { has } from 'lodash'
 
 export default defineComponent({
   name: 'ThemeSwitcher',
@@ -98,14 +107,68 @@ export default defineComponent({
     const crewWeb = new CrewWebPlus()
     window.crewWeb = crewWeb
 
+    function useSavedCredentialsListener(credentials) {
+      crewWeb.setCredentials(credentials)
+      crewWeb.saveCredentials().catch(err => console.error(err))
+    }
+    watchEffect(() => {
+      if (store.config.useSavedCredentials) {
+        crewWeb.on('tosync.saveCredentials', useSavedCredentialsListener)
+      } else {
+        crewWeb.off('tosync.saveCredentials', useSavedCredentialsListener)
+        crewWeb.removeCredentials().catch(err => console.error(err))
+      }
+    })
+
     const openCrewWebPlus = async () => {
       console.log('Open Browser')
       try {
+        if (store.config.useSavedCredentials) {
+          await crewWeb.loadCredentials()
+        }
         crewWeb.open()
         await crewWeb.waitForLogin()
         crewWeb.browser.hide()
         const newState = await crewWeb.getUserState()
         Object.assign(state, newState)
+        if (!has(store.config, 'useSavedCredentials')) {
+          const alert = await alertController.create({
+            header: 'Mémoriser mes identifiants ?',
+            message:
+              'Souhaitez-vous enregistrer vos identifiants CrewWebPlus dans votre trousseau afin de vous connecter plus rapidement ?',
+            buttons: [
+              {
+                text: 'Oui',
+                handler: async () => {
+                  try {
+                    await crewWeb.saveCredentials()
+                    store.config.useSavedCredentials = true
+                    const toast = await toastController.create({
+                      color: 'success',
+                      message: 'Identifiants enregistrés !',
+                      duration: 2000
+                    })
+                    toast.present()
+                  } catch (err) {
+                    const toast = await toastController.create({
+                      color: 'danger',
+                      message: "L'enregistrement a échoué !",
+                      duration: 2000
+                    })
+                    toast.present()
+                  }
+                }
+              },
+              {
+                text: 'Non',
+                handler: () => {
+                  store.config.useSavedCredentials = false
+                }
+              }
+            ]
+          })
+          alert.present()
+        }
       } catch (err) {
         console.log(err)
       }
