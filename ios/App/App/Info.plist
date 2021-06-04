@@ -41,6 +41,11 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>fr</string>
+		<string>en</string>
+		<string>de</string>
+		<string>nl</string>
+		<string>it</string>
+		<string>pt-BR</string>
 	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>$CONTACTS_USAGE_DESCRIPTION</string>
