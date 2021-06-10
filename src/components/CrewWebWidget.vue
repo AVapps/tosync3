@@ -1,15 +1,16 @@
 <template>
   <div class="crewweb-widget">
-    <ion-button
-      v-if="!state.connected"
+    <loading-button
+      v-if="!state.isLoggedIn"
       @click="openCrewWebPlus()"
+      :loading="state.status === 'connecting' || loading"
       class="connect-button"
       shape="round"
     >
       Connexion
-    </ion-button>
+    </loading-button>
 
-    <template v-if="state.connected">
+    <template v-if="state.isLoggedIn">
       <ion-chip color="success">
         <ion-icon :icon="ellipse" size="small"></ion-icon>
         <ion-label>Connecté</ion-label>
@@ -65,7 +66,7 @@
 </template>
 
 <script>
-import { defineComponent, reactive, watchEffect } from 'vue'
+import { defineComponent, ref, watchEffect } from 'vue'
 import {
   IonButton,
   IonChip,
@@ -81,12 +82,12 @@ import {
   openOutline,
   ellipse
 } from 'ionicons/icons'
-
 import { useMainStore } from '@/store'
 import { CrewWebPlus } from '@/lib/CrewWebPlus.js'
 import { importPdfFile } from '@/lib/PlanningImporter.js'
 
 import { has } from 'lodash'
+import LoadingButton from './LoadingButton.vue'
 
 export default defineComponent({
   name: 'ThemeSwitcher',
@@ -94,43 +95,31 @@ export default defineComponent({
     IonButton,
     IonChip,
     IonLabel,
-    IonIcon
+    IonIcon,
+    LoadingButton
   },
   setup() {
     const store = useMainStore()
-    const state = reactive({
-      connected: false,
-      hasPendingChanges: false,
-      needsRosterValidation: false
-    })
-
     const crewWeb = new CrewWebPlus()
+    const loading = ref(false)
     window.crewWeb = crewWeb
 
-    function useSavedCredentialsListener(credentials) {
-      crewWeb.setCredentials(credentials)
-      crewWeb.saveCredentials().catch(err => console.error(err))
-    }
-    watchEffect(() => {
-      if (store.config.useSavedCredentials) {
-        crewWeb.on('tosync.saveCredentials', useSavedCredentialsListener)
-      } else {
-        crewWeb.off('tosync.saveCredentials', useSavedCredentialsListener)
-        crewWeb.removeCredentials().catch(err => console.error(err))
-      }
-    })
+    watchEffect(() =>
+      crewWeb.storeCredentials(store.config?.useSavedCredentials)
+    )
 
     const openCrewWebPlus = async () => {
       console.log('Open Browser')
+      loading.value = true
       try {
-        if (store.config.useSavedCredentials) {
+        if (store.config?.useSavedCredentials) {
           await crewWeb.loadCredentials()
         }
         crewWeb.open()
         await crewWeb.waitForLogin()
         crewWeb.browser.hide()
-        const newState = await crewWeb.getUserState()
-        Object.assign(state, newState)
+        loading.value = false
+
         if (!has(store.config, 'useSavedCredentials')) {
           const alert = await alertController.create({
             header: 'Mémoriser mes identifiants ?',
@@ -186,17 +175,16 @@ export default defineComponent({
 
     async function signRoster() {
       try {
-        const newState = await crewWeb.signRoster()
-        Object.assign(state, newState)
+        await crewWeb.signRoster()
       } catch (err) {
         console.log(err)
         return
       }
 
       if (
-        state.connected &&
-        !state.needsRosterValidation &&
-        !state.hasPendingChanges
+        crewWeb.state.isLoggedIn &&
+        !crewWeb.state.needsRosterValidation &&
+        !crewWeb.state.hasPendingChanges
       ) {
         importPDF()
       }
@@ -204,17 +192,16 @@ export default defineComponent({
 
     async function signChanges() {
       try {
-        const newState = await crewWeb.signRoster()
-        Object.assign(state, newState)
+        await crewWeb.signChanges()
       } catch (err) {
         console.log(err)
         return
       }
 
       if (
-        state.connected &&
-        !state.needsRosterValidation &&
-        !state.hasPendingChanges
+        crewWeb.state.isLoggedIn &&
+        !crewWeb.state.needsRosterValidation &&
+        !crewWeb.state.hasPendingChanges
       ) {
         importPDF()
       }
@@ -233,7 +220,8 @@ export default defineComponent({
       importPDF,
       signRoster,
       signChanges,
-      state,
+      state: crewWeb.state,
+      loading,
       show,
       hide,
       eyeOutline,

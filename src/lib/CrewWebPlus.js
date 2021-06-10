@@ -2,6 +2,9 @@ import { InAppBrowser } from '@ionic-native/in-app-browser'
 import EventEmitter from 'eventemitter3'
 import { Keychain as CapKeychain } from '@ionic-native/keychain'
 
+import { reactive } from 'vue'
+import { has } from 'lodash'
+
 // const ROOT_URL = 'https://planning.to.aero/'
 const SIGN_ON_URL = 'https://planning.to.aero/SAML/SingleSignOn'
 const OKTA_LOGIN_URL = 'https://transaviafr.okta-emea.com/login/login.htm'
@@ -19,10 +22,15 @@ export class CrewWebPlus extends EventEmitter {
     super()
     this.browser = null
     this.credentials = null
-    this.isLoggedIn = false
-    this.hasPendingChanges = false
-    this.needsRosterValidation = false
-    this._signPending = false
+    this._savedCredentials = null
+    this._storeCredentials = false
+
+    this._state = reactive({
+      status: 'closed',
+      isLoggedIn: false,
+      hasPendingChanges: undefined,
+      needsRosterValidation: undefined
+    })
 
     if (!('TextEncoder' in window)) {
       this.encoder = null
@@ -34,10 +42,22 @@ export class CrewWebPlus extends EventEmitter {
     this.on('tosync.saveCredentials', credentials => {
       console.log('storing credentials for later use', credentials)
       this.setCredentials(credentials)
+      if (this._storeCredentials) {
+        this.saveCredentials().catch(err => console.error(err))
+      }
+    })
+
+    this.on('tosync.signChanges', () => {
+      this.updateState().catch(err => console.error(err))
+    })
+
+    this.on('signRoster', () => {
+      this.updateState().catch(err => console.error(err))
     })
 
     this.on('tosync.oktaAuthResponse', ({ ok, status, statusText }) => {
       if (!ok && this.credentials) {
+        this.credentials = null
         this.removeCredentials().catch(err => console.error(err))
       }
     })
@@ -49,6 +69,25 @@ export class CrewWebPlus extends EventEmitter {
     this.on('tosync.log', data => {
       console.log(data)
     })
+  }
+
+  get state() {
+    return this._state
+  }
+
+  set state(state) {
+    if (has(state, 'status')) {
+      this._state.status = state.status
+    }
+    if (has(state, 'isLoggedIn')) {
+      this._state.isLoggedIn = state.isLoggedIn
+    }
+    if (has(state, 'hasPendingChanges')) {
+      this._state.hasPendingChanges = state.hasPendingChanges
+    }
+    if (has(state, 'needsRosterValidation')) {
+      this._state.needsRosterValidation = state.needsRosterValidation
+    }
   }
 
   async open() {
@@ -85,21 +124,32 @@ export class CrewWebPlus extends EventEmitter {
         this.addCustomToolbar().catch(err => console.error(err))
 
         if (evt.url.indexOf(HOME_URL) !== -1) {
-          this.isLoggedIn = true
-          this.emit('login')
+          if (!this.state.isLoggedIn) {
+            this._state.isLoggedIn = true
+            this._state.status = 'logged-in'
+            this.updateState().catch(err => console.error(err))
+            this.emit('login')
+          }
         }
 
         if (evt.url.indexOf(SIGN_ROSTER_URL) !== -1) {
           this.emit('signRoster')
         }
 
+        if (evt.url.indexOf(CHANGES_URL) !== -1) {
+          console.log('INJECTING changes validation watcher...')
+          this.injectChangesValidationWatcher().catch(err => console.error(err))
+        }
+
         if (evt.url.indexOf(LOGOUT_URL) !== -1) {
-          this.isLoggedIn = false
+          this._state.isLoggedIn = false
+          this._state.status = 'logged-out'
           this.emit('logout')
         }
 
         if (evt.url.indexOf(OKTA_LOGIN_URL) !== -1) {
-          this.isLoggedIn = false
+          this._state.isLoggedIn = false
+          this._state.status = 'logged-out'
           console.log('INJECTING okta login watcher...')
           await this.injectOktaLoginWatcher()
           if (this.credentials) {
@@ -141,16 +191,21 @@ export class CrewWebPlus extends EventEmitter {
   }
 
   async saveCredentials() {
-    if (!this.isLoggedIn) throw new Error('You must be logged in to access this function.')
     if (this.credentials) {
-      return CapKeychain.setJson(CREDENTIALS_KEY, this.credentials, true)
+      if (this._savedCredentials && this.credentials.login === this._savedCredentials.login && this.credentials.password === this._savedCredentials.password) {
+        // Déjà enregistré
+        return
+      }
+      await CapKeychain.setJson(CREDENTIALS_KEY, this.credentials, true)
+      this._savedCredentials = this.credentials
     }
   }
 
   async loadCredentials() {
     const credentials = await CapKeychain.getJson(CREDENTIALS_KEY, 'Identification requise pour utiliser vos identifiants CrewWebPlus.')
     if (credentials?.login && credentials?.password) {
-      this.credentials = credentials
+      this.setCredentials(credentials)
+      this._savedCredentials = credentials
       return true
     } else {
       return false
@@ -159,25 +214,37 @@ export class CrewWebPlus extends EventEmitter {
 
   async removeCredentials() {
     this.credentials = null
+    this._savedCredentials = null
     return CapKeychain.remove(CREDENTIALS_KEY)
+  }
+
+  storeCredentials(useKeychainStore = true) {
+    this._storeCredentials = useKeychainStore
   }
 
   // Called when reaching Okta login page and credentials are available
   async tryLogin() {
+    this._state.status = 'connecting'
     const code = `
-    console.log('trying to login...', document.readyState);
-    function loginOkta() {
-      console.log('loginOkta started...');
-      document.getElementById('okta-signin-username').value = '${this.credentials.login}';
-      document.getElementById('okta-signin-password').value = '${this.credentials.password}';
-      document.getElementById('okta-signin-submit').click();
-      window.TOSYNC = { loginOkta : true };
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', loginOkta);
-    } else {
-      loginOkta();
-    }`
+    (() => {
+      console.log('trying to login...', document.readyState);
+      function loginOkta() {
+        console.log('loginOkta started...');
+        const $username = document.getElementById('okta-signin-username')
+        const $password = document.getElementById('okta-signin-password')
+        $username.value = '${this.credentials.login}'
+        $username.dispatchEvent(new Event('change', { bubbles: true }))
+        $password.value = '${this.credentials.password}'
+        $password.dispatchEvent(new Event('change', { bubbles: true }))
+        document.getElementById('okta-signin-submit').click()
+        window.TOSYNC = { loginOkta : true };
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loginOkta);
+      } else {
+        loginOkta();
+      }
+    })()`
 
     const promise = new Promise((resolve, reject) => {
       this.once('tosync.oktaAuthResponse', ({ ok, status, statusText }) => {
@@ -204,31 +271,30 @@ export class CrewWebPlus extends EventEmitter {
   }
 
   async signRoster() {
-    if (!this.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
+    if (!this.state.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
     this.show()
     await this.navigate(PLANNING_URL)
     await this.waitFor('signRoster')
     this.hide()
-    return this.getUserState()
   }
 
   async signChanges() {
-    if (!this.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
+    if (!this.state.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
     this.show()
     await this.navigate(CHANGES_URL)
-    await this.waitFor('signChanges')
+    await this.waitFor('tosync.signChanges')
     this.hide()
-    return this.getUserState()
   }
 
   async getPDFFile() {
-    if (!this.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
+    if (!this.state.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
     const result = await this._fetchPDF()
     return this.encoder.encode(result)
   }
 
   async _fetchPDF() {
-    const code = `fetch('${PDF_URL}')
+    const code = `
+    fetch('${PDF_URL}')
       .then(function(response) {
         return response.arrayBuffer();
       })
@@ -246,40 +312,37 @@ export class CrewWebPlus extends EventEmitter {
     return resultP
   }
 
-  async getUserState() {
-    if (!this.isLoggedIn) throw new Error('You must be logged in to user status.')
+  async updateState() {
+    if (!this.state.isLoggedIn) return
+
     await this.navigate(HOME_URL)
     const homeinfo = await this._getHomeInfo()
-    console.log(homeinfo)
 
     if (homeinfo.rosterchanges) {
-      this.hasPendingChanges = !!homeinfo.rosterchanges?.content
+      this._state.hasPendingChanges = !!homeinfo.rosterchanges?.content
     }
 
     if (homeinfo.rostervalidation) {
-      this.needsRosterValidation = homeinfo.rostervalidation?.content?.indexOf('Please validate your planning') !== -1
-    }
-    return {
-      connected: this.isLoggedIn,
-      hasPendingChanges: this.hasPendingChanges,
-      needsRosterValidation: this.needsRosterValidation
+      this._state.needsRosterValidation = homeinfo.rostervalidation?.content?.indexOf('Please validate your planning') !== -1
     }
   }
 
   async _getHomeInfo() {
-    if (!this.isLoggedIn) throw new Error('You must be logged in to get dashboard info.')
+    if (!this.state.isLoggedIn) throw new Error('You must be logged in to get dashboard info.')
     const code = `
-    const state = {};
-    document.querySelectorAll('.HomeInfo').forEach(el => {
-      const key = el.querySelector('.HomeText')?.innerText?.trim().toLowerCase().replace(/\\s/g,'');
-      if (key) {
-        state[key] = {
-          link: el.querySelector('.HomeLink > a')?.getAttribute('href'),
-          content: el.querySelector('.HomeLink > a')?.innerText?.trim()
+    (() => {
+      const state = {};
+      document.querySelectorAll('.HomeInfo').forEach(el => {
+        const key = el.querySelector('.HomeText')?.innerText?.trim().toLowerCase().replace(/\\s/g,'');
+        if (key) {
+          state[key] = {
+            link: el.querySelector('.HomeLink > a')?.getAttribute('href'),
+            content: el.querySelector('.HomeLink > a')?.innerText?.trim()
+          }
         }
-      }
-    });
-    state;`
+      });
+      return state;
+    })()`
 
     return new Promise(resolve => {
       this.browser.executeScript({ code }, ([result]) => {
@@ -316,58 +379,58 @@ export class CrewWebPlus extends EventEmitter {
     return this.executeScript({ code })
   }
 
-  async injectSaveCredentialsScript() {
+  async injectChangesValidationWatcher() {
     const code = `
-    console.log('trying to listenForSubmit...', document.readyState);
-    function listenForSubmit() {
-      console.log('listenForSubmit started...')
-      document.querySelector('form.primary-auth-form').addEventListener('submit', () => {
-        console.log('ON SUBMIT EVENT');
-        const login = document.getElementById('okta-signin-username').value;
-        const password = document.getElementById('okta-signin-password').value;
-        webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify({
-          method: 'tosync.saveCredentials',
-          result: { login, password }
-        }));
-      });
-      window.TOSYNC = true;
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', listenForSubmit);
-    } else {
-      listenForSubmit();
-    }`
+    $(function () {
+      $(document).ajaxComplete(function(event, xhr, settings) {
+        if (settings.url === '/Changes/CallbackPartial' && settings.data?.indexOf('SignDay=') !== -1) {
+          const success = xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200
+          webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify({
+            method: success ? 'tosync.signChanges' : 'tosync.signChanges.error',
+            result: {
+              method: settings.type,
+              url: settings.url,
+              status: xhr.status,
+              statusText: xhr.statusText,
+              data: settings.data
+            }
+          }))
+        }
+      })
+    })`
     return this.executeScript({ code })
   }
 
   async addCustomToolbar() {
     const code = `
-    const div = document.createElement('div')
-    const button = document.createElement('a')
-    const text = document.createTextNode('Fermer')
-    div.appendChild(button)
-    button.appendChild(text)
-    div.style.position = 'fixed'
-    div.style.bottom = 0
-    div.style.left = 0
-    div.style.color = "#00D66D"
-    div.style.backgroundColor = "#000000"
-    div.style.width = "100vw"
-    div.style.fontFamily = '-apple-system, sans-serif'
-    div.style.fontSize = '1.1rem'
-    button.style.display = 'inline-block'
-    button.style.padding = '1rem'
-    button.addEventListener('click', () => webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify({
-      method: 'tosync.hideCrewWeb',
-      result: {}
-    })))
-    document.body.appendChild(div)
-    document.body.style.paddingBottom = '3rem'
-    const fontEl = document.body.querySelector('font')
-    if (fontEl) {
-      fontEl.style.display = 'inline-block'
-      fontEl.style.width = '100%'
-    }`
+    (() => {
+      const div = document.createElement('div')
+      const button = document.createElement('a')
+      const text = document.createTextNode('Fermer')
+      div.appendChild(button)
+      button.appendChild(text)
+      div.style.position = 'fixed'
+      div.style.bottom = 0
+      div.style.left = 0
+      div.style.color = "#00D66D"
+      div.style.backgroundColor = "#000000"
+      div.style.width = "100vw"
+      div.style.fontFamily = '-apple-system, sans-serif'
+      div.style.fontSize = '1.1rem'
+      button.style.display = 'inline-block'
+      button.style.padding = '1rem'
+      button.addEventListener('click', () => webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify({
+        method: 'tosync.hideCrewWeb',
+        result: {}
+      })))
+      document.body.appendChild(div)
+      document.body.style.paddingBottom = '3rem'
+      const fontEl = document.body.querySelector('font')
+      if (fontEl) {
+        fontEl.style.display = 'inline-block'
+        fontEl.style.width = '100%'
+      }
+    })()`
     return this.executeScript({ code })
   }
 
@@ -383,7 +446,7 @@ export class CrewWebPlus extends EventEmitter {
   }
 
   async waitForLogin() {
-    if (this.isLoggedIn) {
+    if (this.state.isLoggedIn) {
       return Promise.resolve()
     } else {
       return this.waitFor('login')
