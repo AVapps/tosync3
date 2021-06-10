@@ -19,7 +19,7 @@ export default defineComponent({
     const store = useMainStore()
     store.init()
     watchEffect(() => {
-      switch (store.config.theme) {
+      switch (store.config?.theme) {
         case 'light':
           document.body.classList.add('light')
           document.body.classList.remove('dark')

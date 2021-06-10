@@ -28,7 +28,7 @@ export default defineComponent({
     const store = useMainStore()
 
     return {
-      theme: computed(() => store.config.theme),
+      theme: computed(() => store.config?.theme || 'auto'),
       toggleTheme: store.toggleTheme,
       sunnyOutline,
       moonOutline
