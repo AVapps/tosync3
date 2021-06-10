@@ -49,7 +49,7 @@ export const useMainStore = defineStore({
 
       try {
         const { value } = await Storage.get({ key: CONFIG_KEY })
-        this.config = JSON.parse(value)
+        this.config = JSON.parse(value) || {}
         console.log('CONFIG', this.config)
       } catch (err) {
         console.error('Couldn\'t retrieve config.')
