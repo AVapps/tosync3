@@ -14,7 +14,7 @@ export const WEEKDAYS = {
   4: { short: 'Je', long: 'Jeudi' },
   5: { short: 'Ve', long: 'Vendredi' },
   6: { short: 'Sa', long: 'Samedi' },
-  7: { short: 'Di', long: 'Dimanche' },
+  7: { short: 'Di', long: 'Dimanche' }
 }
 
 export function getDaysForMonth(month) {
@@ -26,16 +26,12 @@ export function getDaysForMonth(month) {
 
   for (let i = 0; i <= 41; i++) {
     const day = {
-      tag: '',
-      allday: false,
-      label: '',
       date: cursor,
       iso: cursor.toISODate(),
       weekday: WEEKDAYS[cursor.weekday].short,
       day: cursor.day,
       dof: cursor.weekday,
-      classes: [],
-      events: []
+      classes: []
     }
 
     day.classes.push('calendar-dow-' + day.dof)
@@ -162,16 +158,17 @@ export function isAlldayTag(tag) {
 
 export function eventClass(evt, date) {
   const classes = [evt.tag]
+  const dt = DateTime.fromISO(date)
 
   if (isAlldayTag(evt.tag)) {
     classes.push('allday')
   }
 
-  if (evt.start < date) {
+  if (evt.start < dt) {
     classes.push('span-left')
   }
 
-  if (evt.end > date.endOf('day')) {
+  if (evt.end > dt.endOf('day')) {
     classes.push('span-right')
   }
 

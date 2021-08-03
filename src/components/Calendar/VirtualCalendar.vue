@@ -57,29 +57,21 @@
 </template>
 
 <script>
+import { reactive, ref, onMounted, nextTick, provide } from 'vue'
 import { IonButton, IonIcon } from '@ionic/vue'
 import { chevronBack, chevronForward, ellipseOutline } from 'ionicons/icons'
 
 import SwiperCore, { Virtual } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/swiper.scss'
-SwiperCore.use([Virtual])
-
-import {
-  reactive,
-  ref,
-  onMounted,
-  nextTick,
-  provide,
-  onBeforeUpdate
-} from 'vue'
 
 import CalendarMonth from './CalendarMonth'
 
 import { DateTime } from 'luxon'
 import { WEEKDAYS } from './utils'
-import { EventsDatasource } from '@/model/EventsDatasource'
+import { useEventsDatasource } from '@/lib/useEventsDatasource'
 
+SwiperCore.use([Virtual])
 window.DateTime = DateTime
 
 export default {
@@ -93,9 +85,9 @@ export default {
   },
   props: ['displayMode'],
   setup() {
-    const eventsSource = new EventsDatasource()
-    provide('datasource', eventsSource)
-    window.EventsData = eventsSource
+    const datasource = useEventsDatasource()
+    provide('datasource', datasource)
+    window.EventsData = datasource
 
     const today = DateTime.local()
     const currentMonth = today.startOf('month')
@@ -108,12 +100,6 @@ export default {
       monthsList.push(d)
       d = d.plus({ month: 1 })
     }
-
-    const slidesComponents = ref([])
-
-    onBeforeUpdate(() => {
-      slidesComponents.value = []
-    })
 
     const slides = reactive(
       monthsList.map(month => ({
@@ -142,18 +128,6 @@ export default {
       })
     }
 
-    // const isBusy = ref(false)
-
-    // const onTransitionStart = sw => {
-    //   isBusy.value = true
-    //   console.log('onTransitionStart')
-    // }
-
-    // const onTransitionEnd = sw => {
-    //   isBusy.value = false
-    //   console.log('onTransitionEnd', slidesComponents.value)
-    // }
-
     let swiper
     const onSwiper = sw => {
       console.log('SWIPER')
@@ -166,6 +140,7 @@ export default {
       if (swiper) {
         setTimeout(async () => {
           await nextTick()
+          console.log('Swiper.update')
           swiper.update()
         }, 1000)
       }
@@ -176,7 +151,6 @@ export default {
     }
 
     const goToPresentMonth = async () => {
-      const _currentMonth = today.startOf('month')
       if (swiper) {
         swiper.slideTo(currentSlide(), 300, false)
       }
@@ -189,10 +163,7 @@ export default {
     return {
       onSwiper,
       onActiveIndexChange,
-      // onTransitionStart,
-      // onTransitionEnd,
       slides,
-      // slidesComponents,
       activeMonthLabel,
       initialSlide: currentSlide(),
       goToPrevMonth,
@@ -202,7 +173,6 @@ export default {
       chevronBack,
       chevronForward,
       ellipseOutline
-      // isBusy
     }
   }
 }
@@ -262,6 +232,3 @@ export default {
   }
 }
 </style>
-
-
-

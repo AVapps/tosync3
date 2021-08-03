@@ -63,8 +63,7 @@ import {
   IonCardHeader,
   IonCardContent,
   IonCardSubtitle,
-  IonCardTitle,
-  IonButton
+  IonCardTitle
 } from '@ionic/vue'
 
 import CrewWebWidget from '@/components/CrewWebWidget.vue'
@@ -85,7 +84,6 @@ export default defineComponent({
     IonCardContent,
     IonCardSubtitle,
     IonCardTitle,
-    IonButton,
     CrewWebWidget,
     FilePicker
   },

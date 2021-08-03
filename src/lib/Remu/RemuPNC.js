@@ -1,8 +1,8 @@
 import { DateTime, Duration, Interval, Settings } from 'luxon'
 import _ from 'lodash'
-const CONFIG_TO = require('./configTO')
-const CONFIG_RU = require('./configRU')
-import Utils from './Utils'
+import Utils from '../Utils'
+import CONFIG_TO from './configTO'
+import CONFIG_RU from './configRU'
 
 const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
@@ -42,7 +42,7 @@ function sumByMonth(collection, key, month, startKey = 'debut') {
     if (_.has(object, ['split', month, key].join('.'))) {
       // if (isNaN(_.get(object, ['split', month, key].join('.')))) {
       //   console.log(object, ['split', month, key].join('.'))
-        // throw new Error("NaN")
+      // throw new Error("NaN")
       // }
       return sum + (_.get(object, ['split', month, key].join('.')) || 0)
 
@@ -50,14 +50,14 @@ function sumByMonth(collection, key, month, startKey = 'debut') {
     } else if (_.has(object, key) && _.has(object, startKey) && _.get(object, startKey).month === month) {
       // if (isNaN(_.get(object, key))) {
       //   console.log(object, key)
-        // throw new Error("NaN")
+      // throw new Error("NaN")
       // }
       return sum + (_.get(object, key) || 0)
 
       // L'objet a un Moment de début
-    } else if (_.has(object, key) && _.has(object, 'start')
-      && _.get(object, 'start')._isAMomentObject
-      && _.get(object, 'start').month() + 1 === month) {
+    } else if (_.has(object, key) && _.has(object, 'start') &&
+      _.get(object, 'start')._isAMomentObject &&
+      _.get(object, 'start').month() + 1 === month) {
       // if (isNaN(_.get(object, key))) {
       //   console.log(object, key)
       // throw new Error("NaN")
@@ -70,11 +70,11 @@ function sumByMonth(collection, key, month, startKey = 'debut') {
 }
 
 const findHV100TO = _.memoize(function (vol) {
-	const mois = toDateTime(vol.start).toFormat('yyyy-MM');
-	const hv = HV100.findOne({src: vol.from, dest: vol.to, mois: { $lte : mois }}, { sort: [["mois", "desc"]]});
-	return hv ? hv.tr : undefined;
+  const mois = toDateTime(vol.start).toFormat('yyyy-MM')
+  const hv = HV100.findOne({ src: vol.from, dest: vol.to, mois: { $lte: mois } }, { sort: [['mois', 'desc']] })
+  return hv ? hv.tr : undefined
 }, function (vol) {
-	return [ vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM') ].join('-');
+  return [vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM')].join('-')
 })
 
 export default class RemuPNC {
@@ -136,15 +136,17 @@ export default class RemuPNC {
     const finMois = DateTime.fromObject(monthObject).endOf('month')
 
     _.forEach(_.omit(Utils.tags, 'stage', 'sol', 'simu', 'instructionSol', 'instructionSimu', 'reserve', 'delegation', 'vol', 'mep'), tag => {
-      stats.count[tag] = _.has(data, tag) ? _.sumBy(data[tag], evt => {
-        if (evt.end >= debutMois && evt.start <= finMois) {
-          const debut = DateTime.max(evt.debut || toDateTime(evt.start), debutMois)
-          const fin = DateTime.min(evt.fin || toDateTime(evt.end), finMois)
-          return fin.startOf('day').diff(debut.startOf('day')).as('days') + 1
-        } else {
-           return 0
-        }
-      }) : 0
+      stats.count[tag] = _.has(data, tag)
+        ? _.sumBy(data[tag], evt => {
+          if (evt.end >= debutMois && evt.start <= finMois) {
+            const debut = DateTime.max(evt.debut || toDateTime(evt.start), debutMois)
+            const fin = DateTime.min(evt.fin || toDateTime(evt.end), finMois)
+            return fin.startOf('day').diff(debut.startOf('day')).as('days') + 1
+          } else {
+            return 0
+          }
+        })
+        : 0
     })
 
     if (_.has(this.eventsByTag, 'stage') && _.get(this.eventsByTag, 'stage').length) {
@@ -154,7 +156,7 @@ export default class RemuPNC {
       _.forEach(this.joursSol, (day, date) => {
         if (stageInterval.contains(day.debut) && day.tag !== 'stage') {
           day.tag = 'stage'
-          day.HcsTO = 65/30
+          day.HcsTO = 65 / 30
         }
       })
 
@@ -269,10 +271,10 @@ export default class RemuPNC {
       }
 
       if (day.tag === 'simu' || day.tag === 'instructionSimu') {
-        const Hsimu = _.reduce(day.events, (h, s) => (s.tag === 'simu' || s.tag === 'instructionSimu') ? h+s.fin.diff(s.debut).as('hours') : h , 0)
+        const Hsimu = _.reduce(day.events, (h, s) => (s.tag === 'simu' || s.tag === 'instructionSimu') ? h + s.fin.diff(s.debut).as('hours') : h, 0)
 
         if (day.tag === 'instructionSimu') {
-          day.HcSimuInstTO = CONFIG_TO.HcSimuInst + _.reduce(day.events, (h, s) => s.tag === 'instructionSimu' ? h+this._hdn(s.debut, s.fin, CONFIG_TO.hdn) : h , 0) * CONFIG_TO.coefMajoNuit // TODO : nuit sur temps de simu briefings inclus ou non ?
+          day.HcSimuInstTO = CONFIG_TO.HcSimuInst + _.reduce(day.events, (h, s) => s.tag === 'instructionSimu' ? h + this._hdn(s.debut, s.fin, CONFIG_TO.hdn) : h, 0) * CONFIG_TO.coefMajoNuit // TODO : nuit sur temps de simu briefings inclus ou non ?
         }
 
         if (day.tag === 'simu') {
@@ -298,7 +300,7 @@ export default class RemuPNC {
 
   _isDemiJournée(day, splitHour = 12) {
     if (_.some(day.events, evt => /CEMPN/i.test(evt.summary))) return false
-    if (day.fin.diff(day.debut).as('hours') > 4 ) return false
+    if (day.fin.diff(day.debut).as('hours') > 4) return false
 
     const mijournée = day.debut.set({ hour: splitHour, minute: 0 })
     if (day.debut >= mijournée || day.fin <= mijournée) return true
@@ -337,14 +339,14 @@ export default class RemuPNC {
 
       rot.H2TO = Math.max(rot.HcaTO, rot.H1TO)
 
-      const firstEvent = _.first(rot.events), lastEvent = _.last(rot.events)
+      const firstEvent = _.first(rot.events); const lastEvent = _.last(rot.events)
       const debut = rot.debut = debutAbs
       const fin = rot.fin = lastSV.finTR
 
       if (debut.month !== fin.month) {
         rot.split = {
           [debut.month]: {
-            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === debut.month) ? count+1 : count , 0),
+            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === debut.month) ? count + 1 : count, 0),
             tv: sumByMonth(rot.vols, 'tv', debut.month),
             tvp: sumByMonth(rot.vols, 'tvp', debut.month),
             mep: sumByMonth(rot.events, 'mep', debut.month),
@@ -352,7 +354,7 @@ export default class RemuPNC {
             nbjours: debut.endOf('month').diff(debut.endOf('day')).as('days') + 1
           },
           [fin.month]: {
-            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === fin.month) ? count+1 : count , 0),
+            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === fin.month) ? count + 1 : count, 0),
             tv: sumByMonth(rot.vols, 'tv', fin.month),
             tvp: sumByMonth(rot.vols, 'tvp', fin.month),
             mep: sumByMonth(rot.events, 'mep', fin.month),
@@ -390,44 +392,44 @@ export default class RemuPNC {
     })
 
     sv.tme = counts.vol ? sv.tv / sv.countVol : 0
-    sv.cmt = counts.vol ? Math.max(70 / ( 21 * Math.max(sv.tme, 1) + 30), 1) : 0
+    sv.cmt = counts.vol ? Math.max(70 / (21 * Math.max(sv.tme, 1) + 30), 1) : 0
 
-    const first = _.first(sv.events),
-			last = _.last(sv.events),
-			lastVol = _.last(groups.vol);
-		let preTs, preTsv, postTs, postTsv;
+    const first = _.first(sv.events)
+    const last = _.last(sv.events)
+    const lastVol = _.last(groups.vol)
+    let preTs, preTsv, postTs, postTsv
 
-		//Calcul TR, TS et TSV
-		if (first.tag === 'mep') {
-			// Le service de vol commence par une MEP
-			preTs = CONFIG_RU.preTsMep;
-			preTsv = CONFIG_RU.preTsvMep;
-		} else if (first.from === 'ORY') {
-			// Le service de vol commence en base
-			preTs = CONFIG_RU.preTsBase;
-			preTsv = CONFIG_RU.preTsvBase;
-		} else {
-			// Le service de vol commence en escale
-			preTs = CONFIG_RU.preTsEscale;
-			preTsv = CONFIG_RU.preTsvEscale;
-		}
+    // Calcul TR, TS et TSV
+    if (first.tag === 'mep') {
+      // Le service de vol commence par une MEP
+      preTs = CONFIG_RU.preTsMep
+      preTsv = CONFIG_RU.preTsvMep
+    } else if (first.from === 'ORY') {
+      // Le service de vol commence en base
+      preTs = CONFIG_RU.preTsBase
+      preTsv = CONFIG_RU.preTsvBase
+    } else {
+      // Le service de vol commence en escale
+      preTs = CONFIG_RU.preTsEscale
+      preTsv = CONFIG_RU.preTsvEscale
+    }
 
-		if (last.tag === 'mep') {
-			// Le service de vol termine par une MEP
-			postTs = CONFIG_RU.postTsMep;
-			postTsv = CONFIG_RU.postTsvMep;
-		} else {
-			// Le service de vol termine par un vol
-			postTs = CONFIG_RU.postTs;
-			postTsv = CONFIG_RU.postTsv;
-		}
+    if (last.tag === 'mep') {
+      // Le service de vol termine par une MEP
+      postTs = CONFIG_RU.postTsMep
+      postTsv = CONFIG_RU.postTsvMep
+    } else {
+      // Le service de vol termine par un vol
+      postTs = CONFIG_RU.postTs
+      postTsv = CONFIG_RU.postTsv
+    }
 
     _.extend(sv, {
       tsStart: first.debut.minus({ hours: preTs }),
       tsvStart: first.debut.minus({ hours: preTsv }),
       tsEnd: last.tag === 'vol' ? last.finR.plus({ hours: postTs }) : last.fin.plus({ hours: postTs }),
       tsvEnd: sv.countVol ? lastVol.finR.plus({ hours: postTsv }) : first.debut.minus({ hours: preTsv })
-		})
+    })
 
     if (sv.type === 'vol' || sv.tag === 'sv') {
       sv.debut = toDateTime((first.tag === 'vol' ? first.real : first).start)
@@ -497,11 +499,11 @@ export default class RemuPNC {
       const fin = toDateTime(s.end)
 
       _.assign(s, { debut, fin })
-      
-      s.mep = s.category == "ENGS" ? 0 : fin.diff(debut).as('hours')
+
+      s.mep = s.category == 'ENGS' ? 0 : fin.diff(debut).as('hours')
       s.tv = 0
       s.tvp = 0
-      s.HVnuit= 0
+      s.HVnuit = 0
 
       if (debut.month !== fin.month) {
         s.split = {
@@ -522,9 +524,9 @@ export default class RemuPNC {
     _.forEach(events, evt => {
       let date = evt.debut.startOf('day')
 
-      if (evt.fin < evt.debut) throw new Error("fin avant debut")
-      if (!evt.fin || !evt.fin.isValid) throw new Error("fin invalide")
-      if (!evt.debut || !evt.debut.isValid) throw new Error("debut invalide")
+      if (evt.fin < evt.debut) throw new Error('fin avant debut')
+      if (!evt.fin || !evt.fin.isValid) throw new Error('fin invalide')
+      if (!evt.debut || !evt.debut.isValid) throw new Error('debut invalide')
 
       while (date <= evt.fin) {
         if (date.month === month) {
@@ -540,13 +542,13 @@ export default class RemuPNC {
   	debut = debut.setZone(TIMEZONE)
     fin = fin.setZone(TIMEZONE)
     const interval = Interval.fromDateTimes(debut, fin)
-    const nightEnd = debut.set(configHDN.nightEnd), nightStart = debut.set(configHDN.nightStart)
+    const nightEnd = debut.set(configHDN.nightEnd); const nightStart = debut.set(configHDN.nightStart)
     const prevNight = Interval.fromDateTimes(debut.startOf('day'), nightEnd)
     const nextNight = Interval.fromDateTimes(nightStart, nightStart.plus({ days: 1 }).set(configHDN.nightEnd))
 
     const prevInt = interval.intersection(prevNight)
     const nextInt = interval.intersection(nextNight)
 
-  	return (prevInt ? prevInt.length('hours'): 0) + (nextInt ? nextInt.length('hours') : 0)
+  	return (prevInt ? prevInt.length('hours') : 0) + (nextInt ? nextInt.length('hours') : 0)
   }
 }

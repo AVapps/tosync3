@@ -10,7 +10,8 @@ const rotationSchema = new SimpleSchema({
     type: String,
     regEx: /^[A-Z]{3}$/,
     optional: true
-  },
+  }
+  // sv: []
 })
 
 rotationSchema.extend(eventSchema)

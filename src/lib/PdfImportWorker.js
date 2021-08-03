@@ -6,13 +6,14 @@ import { PdfPlanningParser } from './PdfPlanningParser.js'
 import { PdfPlanningImporter } from './PdfPlanningImporter.js'
 
 async function importPdfPlanning(pdf) {
-  const planningParser = new PdfPlanningParser(pdf)
+  const planningParser = new PdfPlanningParser()
+  planningParser.parse(pdf)
   console.log(planningParser)
-  const planningImporter = new PdfPlanningImporter(planningParser)
-  await planningImporter.importPlanning()
+  const planningImporter = new PdfPlanningImporter()
+  await planningImporter.importPlanning({ planning: planningParser.planning, params: { ...planningParser.meta, printedAt: planningParser.printedAt } })
   console.log(planningImporter)
-  const result = await planningImporter.save()
-  return result
+  // const result = await planningImporter.save()
+  return planningImporter.updateLog
 }
 
 async function parsePageContent(opList, textContent) {
@@ -21,12 +22,12 @@ async function parsePageContent(opList, textContent) {
 
   while (opList.fnArray.length) {
     const fn = opList.fnArray.shift()
-    let args = opList.argsArray.shift()
+    const args = opList.argsArray.shift()
 
-    if (OPS.constructPath == fn) {
+    if (OPS.constructPath === fn) {
       while (args[0].length) {
-        const op = args[0].shift();
-        if (op == OPS.rectangle) { // Lister les rectangles qui constituent les cellules
+        const op = args[0].shift()
+        if (op === OPS.rectangle) { // Lister les rectangles qui constituent les cellules
           // console.log('RECTANGLE', args[1].toString())
           const x = args[1].shift()
           const y = args[1].shift()
@@ -75,6 +76,9 @@ async function parsePageContent(opList, textContent) {
       h: item.height,
       str: item.str
     }))
+    .filter(item => {
+      return item.h && item.str.trim().length
+    })
     .sortBy('y')
     .reverse()
     .value()
@@ -157,11 +161,11 @@ async function parsePageContent(opList, textContent) {
       .value()
   })
 
-  console.log(`Page number parsing done !`, filledTable)
+  console.log('Page number parsing done !', filledTable)
 
   return _.filter(_.flatMap(filledTable, row => {
     return _.map(row.lines, line => {
-      return _.map(line, column => _.map(column, 'str').join("\n"))
+      return _.map(line, column => _.map(column, c => c.str).join('\n'))
     })
   }), line => _.isArray(line) && !(line.length === 1 && _.isEmpty(line[0])))
 }

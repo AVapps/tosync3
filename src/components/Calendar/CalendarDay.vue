@@ -1,14 +1,15 @@
 <template>
-  <div class="av-calendar-day" :class="[...day.classes, state.tag]">
+  <div class="av-calendar-day" :class="[...day.classes, ...state.tags]">
     <div class="av-calendar-weekday">{{ day.weekday }}</div>
     <div class="av-calendar-date">{{ day.day }}</div>
     <div class="av-calendar-content">
       <div
         class="av-calendar-event"
-        v-for="evt in state.groupedEvents"
+        v-for="evt in state.events"
         v-is="eventComponent(evt)"
         :key="evt._id"
         :event="evt"
+        :date="day.date"
         :class="eventClass(evt, state.date)"
       ></div>
     </div>
@@ -16,17 +17,9 @@
 </template>
 
 <script>
-import {
-  defineComponent,
-  inject,
-  ref,
-  reactive,
-  watch,
-  toRaw,
-  watchEffect
-} from 'vue'
+import { defineComponent, inject, ref, computed } from 'vue'
 import { DateTime, Settings } from 'luxon'
-import { getDayParams, eventClass, isAlldayTag } from './utils'
+import { eventClass, isAlldayTag } from './utils'
 
 import AlldayEvent from './Events/AlldayEvent'
 import DefaultEvent from './Events/DefaultEvent'
@@ -50,6 +43,19 @@ export default defineComponent({
       userId: 'IEN'
     }
 
+    const state = computed(() => {
+      const dayState = datasource.getDay(globalState.userId, props.day.iso)
+      return (
+        dayState || {
+          date: props.day.iso,
+          tags: [],
+          allday: false,
+          label: '',
+          events: []
+        }
+      )
+    })
+
     function getTime(ts) {
       return DateTime.fromMillis(ts, {
         zone: zone.value,
@@ -70,56 +76,11 @@ export default defineComponent({
       return DefaultEvent
     }
 
-    const state = reactive({
-      date: props.day.date,
-      tag: '',
-      allday: false,
-      label: '',
-      events: [],
-      groupedEvents: []
-    })
-
-    watchEffect(() => {
-      const day = datasource.getDay(globalState.userId, props.day.iso)
-      state.events = Array.isArray(day?.events) ? day.events : []
-      state.date = props.day.date
-    })
-
-    watch(
-      () => [...state.events],
-      events => {
-        const { tag, allday, label } = getDayParams(events)
-        let groupedEvents = events
-        if (tag === 'rotation') {
-          const rotationMap = new Map()
-          groupedEvents = []
-          events.forEach(evt => {
-            if (evt.tag === 'rotation') {
-              const rotation = toRaw(evt) // do not trigger recursive invalidation of watched events
-              rotation.svs = []
-              rotationMap.set(evt._id, rotation)
-            }
-            if (evt.rotationId) {
-              if (rotationMap.has(evt.rotationId)) {
-                rotationMap.get(evt.rotationId).svs.push(evt)
-              } else {
-                console.error('Rotation introuvable', evt, events)
-              }
-              return
-            }
-            groupedEvents.push(evt)
-          })
-        }
-        Object.assign(state, { tag, allday, label, groupedEvents })
-      },
-      { immediate: true, deep: true }
-    )
-
     return {
+      state,
       eventComponent,
       eventClass,
-      getTime,
-      state
+      getTime
     }
   }
 })

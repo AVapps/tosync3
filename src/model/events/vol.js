@@ -10,15 +10,11 @@ const volSchema = new SimpleSchema({
     type: String,
     optional: true
   },
-  real: {
-    type: Object,
-    optional: true
+  std: {
+    type: SimpleSchema.Integer // Datetime timestamp
   },
-  'real.start': {
-    type: SimpleSchema.Integer, // Datetime timestamp
-  },
-  'real.end': {
-    type: SimpleSchema.Integer, // Datetime timestamp
+  sta: {
+    type: SimpleSchema.Integer // Datetime timestamp
   }
 })
 

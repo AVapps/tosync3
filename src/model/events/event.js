@@ -3,26 +3,26 @@ import { TAGS } from '@/lib/Utils.js'
 
 export const eventSchema = new SimpleSchema({
   _id: {
-    type: String,
+    type: String
   },
   _rev: {
-    type: String,
+    type: String
   },
   userId: {
-    type: String,
+    type: String
   },
   tag: {
     type: String,
     allowedValues: TAGS
   },
   slug: {
-    type: String,
+    type: String
   },
   start: {
-    type: SimpleSchema.Integer, // Datetime timestamp
+    type: SimpleSchema.Integer // Datetime timestamp
   },
   end: {
-    type: SimpleSchema.Integer, // Datetime timestamp
+    type: SimpleSchema.Integer // Datetime timestamp
   },
 
   // Optional fields

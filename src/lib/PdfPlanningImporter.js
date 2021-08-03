@@ -1,6 +1,6 @@
 import { DateTime, Settings } from 'luxon'
 import _ from 'lodash'
-import { slug } from './Utils.js'
+import { slug as getSlug } from './Utils.js'
 import {
   rotationSchema,
   svSchema,
@@ -18,82 +18,77 @@ const DT_TRANSLATION = {
   fin: 'end'
 }
 
+function isRotation(evt) {
+  return evt.tag === 'rotation'
+}
+
 /**
  * Importe un planning après s'être assuré que les évènements enregistrés
  * précédemments ont bien été migrés au nouveau format.
  **/
 export class PdfPlanningImporter {
-  constructor(pdfPlanning) {
-    this.parser = pdfPlanning
-    this.userId = this.parser.meta.trigramme
+  constructor() {
+    this.userId = null
     this.savedEvents = []
     this.savedEventsByTag = {}
-    this.initIndexes()
   }
 
   initIndexes() {
     this.updateLog = {
       userId: this.userId,
       insert: [],
-      rotationInsert: [],
       update: {}, // { _id -> modifier }
-      remove: []
+      remove: [] // events complets
     }
     this.foundIds = new Set()
     this.savedEventsSlugMap = new Map()
     this.savedFlightsSlugMap = new Map()
   }
 
-  async importPlanning() {
-    const first = _.first(this.parser.planning)
-    const last = _.last(this.parser.planning)
+  async importPlanning({ planning, params }) {
+    console.log('PdfPlanningImporter.importPlanning', planning, params)
+    this.userId = params.trigramme
 
-    try {
-      this.savedEvents = await Events.getInterval(this.userId, first.debut.toMillis(), last.fin.toMillis())
-    } catch (error) {
-      console.error(error)
-      return
+    if (!this.userId) {
+      throw new Error('ID utilisateur non défini !')
     }
+
+    this.printedAt = params.printedAt
+    this.initIndexes()
+
+    const first = _.first(planning)
+    const last = _.last(planning)
+
+    this.savedEvents = await Events.getInterval(this.userId, first.debut.toMillis(), last.fin.toMillis())
 
     this.savedEventsByTag = _.groupBy(this.savedEvents, 'tag')
     console.log('PdfPlanningImport.importPlanning savedEvents', this.savedEvents, this.savedEventsByTag)
 
-    this.initIndexes()
-
     // Générer les index Maps
     _.forEach(this.savedEvents, evt => {
       this.savedEventsSlugMap.set(evt.slug, evt)
-      if (evt.rotationId) {
-        if (evt.events && evt.events.length) {
-          _.forEach(evt.events, sub => {
-            sub.slug = slug(sub, this.userId)
-            this.savedFlightsSlugMap.set(sub.slug, sub)
-          })
+      if (isRotation(evt)) {
+        if (_.isEmpty(evt.sv)) {
+          console.log('!!! Rotation sans SV !!!', evt)
         } else {
-          console.log(`!!! SV sans events !!!`, evt)
+          _.forEach(evt.sv, sv => {
+            this.savedEventsSlugMap.set(sv.slug, sv)
+            if (sv.events && sv.events.length) {
+              _.forEach(sv.events, sub => {
+                sub.slug = getSlug(sub, this.userId)
+                this.savedFlightsSlugMap.set(sub.slug, sub)
+              })
+            } else {
+              console.log('!!! SV sans events !!!', sv)
+            }
+          })
         }
       }
     })
 
-    if (this.savedEventsByTag.rotation && this.savedEventsByTag.rotation.length) {
-      // Grouper les SV & rotations
-      _.chain(this.savedEvents)
-        .filter(evt => _.has(evt, 'rotationId'))
-        .groupBy('rotationId')
-        .forEach((svs, rotationId) => {
-          const rotation = _.find(this.savedEventsByTag.rotation, { _id: rotationId })
-          if (rotation) {
-            rotation.sv = svs
-          } else {
-            console.log(`Erreur de planning : rotation introuvable !`, svs, rotationId)
-          }
-        })
-        .value()
-    }
-
-    _.forEach(this.parser.planning, evt => {
+    _.forEach(planning, evt => {
       this._exportDateTimes(evt)
-      if (evt.tag === 'rotation') {
+      if (isRotation(evt)) {
         this.importRotation(evt)
       } else if (_.has(evt, 'events')) {
         this.importDutySol(evt)
@@ -109,7 +104,7 @@ export class PdfPlanningImporter {
    * Importe tout évènement qui n'est ni un vol, ni une rotation, ni une journée sol (composée de plusieurs évènements)
    * - si l'évènement existe => mettre à jour
    * - sinon l'ajouter
-   * @param {*} evt 
+   * @param {*} evt
    */
   importSol(sol) {
     this.completeSol(sol)
@@ -122,16 +117,29 @@ export class PdfPlanningImporter {
   }
 
   importRotation(rot) {
-    rot.slug = slug(rot, this.userId)
+    rot.slug = getSlug(rot, this.userId)
     if (rot.isIncomplete) {
       this.importIncompleteRotation(rot)
     } else {
       const found = this.findSavedEvent(rot)
       if (found) {
-        console.log(`FOUND ${rot.slug}`)
-        this.matchUpdateFoundEvent(rot, found, rotationSchema)
+        console.log(`%cFOUND ${rot.slug}`, 'color:green')
+
+        const firstEvent = _.first(_.first(rot.sv)?.events)
+        if (firstEvent?.start > this.printedAt) { // Heures programmées => garder les heures enregistrées précédemment
+          rot.start = found.start
+          rot.end = found.end
+        } else {
+          const lastEvent = _.last(_.last(rot.sv)?.events)
+          if (lastEvent?.end > this.printedAt) { // Heure de fin programmée => garder l'heure enregistrée
+            rot.end = found.end
+          }
+        }
+
+        const updateResult = this.matchUpdateFoundEvent(rot, found, rotationSchema)
+
         _.forEach(rot.sv, sv => {
-          sv.rotationId = found._id
+          sv.rotationId = updateResult._id
           this.importSV(sv)
         })
       } else {
@@ -158,27 +166,41 @@ export class PdfPlanningImporter {
             this.foundIds.add(savedSV._id)
             continue
           }
-          if (DateTime.fromMillis(savedSV.start).hasSame(firstSV.start, 'day')
-            && _.first(savedSV.events).from === firstSV.from) {
+          if (DateTime.fromMillis(savedSV.start).hasSame(firstSV.start, 'day') &&
+            _.first(savedSV.events).from === firstSV.from) {
             match = true
           }
-          if (firstSV.start - savedSV.end > 8 * 60 * 60 * 1000 // 8 hours
-            && _.last(savedSV.events).to === firstSV.from) {
+          if (firstSV.start - savedSV.end > 8 * 60 * 60 * 1000 && // 8 hours
+            _.last(savedSV.events).to === firstSV.from) {
             match = true
             this.foundIds.add(savedSV._id)
           }
-          i--;
+          i--
         }
         return match
       }
     })
 
     if (foundRot) {
-      console.log(`FOUND ${foundRot.slug} for`, rot)
+      console.log(`%cFOUND ${foundRot.slug} for`, 'color: green', rot)
       rot.start = foundRot.start
-      rot.slug = slug(rot, this.userId)
+      rot.slug = getSlug(rot, this.userId)
       this.updateLog.remove.push(foundRot)
-      // add old SVS to new rot
+
+      if (foundRot.sv?.length && rot.sv?.length) {
+        // TODO : add old SVS to new rot
+        const firstNewSV = _.first(rot.sv)
+        firstNewSV.slug = getSlug(firstNewSV, this.userId)
+        let i = 0
+        while (i < foundRot.sv.length) {
+          const sv = foundRot.sv[i]
+          if (sv.start > firstNewSV.start || sv.slug === firstNewSV.slug) {
+            break
+          }
+          rot.sv.unshift(sv)
+          i++
+        }
+      }
 
       this.insertRotation(rot)
     } else {
@@ -187,39 +209,69 @@ export class PdfPlanningImporter {
   }
 
   insertRotation(rot) {
-    console.log(`NOT FOUND ${rot.slug} : inserting...`)
-    this.updateLog.rotationInsert.push({
-      rotation: _.omit(rotationSchema.clean(rot), '_id', '_rev'),
-      sv: _.map(rot.sv, sv => this.importSV(sv))
+    console.log(`%cNOT FOUND ${rot.slug} : inserting...`, 'color: red')
+
+    const cleanedRot = rotationSchema.clean(rot)
+    cleanedRot.userId = this.userId
+    cleanedRot._id = Events.getId(cleanedRot)
+    this.updateLog.insert.push(cleanedRot)
+
+    rot.sv.forEach(sv => {
+      sv.rotationId = cleanedRot._id
+      this.importSV(sv)
     })
   }
 
   importSV(sv) {
     this.completeSV(sv)
-    return this.matchOrReplaceImport(sv, svSchema)
+    const found = this.findSavedEvent(sv)
+    if (found) {
+      console.log(`%cFOUND SV ${sv.slug}`, 'color: green')
+
+      const firstEvent = _.first(sv.events)
+      if (firstEvent?.start > this.printedAt) { // Heures programmées => garder les heures enregistrées précédemment
+        sv.start = found.start
+        sv.end = found.end
+      } else {
+        const lastEvent = _.last(sv.events)
+        if (lastEvent?.end > this.printedAt) { // Heure de fin programmée => garder l'heure enregistrée
+          sv.end = found.end
+        }
+      }
+
+      return this.matchUpdateFoundEvent(sv, found, svSchema)
+    } else {
+      console.log(`%c SV NOT FOUND ${sv.slug} : inserting...`, 'color: red')
+      const cleanedSV = svSchema.clean(sv)
+      this.updateLog.insert.push(cleanedSV)
+      return { ref: cleanedSV }
+    }
   }
 
   completeSV(sv) {
     _.forEach(sv.events, evt => {
       if (evt.tag === 'vol') {
-        evt.slug = slug(evt, this.userId)
+        evt.slug = getSlug(evt, this.userId)
         const savedVol = this.findSavedFlight(evt)
         if (savedVol) {
           if (evt.isRealise) { // Utiliser les heures programmmées du vol enregistré
-            _.set(evt, 'real', {
-              start: evt.start,
-              end: evt.end
-            })
+            evt.std = savedVol.start
+            evt.sta = savedVol.end
+          } else if (_.has(savedVol, 'real')) { // Utiliser les heures réalisées du vol enregistré
+            evt.std = evt.start
+            evt.sta = evt.end
             evt.start = savedVol.start
             evt.end = savedVol.end
-          } else if (_.has(savedVol, 'real')) { // Utiliser les heures réalisées du vol enregistré
-            _.set(evt, 'real', savedVol.real)
           }
+        } else {
+          evt.std = evt.start
+          evt.sta = evt.end
         }
       }
     })
+
     sv.tag = sv.type
-    sv.slug = slug(sv, this.userId)
+    sv.slug = getSlug(sv, this.userId)
     if (_.has(sv, 'peq.Pilot')) {
       _.set(sv, 'peq.pnt', _.get(sv, 'peq.Pilot'))
     }
@@ -232,7 +284,7 @@ export class PdfPlanningImporter {
   }
 
   completeSol(sol) {
-    sol.slug = slug(sol, this.userId)
+    sol.slug = getSlug(sol, this.userId)
     if (_.has(sol, 'peq.DHD')) {
       _.set(sol, 'peq.mep', _.get(sol, 'peq.DHD'))
     }
@@ -242,15 +294,14 @@ export class PdfPlanningImporter {
   }
 
   removeNotFounds() {
-    const notFounds = _.difference(this.savedEvents.map(evt => evt._id), [...this.foundIds])
+    const notFounds = _.filter(this.savedEvents, evt => !this.foundIds.has(evt._id))
     this.updateLog.remove.push(...notFounds)
   }
 
   async save() {
-    if (this.updateLog.rotationInsert
-      || this.updateLog.insert.length
-      || this.updateLog.update.length
-      || this.updateLog.remove.length) {
+    if (this.updateLog.insert.length ||
+      this.updateLog.update.length ||
+      this.updateLog.remove.length) {
       let result
       try {
         result = {
@@ -267,13 +318,12 @@ export class PdfPlanningImporter {
   }
 
   matchOrReplaceImport(evt, schema) {
-    printEvent(evt)
     const found = this.findSavedEvent(evt)
     if (found) {
-      console.log(`FOUND ${evt.slug}`)
+      console.log(`%cFOUND ${evt.slug}`, 'color: green')
       return this.matchUpdateFoundEvent(evt, found, schema)
     } else {
-      console.log(`NOT FOUND ${evt.slug} : inserting...`)
+      console.log(`%cNOT FOUND ${evt.slug} : inserting...`, 'color: red')
       const cleanedEvt = schema.clean(evt)
       this.updateLog.insert.push(cleanedEvt)
       return { ref: cleanedEvt }
@@ -282,52 +332,52 @@ export class PdfPlanningImporter {
 
   matchUpdateFoundEvent(evt, found, schema) {
     this.foundIds.add(found._id)
-    printEvent(evt)
     const cleanedFound = _.omit(schema.clean(found), '_id', '_rev', 'userId')
     const cleanedEvt = schema.clean(evt)
     if (_.isMatch(cleanedFound, cleanedEvt)) {
-      console.log('- MATCHES: nothing to update')
+      console.log('- %cMATCHES: nothing to update', 'color: teal')
     } else {
-      console.log('- DOES NOT MATCH: update')
+      console.log('- %cDOES NOT MATCH: update', 'color: orange')
       if (evt.start !== found.start || evt.end !== found.end) {
+        cleanedEvt.userId = this.userId
+        cleanedEvt._id = Events.getId(cleanedEvt)
         this.updateLog.insert.push(cleanedEvt)
         this.updateLog.remove.push(found)
+        return { ref: cleanedEvt, _id: cleanedEvt._id }
       } else {
         cleanedEvt._id = found._id
         cleanedEvt._rev = found._rev
-        _.set(this.updateLog.update, [found._id, '$set'], cleanedEvt)
+        _.set(this.updateLog.update, [cleanedEvt._id, '$set'], cleanedEvt)
       }
     }
     return { ref: cleanedEvt, _id: found._id, _rev: found._rev }
   }
 
   findSavedEvent(evt) {
-    if (!_.has(this.savedEventsByTag, evt.tag)) return undefined
-
-    if (evt.tag === 'vol') {
+    if (evt?.tag === 'vol') {
       return this.findSavedFlight(evt)
     }
 
-    const slug = evt.slug || slug(evt, this.userId)
+    const slug = evt.slug || getSlug(evt, this.userId)
     console.log('SLUG for', slug, evt)
 
     if (this.savedEventsSlugMap.has(slug)) {
       const found = this.savedEventsSlugMap.get(slug)
-      console.log('> FOUND BY SLUG <', evt, found)
+      console.log('%c> FOUND BY SLUG <', 'color: green', evt, found)
       return found
     } else {
-      console.log('>! NOT FOUND !<', evt, slug)
+      console.log('%c>! NOT FOUND !<', 'color: red', evt, slug)
     }
   }
 
   findSavedFlight(vol) {
-    const slug = vol.slug || slug(vol, this.userId)
+    const slug = vol.slug || getSlug(vol, this.userId)
     if (this.savedFlightsSlugMap.has(slug)) {
       const found = this.savedFlightsSlugMap.get(slug)
-      console.log('> Flight FOUND BY SLUG <', vol, found)
+      console.log('%c> Flight FOUND BY SLUG <', 'color: green', vol, found)
       return found
     } else {
-      console.log('>! Flight NOT FOUND !<', vol, slug)
+      console.log('%c>! Flight NOT FOUND !<', 'color: red', vol, slug)
     }
   }
 
@@ -352,17 +402,18 @@ export class PdfPlanningImporter {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 function printEvent(evt) {
-  if (evt.tag === 'rotation') {
-    console.log(`[ROTATION] ${evt.debut.toLocaleString(DateTime.DATETIME_FULL)}`)
+  if (isRotation(evt)) {
+    console.log(`%c[ROTATION] ${evt.debut.toLocaleString(DateTime.DATETIME_FULL)}`, 'color: blue')
     _.forEach(evt.sv, sv => {
       if (_.has(sv, 'fromHotel')) console.log(`{...HOTEL} ${sv.fromHotel.summary}`)
-      console.log(`[${sv.type}] ${sv.summary} - ${sv.debut.toLocaleString(DateTime.DATETIME_FULL)}`)
+      console.log(`%c[${sv.type}] ${sv.summary} - ${sv.debut.toLocaleString(DateTime.DATETIME_FULL)}`, 'color: teal')
       _.forEach(sv.events, etape => console.log(`-> ${etape.summary} - ${etape.debut.toLocaleString(DateTime.DATETIME_FULL)}`))
       if (_.has(sv, 'hotel')) console.log(`{HOTEL} ${sv.hotel.summary}`)
     })
   } else {
-    console.log(`[${evt.tag}] (${evt.summary}) ${evt.debut.toLocaleString(DateTime.DATETIME_FULL)}`)
+    console.log(`%c[${evt.tag}] %c(${evt.summary}) ${evt.debut.toLocaleString(DateTime.DATETIME_FULL)}`, 'color: brown', 'color: inherit')
     if (evt.events && evt.events.length) {
       _.forEach(evt.events, subEvt => console.log(`-> ${subEvt.tag} - ${subEvt.summary} - ${subEvt.debut.toLocaleString(DateTime.DATETIME_FULL)}`))
     }

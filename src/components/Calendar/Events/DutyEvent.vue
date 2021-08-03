@@ -20,7 +20,7 @@ import { tagLabel } from '@/lib/Utils'
 
 export default defineComponent({
   name: 'DutyEvent',
-  props: ['event'],
+  props: ['event', 'date'],
   setup() {
     return {
       tsToTime,
@@ -49,6 +49,18 @@ export default defineComponent({
     opacity: 0.8;
     font-size: 0.5625rem;
     text-align: right;
+  }
+
+  &.span-right {
+    .duty-end {
+      opacity: 0;
+    }
+  }
+
+  &.span-left {
+    .duty-start {
+      opacity: 0;
+    }
   }
 
   > ul {

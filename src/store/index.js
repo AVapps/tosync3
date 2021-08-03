@@ -3,7 +3,17 @@ import { watch } from 'vue'
 import { Storage } from '@capacitor/storage'
 
 const USER_ID_KEY = 'tosync.userId'
+const USER_PREFIX = 'tosync.user'
 const CONFIG_KEY = 'tosync.config'
+
+const USER_DEFAULTS = {
+  fonction: 'OPL',
+  categorie: 'A',
+  dateAnciennete: '2021-01-01',
+  classe: 5,
+  atpl: false,
+  eHS: 'AF'
+}
 
 export const useMainStore = defineStore({
   // name of the store
@@ -12,11 +22,20 @@ export const useMainStore = defineStore({
   // a function that returns a fresh state
   state: () => ({
     userId: null,
-    config: {}
+    user: null,
+    config: {
+      profile: {
+        fonction: 'OPL',
+        categorie: 'A',
+        dateAnciennete: '2021-01-01',
+        classe: 5,
+        atpl: false,
+        eHS: 'AF'
+      }
+    }
   }),
   // optional getters
   getters: {
-
   },
   // optional actions
   actions: {
@@ -33,6 +52,8 @@ export const useMainStore = defineStore({
       } catch (err) {
         console.error('Couldn\'t retrieve userId.')
       }
+
+      // Watch userId for change to store and load user
       watch(
         () => this.userId,
         async userId => {
@@ -44,7 +65,35 @@ export const useMainStore = defineStore({
           } catch (err) {
             console.error('Couldn\'t save userId.')
           }
+
+          try {
+            const userKey = [USER_PREFIX, this.userId].join('.')
+            const { value } = await Storage.get(userKey)
+            this.user = JSON.parse(value) || USER_DEFAULTS
+          } catch (err) {
+            console.error('Couldn\'t set user doc.')
+          }
         }
+      )
+
+      // Watch user for change to store
+      watch(
+        () => this.user,
+        async user => {
+          if (this.userId) {
+            try {
+              console.log('USER changed', this.userId, this.user)
+              const userKey = [USER_PREFIX, this.userId].join('.')
+              await Storage.set({
+                key: userKey,
+                value: JSON.stringify(user)
+              })
+            } catch (err) {
+              console.error('Couldn\'t save user.')
+            }
+          }
+        },
+        { deep: true }
       )
 
       try {
@@ -54,10 +103,13 @@ export const useMainStore = defineStore({
       } catch (err) {
         console.error('Couldn\'t retrieve config.')
       }
+
+      // Watch for config change
       watch(
         () => this.config,
         async config => {
           try {
+            console.log('CONFIG changed', this.config)
             await Storage.set({
               key: CONFIG_KEY,
               value: JSON.stringify(config)

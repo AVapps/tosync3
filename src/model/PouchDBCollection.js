@@ -15,7 +15,7 @@ export class PouchDBCollection {
       idFunction = (doc) => {
         return paths.map(path => {
           return get(doc, path)
-        }).join('-')
+        }).join('.')
       }
     }
     this.options = { generateIds, idKey, idFunction }

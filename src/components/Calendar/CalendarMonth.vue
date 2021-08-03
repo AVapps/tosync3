@@ -27,11 +27,11 @@
 </template>
 
 <script>
-import { ref, inject, nextTick, watch, watchEffect } from 'vue'
+import { ref, inject, watch, onUnmounted } from 'vue'
 import CalendarDay from './CalendarDay'
-import { getDaysForMonth, updateDaysForMonth, WEEKDAYS } from './utils'
+import { getDaysForMonth, WEEKDAYS } from './utils'
 import { DateTime, Settings } from 'luxon'
-import { useMainStore } from '@/store'
+// import { useMainStore } from '@/store'
 
 const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
@@ -47,20 +47,57 @@ export default {
     console.time(`setup CalendarMonth ${props.month?.toISODate()}`)
     const days = ref()
     const datasource = inject('datasource')
-    const store = useMainStore()
+    // const store = useMainStore()
 
     // TODO : implement global state
     const state = {
-      userId: 'IEN'
+      userId: 'IEN',
+      isPNT: true
     }
 
-    watchEffect(async () => {
-      days.value = getDaysForMonth(props.month)
-      await nextTick()
-      try {
-        if (props.month instanceof DateTime) {
-          await datasource.subscribe(state.userId, props.month)
+    watch(
+      () => props.month,
+      async (month, prevMonth) => {
+        if (prevMonth) {
+          console.log(
+            'watch.UNSUBSCRIBE',
+            state.userId,
+            prevMonth?.toISODate()?.substring(0, 7)
+          )
+          try {
+            await datasource.unsubscribeMonth(state.userId, prevMonth)
+          } catch (err) {
+            console.error(err)
+          }
         }
+        days.value = getDaysForMonth(month)
+        try {
+          if (DateTime.isDateTime(month)) {
+            console.log(
+              'SUBSCRIBE',
+              state.userId,
+              month.toISODate().substring(0, 7)
+            )
+            await datasource.subscribeMonth(state.userId, month, state.isPNT)
+            console.log(
+              '%cSUBSCRIBED',
+              'font-weight:bold',
+              state.userId,
+              month.toISODate().substring(0, 7)
+            )
+          }
+        } catch (e) {
+          // TODO : handle error
+          console.error(e)
+        }
+      },
+      { immediate: true }
+    )
+
+    onUnmounted(async () => {
+      console.log(`${props.month.toISODate().substring(0, 7)} UNMOUNTED !`)
+      try {
+        await datasource.unsubscribeMonth(state.userId, props.month)
       } catch (e) {
         // TODO : handle error
         console.error(e)
@@ -107,6 +144,3 @@ export default {
   }
 }
 </style>
-
-
-

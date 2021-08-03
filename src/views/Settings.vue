@@ -12,37 +12,59 @@
         </ion-toolbar>
       </ion-header>
       <br />
-      <div class="settings-wrapper">
-        <theme-switcher />
-      </div>
+
+      <User />
+
+      <ion-list>
+        <ion-list-header>
+          <ion-label>Affichage</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-label>Thème</ion-label>
+          <theme-switcher />
+        </ion-item>
+      </ion-list>
+
+      <profile-settings />
     </ion-content>
   </ion-page>
 </template>
 
 <script>
+import { defineComponent } from 'vue'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+import User from '@/components/Settings/User.vue'
+import ProfileSettings from '@/components/Settings/Profile.vue'
 
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonListHeader,
   IonContent,
-  IonButtons
+  IonHeader,
+  IonPage,
+  IonToolbar,
+  IonTitle
 } from '@ionic/vue'
 
-export default {
-  name: 'Tab3',
+export default defineComponent({
+  name: 'SettingsTab',
   components: {
+    IonItem,
+    IonLabel,
+    IonList,
+    IonListHeader,
+    IonContent,
     IonHeader,
+    IonPage,
     IonToolbar,
     IonTitle,
-    IonContent,
-    IonPage,
-    IonButtons,
-    ThemeSwitcher
+    ProfileSettings,
+    ThemeSwitcher,
+    User
   }
-}
+})
 </script>
 
 <style lang="scss">

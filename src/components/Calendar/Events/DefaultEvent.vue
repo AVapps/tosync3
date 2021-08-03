@@ -14,7 +14,7 @@ import { tagLabel } from '@/lib/Utils'
 
 export default defineComponent({
   name: 'DefaultEvent',
-  props: ['event'],
+  props: ['event', 'date'],
   setup() {
     return {
       tsToTime,

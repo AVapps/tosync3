@@ -12,7 +12,7 @@ export const pnSchema = new SimpleSchema({
     type: String
   },
   prenom: {
-    type: String,
+    type: String
   },
   phone: {
     type: SimpleSchema.RegEx.Phone,

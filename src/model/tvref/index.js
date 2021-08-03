@@ -2,23 +2,19 @@ import SimpleSchema from 'simpl-schema'
 
 export const tvrefSchema = new SimpleSchema({
   _id: {
-    type: String,
+    type: String
   },
   serie: {
     type: String,
-    allowedValues: ['AF', 'TO-A', 'TO-B']
+    allowedValues: ['AF', 'TOA', 'TOB']
   },
   saison: {
     type: String,
     allowedValues: ['S', 'W']
   },
-  dept: {
+  route: {
     type: String,
-    regEx: /^[A-Z]{3}$/
-  },
-  dest: {
-    type: String,
-    regEx: /^[A-Z]{3}$/
+    regEx: /^[A-Z]{3}-[A-Z]{3}$/
   },
   mois: {
     type: String,

@@ -12,7 +12,7 @@ import { tagLabel } from '@/lib/Utils'
 
 export default defineComponent({
   name: 'AlldayEvent',
-  props: ['event'],
+  props: ['event', 'date'],
   setup() {
     return {
       tagLabel

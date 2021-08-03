@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      v-for="sv in event.svs"
+      v-for="sv in filteredSVs"
       :key="sv._id"
       class="sv"
       :class="'events-count-' + sv?.events?.length"
@@ -21,14 +21,20 @@
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent, computed } from 'vue'
 import { tsToTime } from '@/lib/helpers'
 
 export default defineComponent({
   name: 'RotationEvent',
-  props: ['event'],
-  setup() {
+  props: ['event', 'date'],
+  setup(props) {
     return {
+      filteredSVs: computed(() => {
+        const endOfDay = props.date.endOf('day')
+        return props.event.sv.filter(sv => {
+          return sv.start < endOfDay && sv.end > props.date
+        })
+      }),
       tsToTime
     }
   }

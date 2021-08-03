@@ -6,13 +6,13 @@ Settings.defaultLocale = 'fr'
 Settings.defaultZoneName = 'Europe/Paris'
 
 const BASES = ['ORY', 'CDG', 'LYS', 'MPL', 'NTE']
-const FLIGHT_REG = /([A-Z]{3})-([A-Z]{3})\s\(([A-Z]+)\)/
+const FLIGHT_REG = /([A-Z]{3})-([A-Z]{3})(?:\s\(([A-Z]+)\))?/
 const MEP_REG = /([A-Z]{3})-([A-Z]{3})/
 const DATE_REG = /^\s[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
 const TIME_REG = /^\d\d:\d\d$/
 
 export class PdfPlanningParser {
-  constructor(pdf, options) {
+  constructor(options) {
     this.options = _.defaults(options, {
       bases: BASES
     })
@@ -20,19 +20,16 @@ export class PdfPlanningParser {
     this.rotations = []
     this.sols = []
     this.planning = []
-    this.meta = pdf.meta
-
-    this.printedAt = DateTime.fromFormat(this.meta.printedOn, 'dd/MM/yyyy HH:mm', { zone: 'Europe/Paris' })
-
-    this.parse(pdf.table)
   }
 
   /***
    * (1) Parser les activités / repos / services
    * (2) Grouper les services de vol en rotation en déterminant la base d'arrivée au premier repos
    */
-  parse(lines) {
-    this.parseDuties(lines)
+  parse(pdf) {
+    this.meta = pdf.meta
+    this.printedAt = DateTime.fromFormat(this.meta.printedOn, 'dd/MM/yyyy HH:mm', { zone: 'Europe/Paris' })
+    this.parseDuties(pdf.table)
     this.groupRotations()
     this.factorSolDays()
     this.buildPlanning()
@@ -71,6 +68,7 @@ export class PdfPlanningParser {
         }
 
         if (evt.instruction) {
+          console.log(evt.instruction)
           const tasks = this._parseInstruction(evt.instruction)
           if (tasks && tasks.length) {
             const userTasks = _.remove(tasks, task => !_.isEmpty(task.fonction))
@@ -78,7 +76,7 @@ export class PdfPlanningParser {
             if (userTasks.length) evt.instruction.own = userTasks
             if (tasks && tasks.length) evt.instruction.other = tasks
           } else {
-            console.log('! Impossible de parser le champ instruction:', evt.instruction)
+            console.log('! Impossible de parser le champ instruction:', evt.instruction, evt)
           }
         }
 
@@ -163,7 +161,7 @@ export class PdfPlanningParser {
     let followsDate = false
     let i = 0
     while (i < rows.length) {
-      let row = rows[i]
+      const row = rows[i]
 
       if (row.type === 'date') {
         followsDate = true
@@ -319,7 +317,7 @@ export class PdfPlanningParser {
 
     if (this._duty) {
       // console.log(this._duty, event)
-      throw new Error("Une duty existe déjà !")
+      throw new Error('Une duty existe déjà !')
     }
 
     this._duty = {
@@ -336,7 +334,10 @@ export class PdfPlanningParser {
 
   addFlight(event) {
     const m = event.summary.match(FLIGHT_REG)
-    if (!m || m.length !== 4) throw new Error('flight-error', 'Format de titre de vol inconnu !')
+    if (!m || m.length !== 4) {
+      console.log(event)
+      throw new Error('flight-error', 'Format de titre de vol inconnu !')
+    }
 
     const vol = {
       tag: 'vol',
@@ -367,7 +368,7 @@ export class PdfPlanningParser {
     console.log('[addFlight]', event.summary, this._date.toLocaleString())
 
     if (vol.fin < vol.debut) {
-      console.log("!!! Heure de fin du vol inférieure à heure de début de vol : ", vol.debut.toString(), vol.fin.toString())
+      console.log('!!! Heure de fin du vol inférieure à heure de début de vol : ', vol.debut.toString(), vol.fin.toString())
       vol.fin = vol.debut.plus({ hours: vol.tv })
       console.log(vol.fin.toString())
     }
@@ -410,7 +411,7 @@ export class PdfPlanningParser {
     }
 
     if (mep.fin < mep.debut) {
-      console.log("Heure de fin du vol inférieure à heure de début de vol : ", mep.debut.toString(), mep.fin.toString())
+      console.log('Heure de fin du vol inférieure à heure de début de vol : ', mep.debut.toString(), mep.fin.toString())
       mep.fin = this._date.plus({ days: 1 }).set(this._parseTime(event.end)).setZone('Europe/Paris')
       console.log(mep.fin.toLocaleString())
     }
@@ -434,20 +435,20 @@ export class PdfPlanningParser {
     this._duty.fin = this._date.set(this._parseTime(event.end)).setZone('Europe/Paris')
 
     if (this._duty.fin < this._duty.debut) {
-      console.log("Heure de fin du vol inférieure à heure de début de vol : ", this._duty.debut.toString(), this._duty.fin.toString())
-      throw new Error("Heure de fin du vol inférieure à heure de début de vol")
+      console.log('Heure de fin du vol inférieure à heure de début de vol : ', this._duty.debut.toString(), this._duty.fin.toString())
+      throw new Error('Heure de fin du vol inférieure à heure de début de vol')
     }
 
     if (!_.has(this._duty, 'type')) {
       console.log(this._date.toLocaleString(), event.summary)
-      throw new Error("Type de duty non défini !")
+      throw new Error('Type de duty non défini !')
     }
 
     if (this._duty.type === 'sv' || this._duty.type === 'mep') {
       this._duty.ts = this._duty.fin.diff(this._duty.debut).as('hours')
 
       if (this._duty.ts > 16.5 || this._duty.ts < 0) {
-        console.log("TS incohérent : ", this._duty)
+        console.log('TS incohérent : ', this._duty)
         throw new Error(`Temps de service incohérent : ${this._duty.ts}`)
       }
 
@@ -573,11 +574,11 @@ export class PdfPlanningParser {
   groupRotations() {
     this.events = _.sortBy(this.events, ['debut', 'fin'])
 
-    let startIndex = _.findIndex(this.events, evt => ['repos', 'conges'].includes(evt.tag))
+    const startIndex = _.findIndex(this.events, evt => ['repos', 'conges'].includes(evt.tag))
     // console.log(this.events, startIndex)
 
     let rotations
-    if (startIndex != -1) {
+    if (startIndex !== -1) {
       rotations = [
         ...this._getRotationsFromRight(_.slice(this.events, 0, startIndex)),
         ...this._getRotationsFromLeft(_.slice(this.events, startIndex))
@@ -652,8 +653,8 @@ export class PdfPlanningParser {
     if (!prevDuty || prevDuty.hotel) return false
 
     if (rotation.base) {
-      return prevDuty.to === rotation.base
-        || prevDuty.to === 'CDG' && rotation.base === 'ORY'
+      return prevDuty.to === rotation.base ||
+        (prevDuty.to === 'CDG' && rotation.base === 'ORY')
     } else {
       return _.includes(this.options.bases, evt.from)
     }
@@ -663,8 +664,8 @@ export class PdfPlanningParser {
     if (!nextDuty || evt.hotel) return false
 
     if (rotation.base) {
-      return nextDuty.from === rotation.base
-        || nextDuty.from === 'CDG' && rotation.base === 'ORY'
+      return nextDuty.from === rotation.base ||
+        (nextDuty.from === 'CDG' && rotation.base === 'ORY')
     } else {
       return _.includes(this.options.bases, nextDuty.from)
     }
@@ -714,7 +715,7 @@ export class PdfPlanningParser {
     if (rotation.sv.length > 1) {
       rotation.decouchers = _.reduce(rotation.sv, (list, sv, index, svs) => {
         if (sv.hotel) {
-          if (index === 0 || (svs[index - 1].hotel && svs[index - 1].hotel.location != sv.hotel.location)) {
+          if (index === 0 || (svs[index - 1].hotel && svs[index - 1].hotel.location !== sv.hotel.location)) {
             list.push(sv.hotel.location)
           }
         }
@@ -731,9 +732,9 @@ export class PdfPlanningParser {
     _.forEach(this.sols, sol => {
       if (_.includes(ALLDAY_TAGS, sol.tag)) {
         if (memo) {
-          if (memo.activity === sol.activity
-            && memo.summary === sol.summary
-            && memo.fin.plus({ days: 1 }).hasSame(sol.debut, 'day')) {
+          if (memo.activity === sol.activity &&
+            memo.summary === sol.summary &&
+            memo.fin.plus({ days: 1 }).hasSame(sol.debut, 'day')) {
             memo.fin = sol.fin
           } else {
             memo.debut = memo.debut.startOf('day')
@@ -765,7 +766,7 @@ export class PdfPlanningParser {
   buildPlanning() {
     const acheminements = _.remove(this.rotations, rotation => rotation.countVol === 0 && rotation.countMEP > 0)
     _.forEach(acheminements, group => {
-      _.forEach(group.sv, mep => mep.tag = 'mep')
+      _.forEach(group.sv, mep => { mep.tag = 'mep' })
       this.sols.push(...group.sv)
     })
     this.planning = _.sortBy(this.sols.concat(this.rotations), ['debut', 'fin'])
@@ -811,7 +812,7 @@ export class PdfPlanningParser {
       const [hours, minutes] = timeStr.split(':')
       return Duration.fromObject({ hours, minutes }).as('hours')
     } else {
-      throw new Error("Format de durée incorrect.")
+      throw new Error('Format de durée incorrect.')
     }
   }
 
@@ -828,14 +829,13 @@ export class PdfPlanningParser {
   }
 
   _parseInstruction(str) {
-    const groups = [...str.matchAll(/\s?([A-z0-9_ ]{2,})\s+Ins\.:\s+([A-Z]{3})/g)]
+    const groups = [...str.matchAll(/(^([A-z0-9_][A-z0-9_ ]+)\n)|(\n([A-z0-9_][A-z0-9_ ]+)\n)/g)]
     if (groups.length) {
       return _.chain(groups)
         .map((match, index) => {
-          if (match && match.length === 3) {
+          if (match && match.length >= 5) {
             const result = {
-              code: match[1].replace(/\s/g, '_'),
-              inst: match[2]
+              code: (match[2] || match[4]).replace(/\s/g, '_')
             }
             const endOfGroup = index === groups.length - 1 ? str.length : groups[index + 1].index
             const sub = str.substring(match.index + result.code.length, endOfGroup)
@@ -864,6 +864,7 @@ export class PdfPlanningParser {
 
             return result
           }
+          return undefined
         })
         .filter(r => !_.isEmpty(r))
         .value()
