@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import { ref, inject, watch, onUnmounted } from 'vue'
+import { ref, inject, watch, onUnmounted, nextTick } from 'vue'
 import CalendarDay from './CalendarDay'
 import { getDaysForMonth, WEEKDAYS } from './utils'
 import { DateTime, Settings } from 'luxon'
@@ -58,6 +58,7 @@ export default {
     watch(
       () => props.month,
       async (month, prevMonth) => {
+        await nextTick()
         if (prevMonth) {
           console.log(
             'watch.UNSUBSCRIBE',

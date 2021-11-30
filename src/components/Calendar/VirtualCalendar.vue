@@ -3,7 +3,7 @@
     <div class="av-calendar-header">
       <div class="datepicker">
         <h2 class="month-label">
-          {{ activeMonthLabel }}
+          <input type="month" :value="isoMonth" />
         </h2>
       </div>
       <div class="actions">
@@ -117,15 +117,19 @@ export default {
       })
     )
 
+    const isoMonth = ref(currentMonth.toISODate().substring(0,7))
+
     const currentSlide = () => {
       return slides.findIndex(s => s.isCurrent)
     }
 
     const onActiveIndexChange = sw => {
-      activeMonthLabel.value = slides[sw.activeIndex]?.month?.toLocaleString({
+      const month = slides[sw.activeIndex]?.month
+      activeMonthLabel.value = month?.toLocaleString({
         year: 'numeric',
         month: 'long'
       })
+      isoMonth.value = month?.toISODate().substring(0,7)
     }
 
     let swiper
@@ -164,6 +168,7 @@ export default {
       onSwiper,
       onActiveIndexChange,
       slides,
+      isoMonth,
       activeMonthLabel,
       initialSlide: currentSlide(),
       goToPrevMonth,
@@ -214,6 +219,18 @@ export default {
           transform: translateX(-5px);
           transition: opacity 0.15s ease-out, transform 0.15s ease-out;
         }
+      }
+
+      input[type='month'] {
+        text-transform: capitalize;
+        padding: 0;
+        outline: none;
+        border: none;
+        background-image: none;
+        background-color: transparent;
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
       }
     }
 

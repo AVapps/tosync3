@@ -31,7 +31,9 @@ export const useMainStore = defineStore({
         classe: 5,
         atpl: false,
         eHS: 'AF'
-      }
+      },
+      syncCalendars: [],
+      syncCalendarsOptions: {}
     }
   }),
   // optional getters
@@ -44,37 +46,47 @@ export const useMainStore = defineStore({
       this.userId = userId
     },
 
+    async loginUserId(userId, save = true) {
+      if (userId && userId !== this.userId) {
+        this.userId = userId
+
+        if (save) {
+          await Storage.set({
+            key: USER_ID_KEY,
+            value: userId
+          })
+        }
+        console.log('User logged in !', userId)
+
+        const userKey = [USER_PREFIX, userId].join('.')
+        const { value } = await Storage.get({ key: userKey })
+        this.user = JSON.parse(value) || USER_DEFAULTS
+        console.log('User loaded :', this.user)
+        return this.user
+      }
+    },
+
+    async logout() {
+      await Storage.set({
+        key: USER_ID_KEY,
+        value: null
+      })
+      this.userId = null
+      this.user = {}
+      console.log('User logged out !')
+    },
+
     async init() {
       try {
         const { value } = await Storage.get({ key: USER_ID_KEY })
-        this.userId = value
-        console.log('userId', value)
+        console.log('store.init userId', value)
+        if (value) {
+          console.log('Previous user session found !', value)
+          await this.loginUserId(value, false)
+        }
       } catch (err) {
         console.error('Couldn\'t retrieve userId.')
       }
-
-      // Watch userId for change to store and load user
-      watch(
-        () => this.userId,
-        async userId => {
-          try {
-            await Storage.set({
-              key: USER_ID_KEY,
-              value: userId
-            })
-          } catch (err) {
-            console.error('Couldn\'t save userId.')
-          }
-
-          try {
-            const userKey = [USER_PREFIX, this.userId].join('.')
-            const { value } = await Storage.get(userKey)
-            this.user = JSON.parse(value) || USER_DEFAULTS
-          } catch (err) {
-            console.error('Couldn\'t set user doc.')
-          }
-        }
-      )
 
       // Watch user for change to store
       watch(
@@ -82,7 +94,7 @@ export const useMainStore = defineStore({
         async user => {
           if (this.userId) {
             try {
-              console.log('USER changed', this.userId, this.user)
+              console.log('USER changed', this.userId, user)
               const userKey = [USER_PREFIX, this.userId].join('.')
               await Storage.set({
                 key: userKey,

@@ -19,7 +19,7 @@ module.exports = {
     'space-before-function-paren': 'off',
     'vue/attribute-hyphenation': 'off',
     'vue/max-attributes-per-line': ['warn', {
-      singleline: 3,
+      singleline: 4,
       multiline: {
         max: 1,
         allowFirstLine: false

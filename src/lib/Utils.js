@@ -406,6 +406,14 @@ export function diffH(d, f) {
   return f.diff(d, 'hours') + 'h' + (min < 10 ? '0' + min : min)
 }
 
+export async function wait(ms) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve()
+    }, ms)
+  })
+}
+
 export function ucfirst(str) {
   return str.charAt(0).toUpperCase() + str.slice(1)
 }

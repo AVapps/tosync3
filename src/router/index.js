@@ -1,10 +1,18 @@
-import { createRouter, createWebHistory } from '@ionic/vue-router';
+import { createRouter, createWebHistory } from '@ionic/vue-router'
 import Tabs from '@/views/Tabs.vue'
+import { useMainStore } from '@/store'
 
 const routes = [
   {
     path: '/',
-    redirect: '/tabs'
+    beforeEnter: (to, from, next) => {
+      const store = useMainStore()
+      if (!store.userId) {
+        next('/welcome')
+      } else {
+        next('/tabs')
+      }
+    }
   },
   {
     path: '/tabs/',
@@ -27,6 +35,10 @@ const routes = [
         component: () => import('@/views/Settings.vue')
       }
     ]
+  },
+  {
+    path: '/welcome',
+    component: () => import('@/views/Welcome.vue')
   }
 ]
 

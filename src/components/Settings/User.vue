@@ -5,13 +5,7 @@
         <h1>{{ userId }}</h1>
       </div>
       <h4 class="nom">Adrien VERMEULEN</h4>
-      <ion-button
-        @click="signChanges()"
-        fill="outline"
-        shape="round"
-        size="small"
-        color="light"
-      >
+      <ion-button fill="outline" shape="round" size="small" color="light">
         Déconnexion
       </ion-button>
     </div>

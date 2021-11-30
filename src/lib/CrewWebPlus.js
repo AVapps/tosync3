@@ -2,8 +2,9 @@ import { InAppBrowser } from '@ionic-native/in-app-browser'
 import EventEmitter from 'eventemitter3'
 import { Keychain as CapKeychain } from '@ionic-native/keychain'
 
-import { reactive } from 'vue'
+import { reactive, toRaw } from 'vue'
 import { has } from 'lodash'
+import { wait } from './Utils'
 
 // const ROOT_URL = 'https://planning.to.aero/'
 const SIGN_ON_URL = 'https://planning.to.aero/SAML/SingleSignOn'
@@ -12,6 +13,8 @@ const HOME_URL = 'https://planning.to.aero/Home'
 const LOGOUT_URL = 'https://planning.to.aero/Login/Logout'
 const PLANNING_URL = '/FlightProgram'
 const PDF_URL = '/FlightProgram/GetPdf'
+const PAST_PDF_URL = '/FlightProgram/GetPastPdf?month='
+const PAST_ROSTERS_URL = '/FlightProgram/IndexPastRoster'
 const SIGN_ROSTER_URL = '/FlightProgram/SignRoster'
 const CHANGES_URL = '/Changes'
 
@@ -24,12 +27,15 @@ export class CrewWebPlus extends EventEmitter {
     this.credentials = null
     this._savedCredentials = null
     this._storeCredentials = false
+    this._currentUrl = null
 
     this._state = reactive({
       status: 'closed',
       isLoggedIn: false,
       hasPendingChanges: undefined,
-      needsRosterValidation: undefined
+      needsRosterValidation: undefined,
+      name: null,
+      userId: null
     })
 
     if (!('TextEncoder' in window)) {
@@ -93,6 +99,8 @@ export class CrewWebPlus extends EventEmitter {
   async open() {
     if (!this.browser) {
       this.createBrowserWindow()
+    } else {
+      await this.navigate(SIGN_ON_URL)
     }
     if (!this.credentials) {
       this.browser.show()
@@ -122,13 +130,17 @@ export class CrewWebPlus extends EventEmitter {
       .subscribe(async (evt) => {
         console.log('[inappbrowser]', evt.type, evt.url, evt)
         this.addCustomToolbar().catch(err => console.error(err))
+        this._currentUrl = evt.url
 
         if (evt.url.indexOf(HOME_URL) !== -1) {
           if (!this.state.isLoggedIn) {
             this._state.isLoggedIn = true
             this._state.status = 'logged-in'
+            this.updateState().then(() => {
+              this.emit('login', toRaw(this.state))
+            }, err => console.error(err))
+          } else {
             this.updateState().catch(err => console.error(err))
-            this.emit('login')
           }
         }
 
@@ -144,17 +156,23 @@ export class CrewWebPlus extends EventEmitter {
         if (evt.url.indexOf(LOGOUT_URL) !== -1) {
           this._state.isLoggedIn = false
           this._state.status = 'logged-out'
-          this.emit('logout')
+          this.emit('logout', toRaw(this.state))
         }
 
         if (evt.url.indexOf(OKTA_LOGIN_URL) !== -1) {
-          this._state.isLoggedIn = false
-          this._state.status = 'logged-out'
+          if (this.state.isLoggedIn) {
+            this._state.isLoggedIn = false
+            this._state.status = 'logged-out'
+            this.emit('logout', toRaw(this.state))
+          }
           console.log('INJECTING okta login watcher...')
           await this.injectOktaLoginWatcher()
           if (this.credentials) {
             console.log('Trying auto-login...')
+            await wait(300)
             this.tryLogin().catch(err => console.error(err))
+          } else {
+            this.show()
           }
         }
       })
@@ -286,15 +304,24 @@ export class CrewWebPlus extends EventEmitter {
     this.hide()
   }
 
-  async getPDFFile() {
+  async getPDFFile(isomonth) {
     if (!this.state.isLoggedIn) throw new Error('You must be logged in to download your flight program file.')
-    const result = await this._fetchPDF()
+    const result = await this._fetchPDF(isomonth)
     return this.encoder.encode(result)
   }
 
-  async _fetchPDF() {
+  async _fetchPDF(isomonth) {
+    let url
+    if (isomonth) {
+      url = PAST_PDF_URL + isomonth
+    } else {
+      url = PDF_URL
+      if (this._currentUrl.indexOf(PAST_ROSTERS_URL) === -1) {
+        await this.navigate(PAST_ROSTERS_URL)
+      }
+    }
     const code = `
-    fetch('${PDF_URL}')
+    fetch('${url}')
       .then(function(response) {
         return response.arrayBuffer();
       })
@@ -315,7 +342,10 @@ export class CrewWebPlus extends EventEmitter {
   async updateState() {
     if (!this.state.isLoggedIn) return
 
-    await this.navigate(HOME_URL)
+    if (this._currentUrl.indexOf(HOME_URL) === -1) {
+      return this.navigate(HOME_URL)
+    }
+
     const homeinfo = await this._getHomeInfo()
 
     if (homeinfo.rosterchanges) {
@@ -324,6 +354,11 @@ export class CrewWebPlus extends EventEmitter {
 
     if (homeinfo.rostervalidation) {
       this._state.needsRosterValidation = homeinfo.rostervalidation?.content?.indexOf('Please validate your planning') !== -1
+    }
+
+    if (homeinfo.name) {
+      this._state.name = homeinfo.name
+      this._state.userId = homeinfo.userId
     }
   }
 
@@ -341,6 +376,14 @@ export class CrewWebPlus extends EventEmitter {
           }
         }
       });
+      const userString = document.getElementById('rpPageHeader')?.textContent?.trim()
+      if (userString) {
+        const match = userString.match(/^(.+)\\s\\(([A-Z]{3})\\)$/)
+        if (match.length === 3) {
+          state.name = match[1]
+          state.userId = match[2]
+        }
+      }
       return state;
     })()`
 

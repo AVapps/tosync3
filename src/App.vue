@@ -8,6 +8,7 @@
 import { IonApp, IonRouterOutlet } from '@ionic/vue'
 import { defineComponent, watchEffect } from 'vue'
 import { useMainStore } from '@/store'
+import { useRouter } from 'vue-router'
 
 export default defineComponent({
   name: 'App',
@@ -17,7 +18,14 @@ export default defineComponent({
   },
   setup() {
     const store = useMainStore()
-    store.init()
+    const router = useRouter()
+
+    store.init().then(() => {
+      if (store.userId) {
+        router.push('/tabs')
+      }
+    })
+
     watchEffect(() => {
       switch (store.config?.theme) {
         case 'light':

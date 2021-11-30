@@ -38,13 +38,13 @@
         </ion-card>
         <ion-card>
           <ion-card-header>
-            <ion-card-subtitle>Card Subtitle</ion-card-subtitle>
-            <ion-card-title>Card Title</ion-card-title>
+            <ion-card-subtitle
+              >Synchronisez votre planning avec vos agendas</ion-card-subtitle
+            >
+            <ion-card-title>Synchronisation Calendrier</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            Keep close to Nature's heart... and break clear away, once in
-            awhile, and climb a mountain or spend a week in the woods. Wash your
-            spirit clean.
+            <calendar-sync-widget />
           </ion-card-content>
         </ion-card>
       </div>
@@ -66,7 +66,8 @@ import {
   IonCardTitle
 } from '@ionic/vue'
 
-import CrewWebWidget from '@/components/CrewWebWidget.vue'
+import CrewWebWidget from '@/components/CrewWebWidget'
+import CalendarSyncWidget from '@/components/CalendarSyncWidget'
 import FilePicker from '@/components/FilePicker'
 
 import { defineComponent } from 'vue'
@@ -84,6 +85,7 @@ export default defineComponent({
     IonCardContent,
     IonCardSubtitle,
     IonCardTitle,
+    CalendarSyncWidget,
     CrewWebWidget,
     FilePicker
   },

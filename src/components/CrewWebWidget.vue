@@ -4,7 +4,7 @@
       v-if="!state.isLoggedIn"
       @click="openCrewWebPlus()"
       :loading="state.status === 'connecting' || loading"
-      class="connect-button"
+      class="full-width"
       shape="round"
     >
       Connexion
@@ -13,14 +13,14 @@
     <template v-if="state.isLoggedIn">
       <ion-chip color="success">
         <ion-icon :icon="ellipse" size="small"></ion-icon>
-        <ion-label>Connecté</ion-label>
+        <ion-label>{{ state.userId }}</ion-label>
       </ion-chip>
       <ion-button @click="show()" fill="clear" shape="round" size="small">
         <ion-icon :icon="openOutline"></ion-icon>
         &nbsp; Afficher Crew Web Plus
       </ion-button>
 
-      <template v-if="state.hasPendingChanges">
+      <template v-if="!mini && state.hasPendingChanges">
         <ion-chip color="warning">
           <ion-icon :icon="alertCircleOutline"></ion-icon>
           <ion-label>Modification planning</ion-label>
@@ -37,7 +37,7 @@
         </ion-button>
       </template>
 
-      <template v-if="state.needsRosterValidation">
+      <template v-if="!mini && state.needsRosterValidation">
         <ion-chip color="warning">
           <ion-icon :icon="alertCircleOutline"></ion-icon>
           <ion-label>Planning à valider</ion-label>
@@ -54,13 +54,24 @@
         </ion-button>
       </template>
 
-      <ion-chip
-        v-if="!state.needsRosterValidation && !state.hasPendingChanges"
-        color="success"
+      <template
+        v-if="!mini && !state.needsRosterValidation && !state.hasPendingChanges"
       >
-        <ion-icon :icon="checkmarkCircleOutline"></ion-icon>
-        <ion-label>Planning validé</ion-label>
-      </ion-chip>
+        <ion-chip color="success">
+          <ion-icon :icon="checkmarkCircleOutline"></ion-icon>
+          <ion-label>Planning validé</ion-label>
+        </ion-chip>
+        <ion-button
+          @click="importPDF()"
+          class="full-width"
+          fill="outline"
+          shape="round"
+          color="primary"
+        >
+          <ion-icon :icon="syncOutline"></ion-icon>
+          &nbsp; Synchroniser
+        </ion-button>
+      </template>
     </template>
   </div>
 </template>
@@ -80,17 +91,26 @@ import {
   checkmarkCircleOutline,
   alertCircleOutline,
   openOutline,
+  syncOutline,
   ellipse
 } from 'ionicons/icons'
 import { useMainStore } from '@/store'
-import { CrewWebPlus } from '@/lib/CrewWebPlus.js'
+import { useCrewWebPlus } from '@/lib/useCrewWebPlus'
 import { importPdfFile } from '@/lib/PlanningImporter.js'
 
 import { has } from 'lodash'
+import { DateTime } from 'luxon'
 import LoadingButton from './LoadingButton.vue'
 
 export default defineComponent({
   name: 'ThemeSwitcher',
+  props: {
+    mini: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['login', 'logout'],
   components: {
     IonButton,
     IonChip,
@@ -98,11 +118,14 @@ export default defineComponent({
     IonIcon,
     LoadingButton
   },
-  setup() {
+  setup(_, { emit }) {
     const store = useMainStore()
-    const crewWeb = new CrewWebPlus()
+    const crewWeb = useCrewWebPlus()
     const loading = ref(false)
     window.crewWeb = crewWeb
+
+    crewWeb.on('login', state => emit('login', state))
+    crewWeb.on('logout', state => emit('logout', state))
 
     watchEffect(() =>
       crewWeb.storeCredentials(store.config?.useSavedCredentials)
@@ -117,6 +140,11 @@ export default defineComponent({
         }
         crewWeb.open()
         await crewWeb.waitForLogin()
+        // authenticate user
+        console.log(crewWeb.state.userId)
+        if (crewWeb.state.userId) {
+          await store.loginUserId(crewWeb.state.userId)
+        }
         crewWeb.browser.hide()
         loading.value = false
 
@@ -163,14 +191,43 @@ export default defineComponent({
       }
     }
 
+    function toISOMonth(date) {
+      return date
+        .toISODate()
+        .substring(0, 7)
+        .split('-')
+        .reverse()
+        .join('-')
+    }
+
     async function importPDF() {
-      try {
-        const data = await crewWeb.getPDFFile()
-        const planning = await importPdfFile(data)
-        console.log(data.length, planning)
-      } catch (error) {
-        console.log(error)
+      const now = DateTime.local()
+      const months = [
+        toISOMonth(now.minus({ month: 6 })),
+        toISOMonth(now.minus({ month: 5 })),
+        toISOMonth(now.minus({ month: 4 })),
+        toISOMonth(now.minus({ month: 3 })),
+        toISOMonth(now.minus({ month: 2 })),
+        toISOMonth(now.minus({ month: 1 })),
+        toISOMonth(now)
+      ]
+      console.log(months)
+
+      for (const isomonth of months) {
+        try {
+          console.log(`Importation ${isomonth}`)
+          const pdfData = await crewWeb.getPDFFile(isomonth)
+          console.log({ data: pdfData })
+          const p = await importPdfFile(pdfData)
+          console.log(p)
+        } catch (error) {
+          console.log(error)
+        }
       }
+
+      const data = await crewWeb.getPDFFile()
+      const planning = await importPdfFile(data)
+      console.log(data.length, planning)
     }
 
     async function signRoster() {
@@ -228,6 +285,7 @@ export default defineComponent({
       checkmarkCircleOutline,
       alertCircleOutline,
       openOutline,
+      syncOutline,
       ellipse
     }
   }
@@ -241,7 +299,7 @@ export default defineComponent({
   gap: 0.5rem;
   place-items: center start;
 
-  .connect-button {
+  .full-width {
     grid-column-start: 1;
     grid-column-end: 3;
     justify-self: center;
