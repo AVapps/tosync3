@@ -54,7 +54,7 @@ export default defineComponent({
               const planning = await importPdfFile(fr.result)
               console.log(planning)
             } catch (err) {
-              console.error(err)
+              console.log(err)
             }
             event.target.value = ''
           }

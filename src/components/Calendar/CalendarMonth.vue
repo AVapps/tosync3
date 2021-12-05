@@ -68,7 +68,7 @@ export default {
           try {
             await datasource.unsubscribeMonth(state.userId, prevMonth)
           } catch (err) {
-            console.error(err)
+            console.log(err)
           }
         }
         days.value = getDaysForMonth(month)
@@ -89,7 +89,7 @@ export default {
           }
         } catch (e) {
           // TODO : handle error
-          console.error(e)
+          console.log(e)
         }
       },
       { immediate: true }
@@ -101,7 +101,7 @@ export default {
         await datasource.unsubscribeMonth(state.userId, props.month)
       } catch (e) {
         // TODO : handle error
-        console.error(e)
+        console.log(e)
       }
     })
 

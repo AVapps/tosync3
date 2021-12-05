@@ -526,7 +526,7 @@ export class EventsDatasource extends SimpleEventEmitter {
         }
       })
       .on('error', (err) => {
-        console.error('PouchDB live changes error !', err)
+        console.log('PouchDB live changes error !', err)
       })
   }
 

@@ -309,7 +309,7 @@ export class PdfPlanningImporter {
           result: await Events.processBulkUpdate(this.updateLog)
         }
       } catch (error) {
-        console.error(error)
+        console.log(error)
         return
       }
       this.initIndexes()

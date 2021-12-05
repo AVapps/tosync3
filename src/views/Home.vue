@@ -36,7 +36,7 @@
             <file-picker></file-picker>
           </ion-card-content>
         </ion-card>
-        <ion-card>
+        <ion-card v-if="isCordova">
           <ion-card-header>
             <ion-card-subtitle
               >Synchronisez votre planning avec vos agendas</ion-card-subtitle
@@ -63,7 +63,8 @@ import {
   IonCardHeader,
   IonCardContent,
   IonCardSubtitle,
-  IonCardTitle
+  IonCardTitle,
+  isPlatform
 } from '@ionic/vue'
 
 import CrewWebWidget from '@/components/CrewWebWidget'
@@ -90,7 +91,9 @@ export default defineComponent({
     FilePicker
   },
   setup() {
-    return {}
+    return {
+      isCordova: isPlatform('cordova')
+    }
   }
 })
 </script>

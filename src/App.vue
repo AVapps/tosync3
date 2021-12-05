@@ -20,11 +20,16 @@ export default defineComponent({
     const store = useMainStore()
     const router = useRouter()
 
-    store.init().then(() => {
-      if (store.userId) {
-        router.push('/tabs')
+    store.init().then(
+      () => {
+        if (store.userId) {
+          router.push('/tabs')
+        }
+      },
+      err => {
+        console.log(err)
       }
-    })
+    )
 
     watchEffect(() => {
       switch (store.config?.theme) {

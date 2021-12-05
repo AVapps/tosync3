@@ -802,7 +802,7 @@ export class PdfPlanningParser {
       const [hour, minute] = timeStr.split(':')
       return { hour, minute }
     } else {
-      if (timeStr !== '>>>') console.error("Format d'heure incorrect : ", timeStr)
+      if (timeStr !== '>>>') console.log("Format d'heure incorrect : ", timeStr)
       return undefined
     }
   }

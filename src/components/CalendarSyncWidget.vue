@@ -27,7 +27,7 @@
 
     <ion-list v-if="selectedCalendars && selectedCalendars.length" inset="true">
       <ion-item v-for="id in selectedCalendars" :key="id">
-        <ion-label>{{ calendarsMap.get(id).name }}</ion-label>
+        <ion-label>{{ calendarsMap.get(id)?.name }}</ion-label>
         <ion-select
           slot="end"
           cancel-text="Annuler"
@@ -133,7 +133,7 @@ export default defineComponent({
         calendarsMap.value = new Map()
         calendars.value.forEach(c => calendarsMap.value.set(c.id, c))
       } catch (err) {
-        console.error(err)
+        console.log(err)
       }
       loading.value = false
     }

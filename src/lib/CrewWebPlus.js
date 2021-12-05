@@ -49,22 +49,22 @@ export class CrewWebPlus extends EventEmitter {
       console.log('storing credentials for later use', credentials)
       this.setCredentials(credentials)
       if (this._storeCredentials) {
-        this.saveCredentials().catch(err => console.error(err))
+        this.saveCredentials().catch(err => console.log(err))
       }
     })
 
     this.on('tosync.signChanges', () => {
-      this.updateState().catch(err => console.error(err))
+      this.updateState().catch(err => console.log(err))
     })
 
     this.on('signRoster', () => {
-      this.updateState().catch(err => console.error(err))
+      this.updateState().catch(err => console.log(err))
     })
 
     this.on('tosync.oktaAuthResponse', ({ ok, status, statusText }) => {
       if (!ok && this.credentials) {
         this.credentials = null
-        this.removeCredentials().catch(err => console.error(err))
+        this.removeCredentials().catch(err => console.log(err))
       }
     })
 
@@ -129,7 +129,7 @@ export class CrewWebPlus extends EventEmitter {
       .on('loadstop')
       .subscribe(async (evt) => {
         console.log('[inappbrowser]', evt.type, evt.url, evt)
-        this.addCustomToolbar().catch(err => console.error(err))
+        this.addCustomToolbar().catch(err => console.log(err))
         this._currentUrl = evt.url
 
         if (evt.url.indexOf(HOME_URL) !== -1) {
@@ -138,9 +138,9 @@ export class CrewWebPlus extends EventEmitter {
             this._state.status = 'logged-in'
             this.updateState().then(() => {
               this.emit('login', toRaw(this.state))
-            }, err => console.error(err))
+            }, err => console.log(err))
           } else {
-            this.updateState().catch(err => console.error(err))
+            this.updateState().catch(err => console.log(err))
           }
         }
 
@@ -150,7 +150,7 @@ export class CrewWebPlus extends EventEmitter {
 
         if (evt.url.indexOf(CHANGES_URL) !== -1) {
           console.log('INJECTING changes validation watcher...')
-          this.injectChangesValidationWatcher().catch(err => console.error(err))
+          this.injectChangesValidationWatcher().catch(err => console.log(err))
         }
 
         if (evt.url.indexOf(LOGOUT_URL) !== -1) {
@@ -170,7 +170,7 @@ export class CrewWebPlus extends EventEmitter {
           if (this.credentials) {
             console.log('Trying auto-login...')
             await wait(300)
-            this.tryLogin().catch(err => console.error(err))
+            this.tryLogin().catch(err => console.log(err))
           } else {
             this.show()
           }

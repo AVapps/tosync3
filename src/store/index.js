@@ -85,7 +85,7 @@ export const useMainStore = defineStore({
           await this.loginUserId(value, false)
         }
       } catch (err) {
-        console.error('Couldn\'t retrieve userId.')
+        console.log('Couldn\'t retrieve userId.')
       }
 
       // Watch user for change to store
@@ -101,7 +101,7 @@ export const useMainStore = defineStore({
                 value: JSON.stringify(user)
               })
             } catch (err) {
-              console.error('Couldn\'t save user.')
+              console.log('Couldn\'t save user.')
             }
           }
         },
@@ -113,7 +113,7 @@ export const useMainStore = defineStore({
         this.config = JSON.parse(value) || {}
         console.log('CONFIG', this.config)
       } catch (err) {
-        console.error('Couldn\'t retrieve config.')
+        console.log('Couldn\'t retrieve config.')
       }
 
       // Watch for config change
@@ -127,7 +127,7 @@ export const useMainStore = defineStore({
               value: JSON.stringify(config)
             })
           } catch (err) {
-            console.error('Couldn\'t save config.')
+            console.log('Couldn\'t save config.')
           }
         },
         { deep: true }

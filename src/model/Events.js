@@ -157,7 +157,7 @@ export class EventsCollection extends PouchDBCollection {
           const rotation = rotationMap.get(evt.rotationId)
           rotation.sv.push(evt)
         } else {
-          console.error('Rotation introuvable', evt, events)
+          console.log('Rotation introuvable', evt, events)
         }
         return
       }

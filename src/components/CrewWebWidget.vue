@@ -124,7 +124,10 @@ export default defineComponent({
     const loading = ref(false)
     window.crewWeb = crewWeb
 
-    crewWeb.on('login', state => emit('login', state))
+    crewWeb.on('login', state => {
+      console.log('login', state)
+      emit('login', state)
+    })
     crewWeb.on('logout', state => emit('logout', state))
 
     watchEffect(() =>
@@ -273,7 +276,7 @@ export default defineComponent({
     }
 
     return {
-      openCrewWebPlus,
+      openCrewWebPlus: () => openCrewWebPlus().catch(console.log),
       importPDF,
       signRoster,
       signChanges,

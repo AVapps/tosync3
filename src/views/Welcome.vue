@@ -62,7 +62,7 @@
           <div class="slide-content">
             <ion-icon :icon="personAddOutline" />
             <h1>Commencez par vous connecter à CrewWebPlus</h1>
-            <crew-web-widget :mini="true" @login="router.push('/tabs')" />
+            <crew-web-widget :mini="true" @login="onLogin" />
           </div>
         </swiper-slide>
       </swiper>
@@ -71,14 +71,13 @@
 </template>
 
 <script>
+import { IonButton, IonContent, IonIcon, IonPage, IonText } from '@ionic/vue'
 import {
-  IonButton,
-  IonContent,
-  IonIcon,
-  IonPage,
-  IonText
-} from '@ionic/vue'
-import { syncOutline, lockClosedOutline, calendarOutline, personAddOutline } from 'ionicons/icons'
+  syncOutline,
+  lockClosedOutline,
+  calendarOutline,
+  personAddOutline
+} from 'ionicons/icons'
 
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/swiper.scss'
@@ -120,9 +119,12 @@ export default defineComponent({
     })
 
     return {
+      onLogin: () => {
+        console.log('LOGIN')
+        router.push('/tabs')
+      },
       onSwiper,
       swiper,
-      router,
       slideOpts,
       syncOutline,
       lockClosedOutline,
