@@ -309,6 +309,10 @@ export class PdfPlanningParser {
       case 'HOTAC': // H
         break
     }
+
+    // Cas jour OFF compagnie OFFG
+    if (row.activity === 'OFFG' && /^compag/.test(summary)) return true
+
     return false
   }
 
