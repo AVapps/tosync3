@@ -3,7 +3,7 @@
     <div class="av-calendar-header">
       <div class="datepicker">
         <h2 class="month-label">
-          <input type="month" :value="isoMonth" />
+          <input type="month" :value="isoMonth" @change="onMonthSelect" />
         </h2>
       </div>
       <div class="actions">
@@ -37,6 +37,7 @@
       <swiper
         @swiper="onSwiper"
         @activeIndexChange="onActiveIndexChange"
+        @transitionEnd="onTransitionEnd"
         :virtual="true"
         :initial-slide="initialSlide"
         :space-between="10"
@@ -102,11 +103,12 @@ export default {
     }
 
     const slides = reactive(
-      monthsList.map(month => ({
+      monthsList.map((month) => ({
         month,
         isCurrent: month.hasSame(currentMonth, 'month'),
         isPast: month < currentMonth,
-        isFuture: month > currentMonth
+        isFuture: month > currentMonth,
+        subscribed: false
       }))
     )
 
@@ -117,23 +119,23 @@ export default {
       })
     )
 
-    const isoMonth = ref(currentMonth.toISODate().substring(0,7))
+    const isoMonth = ref(currentMonth.toISODate().substring(0, 7))
 
     const currentSlide = () => {
-      return slides.findIndex(s => s.isCurrent)
+      return slides.findIndex((s) => s.isCurrent)
     }
 
-    const onActiveIndexChange = sw => {
+    const onActiveIndexChange = (sw) => {
       const month = slides[sw.activeIndex]?.month
       activeMonthLabel.value = month?.toLocaleString({
         year: 'numeric',
         month: 'long'
       })
-      isoMonth.value = month?.toISODate().substring(0,7)
+      isoMonth.value = month?.toISODate().substring(0, 7)
     }
 
     let swiper
-    const onSwiper = sw => {
+    const onSwiper = (sw) => {
       console.log('SWIPER')
       swiper = sw
     }
@@ -145,8 +147,8 @@ export default {
         setTimeout(async () => {
           await nextTick()
           console.log('Swiper.update')
-          swiper.update()
-        }, 1000)
+          swiper.update(true)
+        }, 500)
       }
     })
 
@@ -154,9 +156,18 @@ export default {
       if (swiper) swiper.slidePrev()
     }
 
-    const goToPresentMonth = async () => {
+    const goToPresentMonth = () => {
       if (swiper) {
         swiper.slideTo(currentSlide(), 300, false)
+      }
+    }
+
+    const goToMonth = (monthDT) => {
+      if (swiper) {
+        const index = slides.findIndex((s) => s.month.hasSame(monthDT, 'month'))
+        if (index !== -1) {
+          swiper.slideTo(index, 300, false)
+        }
       }
     }
 
@@ -164,9 +175,87 @@ export default {
       if (swiper) swiper.slideNext()
     }
 
+    const onMonthSelect = (e) => {
+      const month = DateTime.fromISO(e.target.value)
+      goToMonth(month)
+    }
+
+    const onTransitionEnd = () => {
+      console.log('TRANSITION END')
+      if (swiper) {
+        const toSubscribeIndex = [
+          swiper.virtual.from,
+          swiper.activeIndex,
+          swiper.virtual.to
+        ]
+        for (const index of toSubscribeIndex) {
+          const slide = slides[index]
+          if (slide && !slide.subscribed) {
+            subscribe(slide)
+          }
+        }
+
+        slides.forEach((slide, index) => {
+          if (!toSubscribeIndex.includes(index) && slide.subscribed) {
+            unsubscribe(slide)
+          }
+        })
+      }
+    }
+
+    // TODO : implement global state
+    const state = {
+      userId: 'IEN',
+      isPNT: true
+    }
+
+    async function subscribe(slide) {
+      const monthString = slide.month.toISODate().substring(0, 7)
+      console.log(
+        '%cSUBSCRIBING...',
+        'font-weight:bold',
+        state.userId,
+        monthString
+      )
+      try {
+        await datasource.subscribeMonth(state.userId, monthString, state.isPNT)
+      } catch (e) {
+        // TODO : handle error
+        console.log(e)
+      }
+      slide.subscribed = true
+      console.log('%cSUBSCRIBED', 'font-weight:bold', state.userId, monthString)
+    }
+
+    async function unsubscribe(slide) {
+      if (!slide.subscribed) return
+      const monthString = slide.month.toISODate().substring(0, 7)
+      console.log(
+        '%cUNSUBSCRIBING...',
+        'font-weight:bold',
+        state.userId,
+        monthString
+      )
+      try {
+        await nextTick()
+        await datasource.unsubscribeMonth(state.userId, monthString)
+      } catch (err) {
+        console.log(err)
+      }
+      slide.subscribed = false
+      console.log(
+        '%cUNSUBSCRIBED',
+        'font-weight:bold',
+        state.userId,
+        monthString
+      )
+    }
+
     return {
       onSwiper,
       onActiveIndexChange,
+      onTransitionEnd,
+      onMonthSelect,
       slides,
       isoMonth,
       activeMonthLabel,

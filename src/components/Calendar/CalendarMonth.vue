@@ -27,15 +27,9 @@
 </template>
 
 <script>
-import { ref, inject, watch, onUnmounted, nextTick } from 'vue'
+import { ref } from 'vue'
 import CalendarDay from './CalendarDay'
 import { getDaysForMonth, WEEKDAYS } from './utils'
-import { DateTime, Settings } from 'luxon'
-// import { useMainStore } from '@/store'
-
-const TIMEZONE = 'Europe/Paris'
-Settings.defaultLocale = 'fr'
-Settings.defaultZoneName = TIMEZONE
 
 export default {
   name: 'CalendarMonth',
@@ -46,8 +40,6 @@ export default {
   setup(props) {
     console.time(`setup CalendarMonth ${props.month?.toISODate()}`)
     const days = ref()
-    const datasource = inject('datasource')
-    // const store = useMainStore()
 
     // TODO : implement global state
     const state = {
@@ -55,55 +47,7 @@ export default {
       isPNT: true
     }
 
-    watch(
-      () => props.month,
-      async (month, prevMonth) => {
-        await nextTick()
-        if (prevMonth) {
-          console.log(
-            'watch.UNSUBSCRIBE',
-            state.userId,
-            prevMonth?.toISODate()?.substring(0, 7)
-          )
-          try {
-            await datasource.unsubscribeMonth(state.userId, prevMonth)
-          } catch (err) {
-            console.log(err)
-          }
-        }
-        days.value = getDaysForMonth(month)
-        try {
-          if (DateTime.isDateTime(month)) {
-            console.log(
-              'SUBSCRIBE',
-              state.userId,
-              month.toISODate().substring(0, 7)
-            )
-            await datasource.subscribeMonth(state.userId, month, state.isPNT)
-            console.log(
-              '%cSUBSCRIBED',
-              'font-weight:bold',
-              state.userId,
-              month.toISODate().substring(0, 7)
-            )
-          }
-        } catch (e) {
-          // TODO : handle error
-          console.log(e)
-        }
-      },
-      { immediate: true }
-    )
-
-    onUnmounted(async () => {
-      console.log(`${props.month.toISODate().substring(0, 7)} UNMOUNTED !`)
-      try {
-        await datasource.unsubscribeMonth(state.userId, props.month)
-      } catch (e) {
-        // TODO : handle error
-        console.log(e)
-      }
-    })
+    days.value = getDaysForMonth(props.month, state)
 
     console.timeEnd(`setup CalendarMonth ${props.month?.toISODate()}`)
 
