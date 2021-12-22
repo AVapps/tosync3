@@ -5,13 +5,17 @@ module.exports = {
         {
           test: /\.js$/,
           exclude: /node_modules(?!(\/|\\)pdfjs-dist)/,
-          loader: "babel-loader",
+          loader: 'babel-loader',
           options: {
-            presets: ["@babel/preset-env"],
-            plugins: ["@babel/plugin-proposal-optional-chaining"]
+            presets: ['@babel/preset-env'],
+            plugins: ['@babel/plugin-proposal-optional-chaining']
           }
+        },
+        {
+          test: /\.txt$/i,
+          use: 'raw-loader'
         }
       ]
     }
   }
-};
+}
