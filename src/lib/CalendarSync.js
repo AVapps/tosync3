@@ -1,18 +1,41 @@
-import { Calendar } from '@ionic-native/calendar'
+import { Events } from '@/model/Events'
+import { DateTime } from 'luxon'
 
-window.IOSCalendar = Calendar
+import { Calendar } from 'capacitor-calendar2'
+import { getEventsToSync } from '@/lib/Export'
 
-export async function ensurePermission() {
-  return Calendar.hasReadWritePermission()
+window.CapacitorCalendar = Calendar
+
+const TIMEZONE = 'Europe/Paris'
+
+export function maxSyncDate() {
+  return DateTime.now().setZone(TIMEZONE).plus({ days: 31 }).endOf('day')
+}
+
+export function minSyncDate() {
+  return DateTime.now().setZone(TIMEZONE).startOf('month').minus({ months: 2 })
 }
 
 export async function listCalendars() {
-  const calendars = await Calendar.listCalendars()
-  return calendars.filter(calendar => ['CalDAV', 'Local', 'Exchange'].includes(calendar.type))
+  const { availableCalendars } = await Calendar.getAvailableCalendars()
+  return availableCalendars
 }
 
-// fetch events from date range
-export async function fetchEvents(startDate, endDate) {
-  const events = await Calendar.listEventsInRange(startDate, endDate)
+// fetch events from date range and calendar Id
+export async function fetchDeviceEvents(startDate, endDate, calendarId) {
+  const { events } = await Calendar.findEvent({
+    startDate,
+    endDate,
+    calendarId
+  })
   return events
+}
+
+export async function syncEventsInRange(userId, startDateTime, endDateTime, options) {
+  const eventsToSync = await getEventsToSync(userId, startDateTime, endDateTime, options.tags)
+  console.log(eventsToSync)
+
+  const localEvents = await fetchDeviceEvents(startDateTime.toJSDate(), endDateTime.toJSDate())
+
+  console.log(localEvents)
 }

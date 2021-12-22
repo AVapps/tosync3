@@ -11,6 +11,7 @@ def capacitor_pods
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorStorage', :path => '../../node_modules/@capacitor/storage'
   pod 'CapacitorToast', :path => '../../node_modules/@capacitor/toast'
+  pod 'CapacitorCalendar2', :path => '../../../capacitor-calendar2'
   pod 'CordovaPlugins', :path => '../capacitor-cordova-ios-plugins'
 end
 

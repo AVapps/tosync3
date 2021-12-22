@@ -6,9 +6,40 @@ const JOUR = 24 * 60 * 60 * 1000
 const MAX = '\ufff0'
 
 function toBasicIsoZ(ts) {
+  ts = toTimestamp(ts)
   return DateTime.fromMillis(ts, { zone: 'utc' })
     .toISO({ format: 'basic' })
     .substring(0, 13)
+}
+
+function toDateTime(date) {
+  if (DateTime.isDateTime(date)) {
+    return date
+  }
+  if (typeof date === 'number') {
+    return DateTime.fromMillis(date)
+  }
+  if (date instanceof Date) {
+    return DateTime.fromJSDate(date)
+  }
+  if (typeof date === 'string') {
+    return DateTime.fromISO(date)
+  }
+}
+
+function toTimestamp(date) {
+  if (typeof date === 'number') {
+    return date
+  }
+  if (date instanceof Date) {
+    return date.getTime()
+  }
+  if (DateTime.isDateTime(date)) {
+    return date.toMillis()
+  }
+  if (typeof date === 'string') {
+    return DateTime.fromISO(date).toMillis()
+  }
 }
 
 export class EventsCollection extends PouchDBCollection {
@@ -26,7 +57,15 @@ export class EventsCollection extends PouchDBCollection {
     })
   }
 
+  /**
+   * Retourne les évènements entre 'start' et 'end'
+   * @param {string} userId
+   * @param {any} start
+   * @param {any} end
+   */
   async getInterval(userId, start, end) {
+    start = toTimestamp(start)
+    end = toTimestamp(end)
     let events = await this.findUserEvents(userId, start - (7 * JOUR), end)
 
     if (!events.length) {

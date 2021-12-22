@@ -19,9 +19,11 @@
     "@ionic-native/file-picker": "^5.33.1",
     "@ionic-native/in-app-browser": "^5.33.1",
     "@ionic-native/keychain": "^5.33.1",
-    "@ionic/vue": "^5.6.8",
-    "@ionic/vue-router": "^5.6.8",
+    "@ionic/core": "^6.0.0",
+    "@ionic/vue": "^6.0.0",
+    "@ionic/vue-router": "^6.0.0",
     "@vueuse/core": "^4.11.2",
+    "capacitor-calendar2": "file:../capacitor-calendar2",
     "comlink": "^4.3.1",
     "cordova-plugin-calendar": "^5.1.5",
     "cordova-plugin-filepicker": "^1.1.6",
@@ -36,8 +38,8 @@
     "pouchdb-find": "^7.2.2",
     "simpl-schema": "^1.12.0",
     "swiper": "^6.6.2",
-    "vue": "^3.0",
-    "vue-router": "^4.0"
+    "vue": "^3.2.26",
+    "vue-router": "^4.0.12"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",

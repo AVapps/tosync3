@@ -32,8 +32,7 @@ export const useMainStore = defineStore({
         atpl: false,
         eHS: 'AF'
       },
-      syncCalendars: [],
-      syncCalendarsOptions: {}
+      syncCalendarsOptions: []
     }
   }),
   // optional getters

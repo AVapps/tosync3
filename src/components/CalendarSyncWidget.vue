@@ -1,9 +1,10 @@
 <template>
   <div class="calendar-sync-widget">
-    <ion-list v-if="calendars.length" inset="true">
+    <ion-list v-if="availableCalendars.length" inset="true">
       <ion-item>
         <ion-select
-          v-model="store.config.syncCalendars"
+          :value="selectedCalendarIds"
+          @ionChange="onCalendarsChange($event.target.value)"
           cancel-text="Annuler"
           ok-text="Valider"
           multiple="true"
@@ -13,22 +14,28 @@
           }"
         >
           <ion-select-option
-            v-for="calendar in calendars"
+            v-for="calendar in availableCalendars"
             :key="calendar.id"
             :value="calendar.id"
-            >{{ calendar.name }}
+            >{{ calendar.displayName }}
           </ion-select-option>
         </ion-select>
       </ion-item>
     </ion-list>
+
     <loading-button v-else :loading="loading" @click="loadCalendars()">
       Charger la liste des calendriers
     </loading-button>
 
-    <ion-list v-if="selectedCalendars && selectedCalendars.length" inset="true">
-      <ion-item v-for="id in selectedCalendars" :key="id">
-        <ion-label>{{ calendarsMap.get(id)?.name }}</ion-label>
+    <ion-list
+      v-if="selectedCalendarIds && selectedCalendarIds.length"
+      inset="true"
+    >
+      <ion-item v-for="id in selectedCalendarIds" :key="id">
+        <ion-label>{{ availableCalendarsMap.get(id)?.name }}</ion-label>
         <ion-select
+          :value="selectedCalendarsMap.get(id)?.tags || []"
+          @ionChange="onTagsChange(id, $event.target.value)"
           slot="end"
           cancel-text="Annuler"
           ok-text="Valider"
@@ -41,10 +48,12 @@
           <ion-select-option
             v-for="tag in [
               'vol',
+              'rotation',
               'repos',
               'conges',
               'sol',
               'instruction',
+              'sans-solde',
               'blanc',
             ]"
             :key="tag"
@@ -54,36 +63,32 @@
         </ion-select>
       </ion-item>
     </ion-list>
+
+    <loading-button :loading="loading" @click="syncEvents()">
+      Synchronisation
+    </loading-button>
   </div>
 </template>
 
 <script>
 import { computed, defineComponent, ref, watch } from 'vue'
 import {
-  IonButton,
-  IonChip,
   IonLabel,
   IonList,
   IonItem,
-  IonIcon,
-  IonRadio,
   IonSelect,
   IonSelectOption,
-  alertController,
   toastController
 } from '@ionic/vue'
-import {
-  eyeOutline,
-  checkmarkCircleOutline,
-  alertCircleOutline,
-  openOutline,
-  syncOutline,
-  ellipse
-} from 'ionicons/icons'
 
-import { has } from 'lodash'
+import { difference, remove } from 'lodash'
 import { useMainStore } from '@/store'
-import { listCalendars } from '@/lib/CalendarSync'
+import {
+  listCalendars,
+  syncEventsInRange,
+  minSyncDate,
+  maxSyncDate
+} from '@/lib/CalendarSync'
 
 import LoadingButton from './LoadingButton.vue'
 
@@ -97,13 +102,9 @@ export default defineComponent({
   },
   emits: ['login', 'logout'],
   components: {
-    IonButton,
-    IonChip,
     IonLabel,
     IonList,
     IonItem,
-    IonIcon,
-    IonRadio,
     IonSelect,
     IonSelectOption,
     LoadingButton
@@ -112,26 +113,63 @@ export default defineComponent({
     const store = useMainStore()
     const loading = ref(false)
 
-    const calendars = ref([])
-    const calendarsMap = ref(new Map())
-    const selectedCalendars = computed(() => store.config.syncCalendars)
-
-    watch(selectedCalendars, list => {
-      list.forEach(c => {
-        if (!has(store.config.syncCalendarsOptions, c.id)) {
-          store.config.syncCalendarsOptions[c.id] = {
-            tags: []
-          }
-        }
-      })
+    const availableCalendars = ref([])
+    const availableCalendarsMap = computed(() => {
+      return new Map(
+        availableCalendars.value.map((calendar) => [calendar.id, calendar])
+      )
     })
+
+    const selectedCalendarsMap = computed(() => {
+      const map = new Map()
+      store.config.syncCalendarsOptions.forEach((calendar) =>
+        map.set(calendar.id, calendar)
+      )
+      return map
+    })
+
+    const selectedCalendarIds = computed(() =>
+      store.config.syncCalendarsOptions.map((calendar) => calendar.id)
+    )
+
+    function onCalendarsChange(calendarsId) {
+      console.log('onCalendarsChange', calendarsId)
+      const added = difference(calendarsId, selectedCalendarIds.value)
+      const removed = difference(selectedCalendarIds.value, calendarsId)
+
+      remove(store.config.syncCalendarsOptions, ({ id }) =>
+        removed.includes(id)
+      )
+
+      added.forEach((id) => {
+        store.config.syncCalendarsOptions.push({
+          id,
+          tags: [
+            'rotation',
+            'vol',
+            'repos',
+            'conges',
+            'sol',
+            'instruction',
+            'sans-solde',
+            'blanc'
+          ]
+        })
+      })
+    }
+
+    function onTagsChange(id, tags) {
+      console.log('onTagsChange', id, tags)
+      if (selectedCalendarsMap.value.has(id)) {
+        const calendar = selectedCalendarsMap.value.get(id)
+        calendar.tags = tags
+      }
+    }
 
     async function loadCalendars() {
       loading.value = true
       try {
-        calendars.value = await listCalendars()
-        calendarsMap.value = new Map()
-        calendars.value.forEach(c => calendarsMap.value.set(c.id, c))
+        availableCalendars.value = await listCalendars()
       } catch (err) {
         console.log(err)
       }
@@ -140,12 +178,33 @@ export default defineComponent({
 
     loadCalendars()
 
+    async function syncEvents() {
+      loading.value = true
+      const minDate = minSyncDate()
+      const maxDate = maxSyncDate()
+
+      try {
+        await syncEventsInRange(store.userId, minDate, maxDate)
+        toastController.create({
+          message: 'Synchronisation terminée',
+          duration: 2000
+        })
+      } catch (err) {
+        console.trace(err)
+      }
+      loading.value = false
+    }
+
     return {
-      calendars,
-      calendarsMap,
-      selectedCalendars,
+      availableCalendars,
+      availableCalendarsMap,
+      selectedCalendarIds,
+      selectedCalendarsMap,
+      onCalendarsChange,
+      onTagsChange,
       store,
       loadCalendars,
+      syncEvents,
       loading
     }
   }

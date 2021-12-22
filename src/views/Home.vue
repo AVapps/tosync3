@@ -44,7 +44,7 @@
             <ion-card-title>Synchronisation Calendrier</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <calendar-sync-widget />
+            <calendar-sync-widget></calendar-sync-widget>
           </ion-card-content>
         </ion-card>
       </div>

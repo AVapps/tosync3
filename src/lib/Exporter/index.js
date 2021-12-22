@@ -1,7 +1,7 @@
-import allday from './templates/allday'
-import event from './templates/event'
-import rotation from './templates/rotation'
-import vol from './templates/vol'
+import allday from './templates/allday.txt'
+import event from './templates/event.txt'
+import rotation from './templates/rotation.txt'
+import vol from './templates/vol.txt'
 
 import { template, uniq } from 'lodash'
 import { DateTime } from 'luxon'
@@ -47,7 +47,7 @@ function getTemplateFunction(type) {
 }
 
 // Render the given event with the right template
-export function renderEvent(event, options) {
+export function renderEventDescription(event, options) {
   return getTemplateFunction(event.tag)(event, options)
 }
 
@@ -69,7 +69,7 @@ const titleTemplatesCM = {
   mep: mep => `MEP : ${mep.num || mep.title} (${mep.from}-${mep.to})`
 }
 
-export function renderTitle(event, options) {
+export function renderEventTitle(event, options) {
   switch (event.tag) {
     case 'rotation':
       return options.useCMFormat ? titleTemplatesCM.rotation(event) : titleTemplates.rotation(event)
