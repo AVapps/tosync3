@@ -7,13 +7,13 @@ export const dutySubEventSchema = new SimpleSchema({
     allowedValues: TAGS
   },
   slug: {
-    type: String,
+    type: String
   },
   start: {
-    type: SimpleSchema.Integer, // Datetime timestamp
+    type: SimpleSchema.Integer // Datetime timestamp
   },
   end: {
-    type: SimpleSchema.Integer, // Datetime timestamp
+    type: SimpleSchema.Integer // Datetime timestamp
   },
 
   // Optional fields
@@ -22,6 +22,10 @@ export const dutySubEventSchema = new SimpleSchema({
     optional: true
   },
   summary: {
+    type: String,
+    optional: true
+  },
+  remark: {
     type: String,
     optional: true
   },

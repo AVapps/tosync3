@@ -34,6 +34,10 @@ export const eventSchema = new SimpleSchema({
     type: String,
     optional: true
   },
+  remark: {
+    type: String,
+    optional: true
+  },
   created: {
     type: SimpleSchema.Integer, // Datetime timestamp
     optional: true

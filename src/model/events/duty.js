@@ -12,7 +12,7 @@ const dutySchema = new SimpleSchema({
   'events.$': {
     type: SimpleSchema.oneOf(mepSchema, dutySubEventSchema)
   },
-  remarks: {
+  remark: {
     type: String,
     optional: true
   },

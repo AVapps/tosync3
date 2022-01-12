@@ -46,7 +46,7 @@ export const groundCrewSchema = new SimpleSchema({
   },
   'peq.sol.$': {
     type: String,
-    regEx: /^[A-Z]{3}$/
+    regEx: /^©?[A-Z]{3}$/
   },
 
   'peq.mep': {

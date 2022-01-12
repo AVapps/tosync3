@@ -7,7 +7,7 @@ import { instructionSchema } from './instruction.js'
 
 const svSchema = new SimpleSchema({
   rotationId: {
-    type: String,
+    type: String
   },
   tag: {
     type: String,
@@ -17,7 +17,7 @@ const svSchema = new SimpleSchema({
     type: Array
   },
   'events.$': {
-    type: SimpleSchema.oneOf(mepSchema, volSchema),
+    type: SimpleSchema.oneOf(mepSchema, volSchema)
   },
   hotel: {
     type: String,

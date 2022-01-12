@@ -4,10 +4,10 @@ import { groundCrewSchema } from './peq.js'
 import { instructionSchema } from './instruction.js'
 
 const solSchema = new SimpleSchema({
-  remarks: {
+  remark: {
     type: String,
     optional: true
-  },
+  }
 })
 
 solSchema.extend(eventSchema)

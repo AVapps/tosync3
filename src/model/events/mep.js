@@ -34,15 +34,15 @@ const mepSchema = new SimpleSchema({
     regEx: /^[A-Z]{3}$/,
     optional: true
   },
-  remarks: {
+  remark: {
     type: String,
     optional: true
   },
   start: {
-    type: SimpleSchema.Integer, // Datetime timestamp
+    type: SimpleSchema.Integer // Datetime timestamp
   },
   end: {
-    type: SimpleSchema.Integer, // Datetime timestamp
+    type: SimpleSchema.Integer // Datetime timestamp
   }
 })
 

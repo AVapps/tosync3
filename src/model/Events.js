@@ -12,21 +12,6 @@ function toBasicIsoZ(ts) {
     .substring(0, 13)
 }
 
-function toDateTime(date) {
-  if (DateTime.isDateTime(date)) {
-    return date
-  }
-  if (typeof date === 'number') {
-    return DateTime.fromMillis(date)
-  }
-  if (date instanceof Date) {
-    return DateTime.fromJSDate(date)
-  }
-  if (typeof date === 'string') {
-    return DateTime.fromISO(date)
-  }
-}
-
 function toTimestamp(date) {
   if (typeof date === 'number') {
     return date
