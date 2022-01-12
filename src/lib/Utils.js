@@ -63,6 +63,7 @@ export const CATEGORIES = {
   OFFC: 'repos', // Jour OFF couple
   OFFD: 'repos', // JOUR OFF DESIDERATA
   OFFE: 'repos',
+  OFFG: 'repos', // JOUR OFF garanti par la compagnie
   OFFH: 'repos', // OFF HS maladie
   OFFR: 'repos',
   RPC: 'repos',
@@ -259,7 +260,9 @@ export const CODES_INSTRUCTION = {
   VSS_R_OPL: { type: 'vol', tags: ['vss', 'reprise'], title: 'Vol sous supervision OPL' },
 
   // pnc
-  VOL_AC: { type: 'vol', tags: [], title: undefined } // A confirmer
+  VOL_AC: { type: 'vol', tags: ['pnc'], title: '' }, // A confirmer
+  VF_737_C: { type: 'vol', tags: ['vf', 'pnc'], title: 'Vol de familiarisation PNC' },
+  VF_C: { type: 'vol', tags: ['vf', 'pnc'], title: 'Vol de familiarisation PNC' }
 }
 
 export function titre(evt) {
@@ -394,7 +397,7 @@ export function slug(event, username, index) {
       case 'vol':
         return [prefix, event.num, event.from, event.to, suffix].join('-')
       case 'mep':
-        return [prefix, (event.title || event.num).replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
+        return [prefix, (event.num || event.summary).replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
       default:
         return [prefix, event.summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
     }
