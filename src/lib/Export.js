@@ -1,9 +1,11 @@
-import { isEmpty, filter, get, keys } from 'lodash'
+import { DateTime } from 'luxon'
+import { isEmpty, filter, get, keys, has, first, last } from 'lodash'
 import { renderEventDescription, renderEventTitle } from './Exporter'
+import { ALLDAY_TAGS, slug } from './Utils'
 
 import { Events } from '@/model/Events'
 
-const SYNC_CATEGORIES = {
+export const SYNC_CATEGORIES = {
   vol: ['vol', 'mep'],
   rotation: ['rotation'],
   repos: ['repos'],
@@ -50,6 +52,21 @@ const SYNC_TAG_CATEGORIES = {
   autre: 'sol'
 }
 
+function toUTCISOString(ts) {
+  return DateTime.fromMillis(ts, { zone: 'utc' })
+    .set({ milliseconds: 0 })
+    .toISO({ suppressMilliseconds: true })
+}
+
+export function getUserWatermark(userId) {
+  return `<TOSYNC:${userId}>`
+}
+
+export function getUserIdFromWatermark(watermark) {
+  const match = watermark.match(/<TOSYNC:([A-Z]{3})>/)
+  return match ? match[1] : null
+}
+
 export function getSyncCategorie(tag) {
   return get(SYNC_TAG_CATEGORIES, tag)
 }
@@ -71,14 +88,48 @@ export function filterEventsByTags(events, tags) {
     })
 }
 
-export function transformEventsToSync(events, options = {}) {
-  return events.map((evt) => {
+function flattenEvents(events) {
+  return events.reduce((acc, evt) => {
+    if (evt.events && events.length) {
+      if (has(evt, 'peq')) {
+        first(evt.events).peq = evt.peq
+      }
+      if (has(evt, 'instruction')) {
+        first(evt.events).instruction = evt.instruction
+      }
+      acc.push(...evt.events.map(sol => ({ ...sol, slug: slug(sol, evt.userId) })))
+    } else if (evt.tag === 'rotation' && evt.sv && evt.sv.length) {
+      evt.sv.forEach(sv => {
+        if (sv.events && sv.events.length) {
+          if (has(sv, 'peq')) {
+            first(sv.events).peq = sv.peq
+          }
+          if (has(sv, 'instruction')) {
+            first(sv.events).instruction = sv.instruction
+          }
+          if (has(sv, 'hotel')) {
+            last(sv.events).hotel = sv.hotel
+          }
+          acc.push(...sv.events.map(vol => ({ ...vol, slug: slug(vol, evt.userId) })))
+        }
+      })
+      acc.push(evt)
+    } else {
+      acc.push(evt)
+    }
+    return acc
+  }, [])
+}
+
+export function transformEventsToSync(userId, events, options = {}) {
+  return flattenEvents(events).map((evt) => {
     return {
-      id: evt.id,
+      tag: evt.tag,
       title: renderEventTitle(evt, options),
-      description: renderEventDescription(evt, options),
-      start: evt.start,
-      end: evt.end
+      startDate: toUTCISOString(evt.start),
+      endDate: toUTCISOString(evt.end),
+      notes: renderEventDescription(evt, options) + '\n\n' + getUserWatermark(userId),
+      isAllDay: ALLDAY_TAGS.includes(evt.tag)
     }
   })
 }
@@ -91,7 +142,10 @@ export function transformEventsToSync(events, options = {}) {
  */
 export async function getEventsToSync(userId, startDate, endDate, categories) {
   let eventsToSync = await Events.getInterval(userId, startDate, endDate)
-  eventsToSync = filterEventsByTags(eventsToSync, categories)
-  eventsToSync = transformEventsToSync(eventsToSync)
-  return eventsToSync
+  console.log('eventsToSync unfiltered', eventsToSync.length)
+  if (categories && categories.length) {
+    eventsToSync = filterEventsByTags(eventsToSync, categories)
+    console.log('eventsToSync filtered', eventsToSync.length)
+  }
+  return transformEventsToSync(userId, eventsToSync)
 }

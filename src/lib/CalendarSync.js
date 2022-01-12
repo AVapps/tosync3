@@ -1,19 +1,19 @@
-import { Events } from '@/model/Events'
 import { DateTime } from 'luxon'
 
 import { Calendar } from 'capacitor-calendar2'
-import { getEventsToSync } from '@/lib/Export'
+import { getEventsToSync, filterEventsByTags, getUserWatermark, getUserIdFromWatermark } from '@/lib/Export'
+import { isMatch, difference, has, pick } from 'lodash'
 
 window.CapacitorCalendar = Calendar
 
 const TIMEZONE = 'Europe/Paris'
 
 export function maxSyncDate() {
-  return DateTime.now().setZone(TIMEZONE).plus({ days: 31 }).endOf('day')
+  return DateTime.now().setZone(TIMEZONE).plus({ days: 40 }).endOf('day')
 }
 
 export function minSyncDate() {
-  return DateTime.now().setZone(TIMEZONE).startOf('month').minus({ months: 2 })
+  return DateTime.now().setZone(TIMEZONE).startOf('month')
 }
 
 export async function listCalendars() {
@@ -31,11 +31,67 @@ export async function fetchDeviceEvents(startDate, endDate, calendarId) {
   return events
 }
 
-export async function syncEventsInRange(userId, startDateTime, endDateTime, options) {
-  const eventsToSync = await getEventsToSync(userId, startDateTime, endDateTime, options.tags)
-  console.log(eventsToSync)
+const watermarkRE = /(METEORCREW$)|(CHOPETO$)/
 
-  const localEvents = await fetchDeviceEvents(startDateTime.toJSDate(), endDateTime.toJSDate())
+function filterDeviceEvents(events, userId) {
+  return events.filter(evt => {
+    return watermarkRE.test(evt.id) || (new RegExp(`${userId}\\d{8}`)).test(evt.id) || evt?.notes?.includes(getUserWatermark(userId))
+  })
+}
 
-  console.log(localEvents)
+function simpleSlug(event, userId) {
+  return `${userId}_${event.startDate}_${event.endDate}`
+}
+
+export async function syncEventsInRange(userId, startDateTime, endDateTime, calendars, options) {
+  const unfilteredEventsToSync = await getEventsToSync(userId, startDateTime, endDateTime)
+  for (const calendar of calendars) {
+    await syncEventsCategoriesInRangeForCalendar(userId, startDateTime, endDateTime, calendar.id, calendar.tags, unfilteredEventsToSync)
+  }
+}
+
+export async function syncEventsCategoriesInRangeForCalendar(userId, startDateTime, endDateTime, calendarId, categories, unfilteredEventsToSync) {
+  let filteredEventsToSync
+  console.log('unfilteredEventsToSync', unfilteredEventsToSync, calendarId, categories)
+  if (!unfilteredEventsToSync || !unfilteredEventsToSync.length) {
+    filteredEventsToSync = await getEventsToSync(userId, startDateTime, endDateTime, categories)
+  } else {
+    filteredEventsToSync = filterEventsByTags(unfilteredEventsToSync, categories)
+  }
+
+  const localEvents = await fetchDeviceEvents(startDateTime.toJSDate(), endDateTime.toJSDate(), calendarId)
+  const filteredLocalEvents = filterDeviceEvents(localEvents, userId)
+  console.log(filteredEventsToSync, filteredLocalEvents)
+
+  const localEventsMap = new Map()
+  filteredLocalEvents.forEach(evt => {
+    localEventsMap.set(simpleSlug(evt, userId), evt)
+  })
+
+  const updateRegistry = {
+    insert: [],
+    update: [],
+    remove: []
+  }
+  const keep = []
+
+  filteredEventsToSync.forEach(evt => {
+    const slug = simpleSlug(evt, userId)
+    if (localEventsMap.has(slug)) {
+      const localEvt = localEventsMap.get(slug)
+      keep.push(localEvt.id)
+      const evtPartial = pick(evt, 'title', 'startDate', 'endDate', 'notes', 'isAllDay')
+      if (!isMatch(localEvt, evtPartial)) {
+        updateRegistry.update.push({ id: localEvt.id, ...evtPartial })
+      }
+    } else {
+      updateRegistry.insert.push({ ...evt, calendarId })
+    }
+  })
+
+  updateRegistry.remove = difference(filteredLocalEvents.map(e => e.id), keep)
+  console.log(updateRegistry)
+
+  const result = await Calendar.batchUpdate(updateRegistry)
+  console.log(result)
 }

@@ -1,9 +1,9 @@
-import allday from './templates/allday.txt'
-import event from './templates/event.txt'
-import rotation from './templates/rotation.txt'
-import vol from './templates/vol.txt'
+import allday from './templates/allday.js'
+import event from './templates/event.js'
+import rotation from './templates/rotation.js'
+import vol from './templates/vol.js'
+import { nbjours, decouchers } from './templates/helpers.js'
 
-import { template, uniq } from 'lodash'
 import { DateTime } from 'luxon'
 
 const exportTemplates = {
@@ -30,15 +30,32 @@ const exportTemplates = {
 }
 
 const templateFunctions = {
-  allday: template(allday),
-  event: template(event),
-  rotation: template(rotation),
-  vol: template(vol)
+  allday,
+  event,
+  rotation,
+  vol
+}
+
+// Capitalise first letter of all words in string
+function capitalize(str) {
+  return str.replace(/\w\S*/g, function(txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+  })
 }
 
 // get the template for the given type
 function getTemplate(type) {
   return exportTemplates[type] || 'event'
+}
+
+function getTitleTemplate(type, useLegacyFormat) {
+  if (useLegacyFormat && titleTemplatesLegacy[type]) {
+    return titleTemplatesLegacy[type]
+  }
+  if (titleTemplates[type]) {
+    return titleTemplates[type]
+  }
+  return evt => evt.summary
 }
 
 // get template function for given event type
@@ -51,33 +68,42 @@ export function renderEventDescription(event, options) {
   return getTemplateFunction(event.tag)(event, options)
 }
 
-const titleTemplates = {
-  rotation: rot => `Rotation ${rot.nbjoursTO}ON du ${DateTime.fromMillis(rot.start).toFormat('D MMMM')}`,
-  vol: vol => `${vol.num} | ${vol.from} - ${vol.to} | ${vol.type}`,
-  mep: mep => `${mep.num || mep.title} | ${mep.from} - ${mep.to} | MEP`
+const titleTemplatesLegacy = {
+  rotation: rot => `Rotation ${nbjours(rot)}ON du ${DateTime.fromMillis(rot.start).toFormat('D MMMM')}`,
+  vol: vol => `${vol.num} | ${vol.from} - ${vol.to}`,
+  mep: mep => `${mep.num || mep.summary} | ${mep.from} - ${mep.to} | MEP`
 }
 
-const titleTemplatesCM = {
+const titleTemplates = {
   rotation: rot => {
-    let str = `Rotation - ${rot.nbjoursTO}ON`
-    if (rot.decouchers.length) {
-      str += ' - ' + uniq(rot.decouchers.map('to')).join(' - ')
+    let str = `Rotation ${nbjours(rot)}ON`
+    const d = decouchers(rot)
+    if (d) {
+      str += ` ${d}`
     }
     return str
   },
-  vol: vol => `${vol.num} (${vol.from}-${vol.to}) ${vol.type}`,
-  mep: mep => `MEP : ${mep.num || mep.title} (${mep.from}-${mep.to})`
+  vol: vol => `${vol.num} (${vol.from}-${vol.to})`,
+  mep: mep => `MEP : ${mep.num || mep.summary} (${mep.from}-${mep.to})`,
+  absence: evt => capitalize(evt.summary),
+  conges: evt => 'Congés',
+  sanssolde: evt => 'Sans solde',
+  blanc: evt => 'Blanc',
+  jisap: evt => 'JISAP',
+  repos: evt => 'Repos',
+  maladie: evt => 'Arrêt maladie',
+  greve: evt => 'Grève',
+  stage: evt => capitalize(evt.summary),
+  sol: evt => capitalize(evt.summary),
+  instructionSol: evt => capitalize(evt.summary),
+  simu: evt => capitalize(evt.summary),
+  instructionSimu: evt => capitalize(evt.summary),
+  reserve: evt => capitalize(evt.summary),
+  delegation: evt => 'Syndicat',
+  npl: evt => 'Non planifiable',
+  autre: evt => capitalize(evt.summary)
 }
 
 export function renderEventTitle(event, options) {
-  switch (event.tag) {
-    case 'rotation':
-      return options.useCMFormat ? titleTemplatesCM.rotation(event) : titleTemplates.rotation(event)
-    case 'vol':
-      return options.useCMFormat ? titleTemplatesCM.vol(event) : titleTemplates.vol(event)
-    case 'mep':
-      return options.useCMFormat ? titleTemplatesCM.mep(event) : titleTemplates.mep(event)
-    default:
-      return event.title
-  }
+  return getTitleTemplate(event.tag, options.useLegacyFormat)(event)
 }
