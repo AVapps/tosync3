@@ -46,16 +46,7 @@
           }"
         >
           <ion-select-option
-            v-for="tag in [
-              'vol',
-              'rotation',
-              'repos',
-              'conges',
-              'sol',
-              'instruction',
-              'sans-solde',
-              'blanc',
-            ]"
+            v-for="tag in syncCategories"
             :key="tag"
             :value="tag"
             >{{ tag }}
@@ -71,7 +62,7 @@
 </template>
 
 <script>
-import { computed, defineComponent, ref, watch } from 'vue'
+import { computed, defineComponent, ref, toRaw } from 'vue'
 import {
   IonLabel,
   IonList,
@@ -91,6 +82,7 @@ import {
 } from '@/lib/CalendarSync'
 
 import LoadingButton from './LoadingButton.vue'
+import { SYNC_CATEGORIES } from '@/lib/Export.js'
 
 export default defineComponent({
   name: 'CalendarSyncWidget',
@@ -113,20 +105,25 @@ export default defineComponent({
     const store = useMainStore()
     const loading = ref(false)
 
-    const availableCalendars = ref([])
-    const availableCalendarsMap = computed(() => {
-      return new Map(
-        availableCalendars.value.map((calendar) => [calendar.id, calendar])
-      )
-    })
+    const syncCategories = Object.keys(SYNC_CATEGORIES)
 
-    const selectedCalendarsMap = computed(() => {
-      const map = new Map()
-      store.config.syncCalendarsOptions.forEach((calendar) =>
-        map.set(calendar.id, calendar)
-      )
-      return map
-    })
+    const availableCalendars = ref([])
+    const availableCalendarsMap = computed(
+      () =>
+        new Map(
+          availableCalendars.value.map((calendar) => [calendar.id, calendar])
+        )
+    )
+
+    const selectedCalendarsMap = computed(
+      () =>
+        new Map(
+          store.config.syncCalendarsOptions.map((calendar) => [
+            calendar.id,
+            calendar
+          ])
+        )
+    )
 
     const selectedCalendarIds = computed(() =>
       store.config.syncCalendarsOptions.map((calendar) => calendar.id)
@@ -136,24 +133,14 @@ export default defineComponent({
       console.log('onCalendarsChange', calendarsId)
       const added = difference(calendarsId, selectedCalendarIds.value)
       const removed = difference(selectedCalendarIds.value, calendarsId)
+      console.log(added, removed)
 
-      remove(store.config.syncCalendarsOptions, ({ id }) =>
-        removed.includes(id)
-      )
-
-      added.forEach((id) => {
-        store.config.syncCalendarsOptions.push({
-          id,
-          tags: [
-            'rotation',
-            'vol',
-            'repos',
-            'conges',
-            'sol',
-            'instruction',
-            'sans-solde',
-            'blanc'
-          ]
+      store.$patch((state) => {
+        remove(state.config.syncCalendarsOptions, ({ id }) =>
+          removed.includes(id)
+        )
+        added.forEach((id) => {
+          state.config.syncCalendarsOptions.push({ id, tags: syncCategories })
         })
       })
     }
@@ -161,8 +148,7 @@ export default defineComponent({
     function onTagsChange(id, tags) {
       console.log('onTagsChange', id, tags)
       if (selectedCalendarsMap.value.has(id)) {
-        const calendar = selectedCalendarsMap.value.get(id)
-        calendar.tags = tags
+        selectedCalendarsMap.value.get(id).tags = tags
       }
     }
 
@@ -183,8 +169,11 @@ export default defineComponent({
       const minDate = minSyncDate()
       const maxDate = maxSyncDate()
 
+      const calendars = toRaw(store.config.syncCalendarsOptions)
+      console.log(calendars)
+
       try {
-        await syncEventsInRange(store.userId, minDate, maxDate)
+        await syncEventsInRange(store.userId, minDate, maxDate, calendars, {})
         toastController.create({
           message: 'Synchronisation terminée',
           duration: 2000
@@ -205,7 +194,8 @@ export default defineComponent({
       store,
       loadCalendars,
       syncEvents,
-      loading
+      loading,
+      syncCategories
     }
   }
 })
