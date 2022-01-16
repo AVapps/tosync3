@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 
-import { IonicVue } from '@ionic/vue'
+import { IonicVue, isPlatform } from '@ionic/vue'
 import { createPinia } from 'pinia'
 
 /* Core CSS required for Ionic components to work properly */
@@ -31,7 +31,9 @@ import { Events } from '@/model/Events'
 window.Events = Events
 
 const app = createApp(App)
-  .use(IonicVue)
+  .use(IonicVue, {
+    mode: isPlatform('android') ? 'md' : 'ios'
+  })
   .use(createPinia())
   .use(router)
 
