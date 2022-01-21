@@ -10,6 +10,9 @@ const FLIGHT_REG = /([A-Z]{3})-([A-Z]{3})(?:\s\(([A-Z]+)\))?/
 const MEP_REG = /([A-Z]{3})-([A-Z]{3})/
 const DATE_REG = /^\s[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
 const TIME_REG = /^\d\d:\d\d$/
+const CREW_TITLE_REG = /\w+:/
+const CREW_LIST_REG = /^(\s+©?[A-Z]{3})+$/
+const CREW_LINE_REG = /^((\s©?\w+)+)\s+\(([A-Z]{3})\)$/
 
 export class PdfPlanningParser {
   constructor(options) {
@@ -68,7 +71,6 @@ export class PdfPlanningParser {
         }
 
         if (evt.instruction) {
-          console.log(evt.instruction)
           const tasks = this._parseInstruction(evt.instruction)
           if (tasks && tasks.length) {
             const userTasks = _.remove(tasks, task => !_.isEmpty(task.fonction))
@@ -346,16 +348,18 @@ export class PdfPlanningParser {
     const vol = {
       tag: 'vol',
       fonction: event.fonction,
-      summary: `${event.activity} (${m[1]}-${m[2]})`,
+      summary: `${event.activity} (${m[1]}-${m[2]}) ${event.typeAvion}`,
       num: event.activity,
       from: m[1],
       to: m[2],
       immat: m[3],
       debut: this._date.set(this._parseTime(event.start)).setZone('Europe/Paris'),
       fin: this._date.set(this._parseTime(event.end)).setZone('Europe/Paris'),
+      type: event.typeAvion,
       tv: this._parseDuration(event.tv)
     }
 
+    if (event.remark) vol.remark = event.remark
     if (event.peq) vol.peq = event.peq
     if (event.instruction) vol.instruction = event.instruction
 
@@ -390,15 +394,17 @@ export class PdfPlanningParser {
     const mep = {
       tag: 'mep',
       fonction: event.fonction,
-      summary: `MEP ${event.activity} (${m[1]}-${m[2]})`,
+      summary: `MEP ${event.activity} (${m[1]}-${m[2]}) ${event.typeAvion}`,
       num: event.activity,
       title: event.activity,
       from: m[1],
       to: m[2],
       debut: this._date.set(this._parseTime(event.start)).setZone('Europe/Paris'),
-      fin: this._date.set(this._parseTime(event.end)).setZone('Europe/Paris')
+      fin: this._date.set(this._parseTime(event.end)).setZone('Europe/Paris'),
+      type: event.typeAvion
     }
 
+    if (event.remark) mep.remark = event.remark
     if (event.peq) mep.peq = event.peq
     if (event.instruction) mep.instruction = event.instruction
 
@@ -515,6 +521,7 @@ export class PdfPlanningParser {
       fonction: event.fonction
     }
 
+    if (event.remark) sol.remark = event.remark
     if (event.peq) sol.peq = event.peq
     if (event.instruction) sol.instruction = event.instruction
 
@@ -559,6 +566,9 @@ export class PdfPlanningParser {
         summary: event.summary,
         debut: this._date.set(this._parseTime(event.start)).setZone('Europe/Paris')
       }
+
+      if (event.remark) this._hotel.remark = event.remark
+
       if (this._precDuty) {
         this._hotel.location = this._precDuty.to
       }
@@ -578,15 +588,18 @@ export class PdfPlanningParser {
   groupRotations() {
     this.events = _.sortBy(this.events, ['debut', 'fin'])
 
+    // Chercher un jour de repos ou congé comme point de départ de l'algorythme de recherche de rotations
     const startIndex = _.findIndex(this.events, evt => ['repos', 'conges'].includes(evt.tag))
     // console.log(this.events, startIndex)
 
     let rotations
+    // Applique la recherche de rotation à gauche et à droite du jour de repos ou congé trouvé
     if (startIndex !== -1) {
       rotations = [
         ...this._getRotationsFromRight(_.slice(this.events, 0, startIndex)),
         ...this._getRotationsFromLeft(_.slice(this.events, startIndex))
       ]
+    // Sinon applique la recherche de rotation à partir de la fin car les rotations ne sont pas découpées en fin de planning
     } else {
       rotations = this._getRotationsFromRight(this.events)
     }
@@ -821,15 +834,42 @@ export class PdfPlanningParser {
   }
 
   _parsePeq(peq) {
-    const list = peq.split(/\s*(\w+)\.?\s?:\s+/g)
-    if (peq.length >= 3) {
-      const result = {}
-      for (let i = 1; i < list.length - 1; i += 2) {
-        result[list[i]] = list[i + 1].split(/\s+/g)
+    const result = {}
+    let key = null
+    peq.split(/\n/g).forEach(line => {
+      if (CREW_TITLE_REG.test(line)) {
+        // console.log(`Clé trouvée : ${line}`)
+        key = line.split(':')[0]
+        result[key] = []
+      } else if (CREW_LIST_REG.test(line)) {
+        // console.log(`Liste de trigrammes : ${line}`)
+        if (key) {
+          line.trim().split(' ').forEach(code => {
+            const crew = {
+              name: '',
+              crewCode: code.trim().replace('©', '')
+            }
+            if (code.includes('©')) crew.cpt = '©'
+            result[key].push(crew)
+          })
+        }
+      } else if (CREW_LINE_REG.test(line)) {
+        // console.log(`Membre d'équipage : ${line}`)
+        const m = line.match(CREW_LINE_REG)
+        console.log(m)
+        if (key && m && m.length) {
+          const crew = {
+            name: m[1].trim().replace('©', ''),
+            crewCode: m[3]
+          }
+          if (m[1].includes('©')) crew.cpt = true
+          result[key].push(crew)
+        }
+      } else {
+        // console.log(`Ligne inconnue : ${line}`)
       }
-      return result
-    }
-    return undefined
+    })
+    return result
   }
 
   _parseInstruction(str) {
@@ -843,7 +883,17 @@ export class PdfPlanningParser {
             }
             const endOfGroup = index === groups.length - 1 ? str.length : groups[index + 1].index
             const sub = str.substring(match.index + result.code.length, endOfGroup)
-            result.peq = this._parsePeq(sub)
+            result.peq = {}
+            let key = null
+            sub.split(/\n/g).forEach(line => {
+              if (/\w+\.?\s?:\s[A-Z]{3}/.test(line)) {
+                const [_key, code] = line.split(':')
+                key = _key.trim().replace('.', '')
+                result.peq[key] = [code.trim()]
+              } else if (CREW_LIST_REG.test(line) && key) {
+                result.peq[key].push(...line.trim().split(' '))
+              }
+            })
 
             const details = findCodeInstruction(result.code)
             if (details) _.extend(result, details)

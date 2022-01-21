@@ -29,7 +29,7 @@ function instructionGroupString(group) {
   }
   if (has(group, 'peq')) {
     forEach(group.peq, (list, key) => {
-      str += `\n${key} : ${list.join('')}`
+      str += `\n${key} : ${list.join(' ')}`
     })
   }
   return str

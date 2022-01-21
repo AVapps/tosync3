@@ -1,5 +1,20 @@
 import SimpleSchema from 'simpl-schema'
 
+const crewSchema = new SimpleSchema({
+  crewCode: {
+    type: String,
+    regEx: /^[A-Z]{3}$/
+  },
+  name: {
+    type: String,
+    optional: true
+  },
+  cpt: {
+    type: Boolean,
+    optional: true
+  }
+})
+
 export const peqSchema = new SimpleSchema({
   peq: {
     type: Object,
@@ -11,8 +26,7 @@ export const peqSchema = new SimpleSchema({
     optional: true
   },
   'peq.pnt.$': {
-    type: String,
-    regEx: /^©?[A-Z]{3}$/
+    type: crewSchema
   },
 
   'peq.pnc': {
@@ -20,8 +34,7 @@ export const peqSchema = new SimpleSchema({
     optional: true
   },
   'peq.pnc.$': {
-    type: String,
-    regEx: /^[A-Z]{3}$/
+    type: crewSchema
   },
 
   'peq.mep': {
@@ -29,8 +42,7 @@ export const peqSchema = new SimpleSchema({
     optional: true
   },
   'peq.mep.$': {
-    type: String,
-    regEx: /^[A-Z]{3}$/
+    type: crewSchema
   }
 })
 
@@ -45,8 +57,7 @@ export const groundCrewSchema = new SimpleSchema({
     optional: true
   },
   'peq.sol.$': {
-    type: String,
-    regEx: /^©?[A-Z]{3}$/
+    type: crewSchema
   },
 
   'peq.mep': {
@@ -54,7 +65,6 @@ export const groundCrewSchema = new SimpleSchema({
     optional: true
   },
   'peq.mep.$': {
-    type: String,
-    regEx: /^[A-Z]{3}$/
+    type: crewSchema
   }
 })

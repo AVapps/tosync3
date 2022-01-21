@@ -1,8 +1,8 @@
 import { DateTime } from 'luxon'
 
 import { Calendar } from 'capacitor-calendar2'
-import { getEventsToSync, filterEventsByTags, getUserWatermark, getUserIdFromWatermark } from '@/lib/Export'
-import { isMatch, difference, has, pick } from 'lodash'
+import { getEventsToSync, filterEventsByTags, getUserWatermark } from '@/lib/Export'
+import { isMatch, difference, pick } from 'lodash'
 
 window.CapacitorCalendar = Calendar
 
@@ -44,19 +44,31 @@ function simpleSlug(event, userId) {
 }
 
 export async function syncEventsInRange(userId, startDateTime, endDateTime, calendars, options) {
-  const unfilteredEventsToSync = await getEventsToSync(userId, startDateTime, endDateTime)
+  const unfilteredEventsToSync = await getEventsToSync(userId, startDateTime, endDateTime, options)
   for (const calendar of calendars) {
-    await syncEventsCategoriesInRangeForCalendar(userId, startDateTime, endDateTime, calendar.id, calendar.tags, unfilteredEventsToSync)
+    await syncEventsCategoriesInRangeForCalendar(
+      userId,
+      startDateTime,
+      endDateTime,
+      { calendarId: calendar.id, tags: calendar.tags, ...options },
+      unfilteredEventsToSync
+    )
   }
 }
 
-export async function syncEventsCategoriesInRangeForCalendar(userId, startDateTime, endDateTime, calendarId, categories, unfilteredEventsToSync) {
+export async function syncEventsCategoriesInRangeForCalendar(
+  userId,
+  startDateTime,
+  endDateTime,
+  { calendarId, tags, ...options },
+  unfilteredEventsToSync
+) {
   let filteredEventsToSync
-  console.log('unfilteredEventsToSync', unfilteredEventsToSync, calendarId, categories)
+  console.log('unfilteredEventsToSync', unfilteredEventsToSync, calendarId, tags)
   if (!unfilteredEventsToSync || !unfilteredEventsToSync.length) {
-    filteredEventsToSync = await getEventsToSync(userId, startDateTime, endDateTime, categories)
+    filteredEventsToSync = await getEventsToSync(userId, startDateTime, endDateTime, { tags, ...options })
   } else {
-    filteredEventsToSync = filterEventsByTags(unfilteredEventsToSync, categories)
+    filteredEventsToSync = filterEventsByTags(unfilteredEventsToSync, tags)
   }
 
   const localEvents = await fetchDeviceEvents(startDateTime.toJSDate(), endDateTime.toJSDate(), calendarId)

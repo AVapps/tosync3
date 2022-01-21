@@ -1,4 +1,3 @@
-import { tsToDateTimeString } from './helpers'
 import peq from './peq'
 import instruction from './instruction'
 
@@ -14,7 +13,7 @@ export default function (evt) {
   }
 
   if (evt.instruction) {
-    str += `\n\nINSTRUCTION\n${instruction(evt.instruction)}`
+    str += `\n\nInstruction\n${instruction(evt.instruction)}`
   }
 
   return str

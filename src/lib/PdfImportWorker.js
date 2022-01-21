@@ -8,12 +8,12 @@ import { PdfPlanningImporter } from './PdfPlanningImporter.js'
 async function importPdfPlanning(pdf) {
   const planningParser = new PdfPlanningParser()
   planningParser.parse(pdf)
-  console.log(planningParser)
+  console.log('importPdfPlanning.planningParser', planningParser)
   const planningImporter = new PdfPlanningImporter()
   await planningImporter.importPlanning({ planning: planningParser.planning, params: { ...planningParser.meta, printedAt: planningParser.printedAt } })
-  console.log(planningImporter)
-  // const result = await planningImporter.save()
-  return planningImporter.updateLog
+  const result = await planningImporter.save()
+  console.log(result)
+  return result
 }
 
 async function parsePageContent(opList, textContent) {

@@ -37,8 +37,8 @@ export class PdfPlanningImporter {
     this.updateLog = {
       userId: this.userId,
       insert: [],
-      update: {}, // { _id -> modifier }
-      remove: [] // events complets
+      update: [], // events avec _id et _rev
+      remove: [] // events complets avec _id et _rev
     }
     this.foundIds = new Set()
     this.savedEventsSlugMap = new Map()
@@ -255,9 +255,9 @@ export class PdfPlanningImporter {
         const savedVol = this.findSavedFlight(evt)
         if (savedVol) {
           if (evt.isRealise) { // Utiliser les heures programmmées du vol enregistré
-            evt.std = savedVol.start
-            evt.sta = savedVol.end
-          } else if (_.has(savedVol, 'real')) { // Utiliser les heures réalisées du vol enregistré
+            evt.std = savedVol.std
+            evt.sta = savedVol.sta
+          } else { // Utiliser les heures réalisées du vol enregistré
             evt.std = evt.start
             evt.sta = evt.end
             evt.start = savedVol.start
@@ -299,18 +299,13 @@ export class PdfPlanningImporter {
   }
 
   async save() {
+    console.log(this.updateLog)
     if (this.updateLog.insert.length ||
       this.updateLog.update.length ||
       this.updateLog.remove.length) {
-      let result
-      try {
-        result = {
-          updateLog: this.updateLog,
-          result: await Events.processBulkUpdate(this.updateLog)
-        }
-      } catch (error) {
-        console.log(error)
-        return
+      const result = {
+        updateLog: this.updateLog,
+        result: await Events.processBulkUpdate(this.updateLog)
       }
       this.initIndexes()
       return result
@@ -332,14 +327,14 @@ export class PdfPlanningImporter {
 
   matchUpdateFoundEvent(evt, found, schema) {
     this.foundIds.add(found._id)
-    const cleanedFound = _.omit(schema.clean(found), '_id', '_rev', 'userId')
+    const cleanedFound = schema.clean(found)
     const cleanedEvt = schema.clean(evt)
+    cleanedEvt.userId = this.userId
     if (_.isMatch(cleanedFound, cleanedEvt)) {
       console.log('- %cMATCHES: nothing to update', 'color: teal')
     } else {
       console.log('- %cDOES NOT MATCH: update', 'color: orange')
       if (evt.start !== found.start || evt.end !== found.end) {
-        cleanedEvt.userId = this.userId
         cleanedEvt._id = Events.getId(cleanedEvt)
         this.updateLog.insert.push(cleanedEvt)
         this.updateLog.remove.push(found)
@@ -347,7 +342,7 @@ export class PdfPlanningImporter {
       } else {
         cleanedEvt._id = found._id
         cleanedEvt._rev = found._rev
-        _.set(this.updateLog.update, [cleanedEvt._id, '$set'], cleanedEvt)
+        this.updateLog.update.push(cleanedEvt)
       }
     }
     return { ref: cleanedEvt, _id: found._id, _rev: found._rev }

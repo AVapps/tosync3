@@ -1,5 +1,3 @@
-import { tsToDateString } from './helpers'
-
 export default function (evt) {
   let str = `${evt.summary} [${evt.category}]`
 

@@ -39,7 +39,7 @@ const templateFunctions = {
 // Capitalise first letter of all words in string
 function capitalize(str) {
   return str.replace(/\w\S*/g, function(txt) {
-    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    return txt.charAt(0).toUpperCase() + txt.substr(1)
   })
 }
 
@@ -70,7 +70,7 @@ export function renderEventDescription(event, options) {
 
 const titleTemplatesLegacy = {
   rotation: rot => `Rotation ${nbjours(rot)}ON du ${DateTime.fromMillis(rot.start).toFormat('D MMMM')}`,
-  vol: vol => `${vol.num} | ${vol.from} - ${vol.to}`,
+  vol: vol => `${vol.num} | ${vol.from} - ${vol.to} | ${vol.type}`,
   mep: mep => `${mep.num || mep.summary} | ${mep.from} - ${mep.to} | MEP`
 }
 
@@ -83,7 +83,7 @@ const titleTemplates = {
     }
     return str
   },
-  vol: vol => `${vol.num} (${vol.from}-${vol.to})`,
+  vol: vol => `${vol.num} (${vol.from}-${vol.to}) ${vol.type}`,
   mep: mep => `MEP : ${mep.num || mep.summary} (${mep.from}-${mep.to})`,
   absence: evt => capitalize(evt.summary),
   conges: evt => 'Congés',

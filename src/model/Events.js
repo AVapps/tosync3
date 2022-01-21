@@ -1,5 +1,5 @@
 import { PouchDBCollection } from './PouchDBCollection.js'
-import { set, findLast, sortBy } from 'lodash'
+import { findLast, sortBy } from 'lodash'
 import { DateTime } from 'luxon'
 
 const JOUR = 24 * 60 * 60 * 1000
@@ -135,13 +135,11 @@ export class EventsCollection extends PouchDBCollection {
     }
 
     if (update && update.length) {
-      const updateMap = update.map(upd => {
-        const doc = { _id: upd._id, _rev: upd._rev }
-        set(upd.modifier, '$set.updated', now)
-        Object.assign(doc, upd.modifier.$set)
-        return doc
+      const updates = update.map(evt => {
+        evt.updated = now
+        return evt
       })
-      docs.push(updateMap)
+      docs.push(...updates)
     }
 
     result.docs = docs

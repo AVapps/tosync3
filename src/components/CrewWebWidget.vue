@@ -124,11 +124,11 @@ export default defineComponent({
     const loading = ref(false)
     window.crewWeb = crewWeb
 
-    crewWeb.on('login', state => {
+    crewWeb.on('login', (state) => {
       console.log('login', state)
       emit('login', state)
     })
-    crewWeb.on('logout', state => emit('logout', state))
+    crewWeb.on('logout', (state) => emit('logout', state))
 
     watchEffect(() =>
       crewWeb.storeCredentials(store.config?.useSavedCredentials)
@@ -195,21 +195,16 @@ export default defineComponent({
     }
 
     function toISOMonth(date) {
-      return date
-        .toISODate()
-        .substring(0, 7)
-        .split('-')
-        .reverse()
-        .join('-')
+      return date.toISODate().substring(0, 7).split('-').reverse().join('-')
     }
 
     async function importPDF() {
       const now = DateTime.local()
       const months = [
-        toISOMonth(now.minus({ month: 6 })),
-        toISOMonth(now.minus({ month: 5 })),
-        toISOMonth(now.minus({ month: 4 })),
-        toISOMonth(now.minus({ month: 3 })),
+        // toISOMonth(now.minus({ month: 6 })),
+        // toISOMonth(now.minus({ month: 5 })),
+        // toISOMonth(now.minus({ month: 4 })),
+        // toISOMonth(now.minus({ month: 3 })),
         toISOMonth(now.minus({ month: 2 })),
         toISOMonth(now.minus({ month: 1 })),
         toISOMonth(now)

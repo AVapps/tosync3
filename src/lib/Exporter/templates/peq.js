@@ -1,21 +1,23 @@
-import { forEach } from 'lodash'
+import { forEach, has } from 'lodash'
+import PN from '@/model/PN.js'
 
-const TITLES = {
-  sol: 'Participants',
-  mep: 'MEP',
-  pnt: 'Pilotes',
-  pnc: 'PNC'
+function crewTemplate(pn, isMEP) {
+  const name = has(pn, 'firstName') && has(pn, 'lastName') ? `${pn.lastName} ${pn.firstName}` : pn.name
+  const fonction = isMEP ? 'MEP' : pn.title + (pn.cpt ? '*' : '')
+  let str = `${fonction} - ${name} (${pn.crewCode})`
+  if (has(pn, 'contractRoles')) {
+    str += ` [${pn.contractRoles}]`
+  }
+  return str
 }
 
 export default function (peq) {
-  let str = ''
+  const crews = []
   forEach(peq, (list, key) => {
     if (list.length) {
-      str += `${TITLES[key]} :\n`
-      forEach(list, (code) => {
-        str += `${code}\n`
-      })
+      const listePN = PN.mapCrew(list)
+      crews.push(listePN.map(pn => crewTemplate(pn, key === 'mep')).join('\n'))
     }
   })
-  return str
+  return crews.join('\n\n')
 }

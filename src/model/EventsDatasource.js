@@ -356,7 +356,7 @@ export class EventsDatasource extends SimpleEventEmitter {
 
     const events = await this.db.getInterval(userId, interval.start.valueOf(), interval.end.valueOf()) // SVs are grouped in rotations
     console.log('%cEventsDatasource._fetchEvents', 'color:green', userId, interval.start.toISODate(), interval.end.toISODate(), events)
-    console.timeEnd('EventsDatasource._Events')
+    console.timeEnd('EventsDatasource._fetchEvents')
     return events
   }
 

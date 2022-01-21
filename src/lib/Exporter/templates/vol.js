@@ -11,11 +11,11 @@ export default function (evt) {
   str += `Départ : ${evt.from} ${tsToDateTimeString(evt.start)}\nArrivée : ${evt.to} ${tsToDateTimeString(evt.end)}\nTemps de vol : ${duree(evt)}\nImmat : ${evt.immat}\nFonction : ${evt.fonction}`
 
   if (evt.peq) {
-    str += `\n\nEQUIPAGE\n${peq(evt.peq)}`
+    str += `\n\n${peq(evt.peq)}`
   }
 
   if (evt.instruction) {
-    str += `\n\nINSTRUCTION\n${instruction(evt.instruction)}`
+    str += `\n\nInstruction\n${instruction(evt.instruction)}`
   }
 
   return str

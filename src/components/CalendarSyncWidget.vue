@@ -86,13 +86,6 @@ import { SYNC_CATEGORIES } from '@/lib/Export.js'
 
 export default defineComponent({
   name: 'CalendarSyncWidget',
-  props: {
-    mini: {
-      type: Boolean,
-      default: false
-    }
-  },
-  emits: ['login', 'logout'],
   components: {
     IonLabel,
     IonList,
