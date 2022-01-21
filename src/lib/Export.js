@@ -122,7 +122,7 @@ function flattenEvents(events) {
 }
 
 export function transformEventsToSync(userId, events, options = {}) {
-  return flattenEvents(events).map((evt) => {
+  return events.map((evt) => {
     return {
       tag: evt.tag,
       title: renderEventTitle(evt, options),
@@ -134,18 +134,59 @@ export function transformEventsToSync(userId, events, options = {}) {
   })
 }
 
+export function transformEventsToICalendarFormat(userId, events, options = {}) {
+  return events.map((evt) => {
+    return {
+      uid: evt.slug,
+      tag: evt.tag,
+      summary: renderEventTitle(evt, options),
+      start: evt.start,
+      end: evt.end,
+      description: renderEventDescription(evt, options) + '\n\n' + getUserWatermark(userId),
+      isAllDay: ALLDAY_TAGS.includes(evt.tag)
+    }
+  })
+}
+
 /**
  * Get events between two dates for given userId and transform them to export format
  * @param {string} userId
  * @param {any} startDate
  * @param {any} endDate
  */
-export async function getEventsToSync(userId, startDate, endDate, categories) {
+export async function getEventsToSync(userId, startDate, endDate, options = {}) {
   let eventsToSync = await Events.getInterval(userId, startDate, endDate)
+  eventsToSync = flattenEvents(eventsToSync)
   console.log('eventsToSync unfiltered', eventsToSync.length)
-  if (categories && categories.length) {
-    eventsToSync = filterEventsByTags(eventsToSync, categories)
+  if (options?.tags && options.tags.length) {
+    eventsToSync = filterEventsByTags(eventsToSync, options.tags)
     console.log('eventsToSync filtered', eventsToSync.length)
   }
-  return transformEventsToSync(userId, eventsToSync)
+  return transformEventsToSync(userId, eventsToSync, options)
+}
+
+/**
+ * Export events to iCal format for given userId and between two dates
+ * @param {string} userId
+ * @param {DateTime} startDate
+ * @param {DateTime} endDate
+ * @param {object} options
+ * @param {string[]} options.categories
+ *
+ */
+export async function exportIcs(userId, startDateTime, endDateTime, options) {
+  const { IcsFile } = await import('./IcsFile.js')
+  const filename = ['TO.sync', 'planning', startDateTime.toISODate(), endDateTime.toISODate()].join('_') + '.ics'
+  let eventsToSync = await Events.getInterval(userId, startDateTime, endDateTime)
+  eventsToSync = flattenEvents(eventsToSync)
+  console.log('eventsToSync unfiltered', eventsToSync.length)
+  if (options?.tags && options.tags.length) {
+    eventsToSync = filterEventsByTags(eventsToSync, options.tags)
+    console.log('eventsToSync filtered', eventsToSync.length)
+  }
+  const events = transformEventsToICalendarFormat(userId, eventsToSync, options)
+  console.log(events)
+  const icsFile = new IcsFile(events)
+  icsFile.generate(options)
+  icsFile.save(filename)
 }

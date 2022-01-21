@@ -47,6 +47,15 @@
             <calendar-sync-widget></calendar-sync-widget>
           </ion-card-content>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle></ion-card-subtitle>
+            <ion-card-title>Exportation iCalendar</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <i-calendar-export-widget></i-calendar-export-widget>
+          </ion-card-content>
+        </ion-card>
       </div>
     </ion-content>
   </ion-page>
@@ -69,6 +78,7 @@ import {
 
 import CrewWebWidget from '@/components/CrewWebWidget'
 import CalendarSyncWidget from '@/components/CalendarSyncWidget'
+import ICalendarExportWidget from '@/components/ICalendarExportWidget'
 import FilePicker from '@/components/FilePicker'
 
 import { defineComponent } from 'vue'
@@ -87,6 +97,7 @@ export default defineComponent({
     IonCardSubtitle,
     IonCardTitle,
     CalendarSyncWidget,
+    ICalendarExportWidget,
     CrewWebWidget,
     FilePicker
   },

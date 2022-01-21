@@ -32,7 +32,10 @@ export const useMainStore = defineStore({
         atpl: false,
         eHS: 'AF'
       },
-      syncCalendarsOptions: []
+      syncCalendarsOptions: [],
+      icalendarOptions: {
+        tags: ['vol', 'repos', 'conges', 'instruction', 'sol']
+      }
     }
   }),
   // optional getters
@@ -115,6 +118,15 @@ export const useMainStore = defineStore({
         console.log('Couldn\'t retrieve config.')
       }
 
+      if (!Object.prototype.hasOwnProperty.call(this.config, 'theme')) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+        this.config.theme = prefersDark.matches ? 'dark' : 'light'
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(this.config, 'icalendarOptions')) {
+        this.config.icalendarOptions = { tags: ['vol', 'repos', 'conges', 'instruction', 'sol'] }
+      }
+
       // Watch for config change
       watch(
         () => this.config,
@@ -131,11 +143,6 @@ export const useMainStore = defineStore({
         },
         { deep: true }
       )
-
-      if (!Object.prototype.hasOwnProperty.call(this.config, 'theme')) {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
-        this.config.theme = prefersDark.matches ? 'dark' : 'light'
-      }
     },
 
     toggleTheme() {
