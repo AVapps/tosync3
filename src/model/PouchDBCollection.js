@@ -7,7 +7,8 @@ PouchDB.plugin(PouchDBFind)
 export class PouchDBCollection {
   constructor(name, options = {}) {
     this.collection = new PouchDB(`CrewSync.${name}`, {
-      adapter: 'idb'
+      adapter: 'idb',
+      auto_compaction: true
     })
     let { generateIds = true, idKey = '_id', idFunction = null } = options
     if (isArray(idFunction)) {
