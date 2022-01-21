@@ -98,6 +98,7 @@ export class PdfPlanningImporter {
     })
 
     this.removeNotFounds()
+    return this.updateLog
   }
 
   /**
@@ -117,34 +118,34 @@ export class PdfPlanningImporter {
   }
 
   importRotation(rot) {
-    rot.slug = getSlug(rot, this.userId)
     if (rot.isIncomplete) {
-      this.importIncompleteRotation(rot)
-    } else {
-      const found = this.findSavedEvent(rot)
-      if (found) {
-        console.log(`%cFOUND ${rot.slug}`, 'color:green')
+      // Passer l'importation de rotation incomplète : les rotations sont toujours complètes en fin de fichier
+      return
+    }
+    rot.slug = getSlug(rot, this.userId)
+    const found = this.findSavedEvent(rot)
+    if (found) {
+      console.log(`%cFOUND ${rot.slug}`, 'color:green')
 
-        const firstEvent = _.first(_.first(rot.sv)?.events)
-        if (firstEvent?.start > this.printedAt) { // Heures programmées => garder les heures enregistrées précédemment
-          rot.start = found.start
-          rot.end = found.end
-        } else {
-          const lastEvent = _.last(_.last(rot.sv)?.events)
-          if (lastEvent?.end > this.printedAt) { // Heure de fin programmée => garder l'heure enregistrée
-            rot.end = found.end
-          }
-        }
-
-        const updateResult = this.matchUpdateFoundEvent(rot, found, rotationSchema)
-
-        _.forEach(rot.sv, sv => {
-          sv.rotationId = updateResult._id
-          this.importSV(sv)
-        })
+      const firstEvent = _.first(_.first(rot.sv)?.events)
+      if (firstEvent?.start > this.printedAt) { // Heures programmées => garder les heures enregistrées précédemment
+        rot.start = found.start
+        rot.end = found.end
       } else {
-        this.insertRotation(rot)
+        const lastEvent = _.last(_.last(rot.sv)?.events)
+        if (lastEvent?.end > this.printedAt) { // Heure de fin programmée => garder l'heure enregistrée
+          rot.end = found.end
+        }
       }
+
+      const updateResult = this.matchUpdateFoundEvent(rot, found, rotationSchema)
+
+      _.forEach(rot.sv, sv => {
+        sv.rotationId = updateResult._id
+        this.importSV(sv)
+      })
+    } else {
+      this.insertRotation(rot)
     }
   }
 

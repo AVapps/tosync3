@@ -10,10 +10,10 @@ async function importPdfPlanning(pdf) {
   planningParser.parse(pdf)
   console.log('importPdfPlanning.planningParser', planningParser)
   const planningImporter = new PdfPlanningImporter()
-  await planningImporter.importPlanning({ planning: planningParser.planning, params: { ...planningParser.meta, printedAt: planningParser.printedAt } })
-  const result = await planningImporter.save()
-  console.log(result)
-  return result
+  return planningImporter.importPlanning({
+    planning: planningParser.planning,
+    params: { ...planningParser.meta, printedAt: planningParser.printedAt }
+  })
 }
 
 async function parsePageContent(opList, textContent) {
