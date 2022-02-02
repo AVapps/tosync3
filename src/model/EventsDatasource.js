@@ -25,6 +25,23 @@ function checkDate(isoDate) {
   }
 }
 
+// get DateTime from isoDate, timestamp or DateTime
+function toDateTime(date) {
+  if (DateTime.isDateTime(date)) {
+    return date
+  }
+  if (typeof date === 'number') {
+    return DateTime.fromMillis(date)
+  }
+  if (typeof date === 'string') {
+    return DateTime.fromISO(date)
+  }
+  if (date instanceof Date) {
+    return DateTime.fromJSDate(date)
+  }
+  throw new Error('You must provide a valid date !')
+}
+
 export class EventsDatasource extends SimpleEventEmitter {
   constructor() {
     super()
@@ -128,25 +145,8 @@ export class EventsDatasource extends SimpleEventEmitter {
   async subscribeInterval(userId, start, end, isPNT = false) {
     checkUserId(userId)
 
-    if (typeof start === 'number') {
-      start = DateTime.fromMillis(start)
-    }
-    if (typeof end === 'number') {
-      end = DateTime.fromMillis(end)
-    }
-    if (typeof start === 'string') {
-      start = DateTime.fromISO(start)
-    }
-    if (typeof end === 'string') {
-      end = DateTime.fromISO(end)
-    }
-
-    if (!DateTime.isDateTime(start) || !DateTime.isDateTime(end)) {
-      throw new Error('start and end of interval must be valid DateTimes !')
-    }
-
-    start = start.setZone(TIMEZONE).startOf('day')
-    end = end.setZone(TIMEZONE).endOf('day')
+    start = toDateTime(start).setZone(TIMEZONE).startOf('day')
+    end = toDateTime(end).setZone(TIMEZONE).endOf('day')
 
     return this._tasksQueue.enqueue(
       async () => {
@@ -296,25 +296,8 @@ export class EventsDatasource extends SimpleEventEmitter {
   async refreshInterval(userId, start, end, isPNT = false) {
     checkUserId(userId)
 
-    if (typeof start === 'number') {
-      start = DateTime.fromMillis(start)
-    }
-    if (typeof end === 'number') {
-      end = DateTime.fromMillis(end)
-    }
-    if (typeof start === 'string') {
-      start = DateTime.fromISO(start)
-    }
-    if (typeof end === 'string') {
-      end = DateTime.fromISO(end)
-    }
-
-    if (!DateTime.isDateTime(start) || !DateTime.isDateTime(end)) {
-      throw new Error('start and end of interval must be valid DateTimes !')
-    }
-
-    start = start.setZone(TIMEZONE).startOf('day')
-    end = start.setZone(TIMEZONE).endOf('day')
+    start = toDateTime(start).setZone(TIMEZONE).startOf('day')
+    end = toDateTime(end).setZone(TIMEZONE).endOf('day')
 
     const interval = Interval.fromDateTimes(start, end)
 
@@ -415,7 +398,7 @@ export class EventsDatasource extends SimpleEventEmitter {
       if (eventsByDate.has(date)) {
         day.events = eventsByDate.get(date)
       }
-      Object.assign(day, getDayParams(day.events))
+      Object.assign(day, getDayParams(day))
 
       const remu = remuForDay(day, isPNT)
       if (remu) {
@@ -705,7 +688,7 @@ export class EventsDatasource extends SimpleEventEmitter {
   }
 
   updateDay(userId, day) {
-    Object.assign(day, getDayParams(day.events))
+    Object.assign(day, getDayParams(day))
     this.emit('days.set', { userId, days: [day] })
   }
 
