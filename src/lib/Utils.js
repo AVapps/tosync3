@@ -397,7 +397,7 @@ export function slug(event, username, index) {
       case 'vol':
         return [prefix, event.num, event.from, event.to, suffix].join('-')
       case 'mep':
-        return [prefix, (event.num || event.summary).replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
+        return [prefix, (event.num || event.summary || '').replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
       default:
         return [prefix, event.summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
     }

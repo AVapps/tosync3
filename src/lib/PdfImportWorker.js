@@ -122,7 +122,8 @@ async function parsePageContent(opList, textContent) {
       }
     })
 
-    row.lines = _.chain(_.first(row.cells).items)
+    // Détermine les lignes de tableau à partir des ordonnées « y » des heures de début
+    row.lines = _.chain((row.cells[1] || row.cells[0]).items) // row.cells[1] correspond à la colonne des heures de début
       .groupBy('y')
       .mapValues((items) => {
         const maxH = _.maxBy(items, 'h')

@@ -18,7 +18,9 @@ export async function importPdfFile(data) {
   }
   doc.destroy()
   const pdf = groupPdfPageTables(pageTables)
+  console.log('PDF', pdf)
   const updateLog = await importPdfPlanning(pdf)
+  console.log('importPdfFile.updateLog', updateLog)
   const datasourceClient = useEventsDatasource()
   return datasourceClient.bulkUpdate(updateLog)
 }

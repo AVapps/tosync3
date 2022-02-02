@@ -14,6 +14,43 @@ const CREW_TITLE_REG = /\w+:/
 const CREW_LIST_REG = /^(\s+©?[A-Z]{3})+$/
 const CREW_LINE_REG = /^((\s©?\w+)+)\s+\(([A-Z]{3})\)$/
 
+const hasNewline = (str) => str?.includes('\n')
+
+const BEGIN_DUTY_REG = /Begin Duty/
+function isBeginDuty({ header }) {
+  return BEGIN_DUTY_REG.test(header)
+}
+
+const END_DUTY_REG = /End Duty/
+function isEndDuty({ header }) {
+  return END_DUTY_REG.test(header)
+}
+
+const DUTY_FLIGHT_REG = /Duty Flight/
+function isDutyFlight({ header }) {
+  return DUTY_FLIGHT_REG.test(header)
+}
+
+const DHD_REG = /DHD|Train|Transfert|Shuttle/
+function isMEP({ header }) {
+  return DHD_REG.test(header)
+}
+
+const END_REST_REG = /End Rest/
+function isEndRest({ header }) {
+  return END_REST_REG.test(header)
+}
+
+const GROUND_ACT_REG = /Ground Act./
+function isGroundAct({ header }) {
+  return GROUND_ACT_REG.test(header)
+}
+
+const HOTEL_REG = /HOTAC/
+function isHotel({ header }) {
+  return HOTEL_REG.test(header)
+}
+
 export class PdfPlanningParser {
   constructor(options) {
     this.options = _.defaults(options, {
@@ -47,6 +84,7 @@ export class PdfPlanningParser {
     this._ground = null
 
     const rows = this.mapAndCorrectRows(lines)
+    console.log('- corrected rows', rows)
 
     let i = 0
     while (i < rows.length) {
@@ -82,45 +120,22 @@ export class PdfPlanningParser {
           }
         }
 
-        /*
-          F = vol
-          B = début SV
-          D = fin SV
-          G = sol
-          E = end rest
-          O,P = MEP
-          T = train
-          S = navette / taxi
-          H = découcher
-        */
-
-        switch (evt.header) {
-          case 'Begin Duty': // B
-            this.beginDuty(evt)
-            break
-          case 'Duty Flight': // F
-            this.addFlight(evt)
-            break
-          case 'DHD Flight': // O | P
-          case 'Train': // T
-          case 'Transfert': // S
-            this.addMEP(evt)
-            break
-          case 'End Duty': // D
-            this.endDuty(evt)
-            break
-          case 'End Rest': // E
-            this.endRest(evt)
-            break
-          case 'Ground Act.': // G
-            // if (!['ENGS', 'ENGST'].includes(event.activity))
-            this.addGround(evt)
-            break
-          case 'HOTAC': // H
-            this.addHotel(evt)
-            break
-          default:
-            console.log(`Type Inconnu : ${evt.header}`)
+        if (isBeginDuty(evt)) {
+          this.beginDuty(evt)
+        } else if (isEndDuty(evt)) {
+          this.endDuty(evt)
+        } else if (isDutyFlight(evt)) {
+          this.addFlight(evt)
+        } else if (isMEP(evt)) {
+          this.addMEP(evt)
+        } else if (isGroundAct(evt)) {
+          this.addGround(evt)
+        } else if (isHotel(evt)) {
+          this.addHotel(evt)
+        } else if (isEndRest(evt)) {
+          this.endRest(evt)
+        } else {
+          console.log(`Type Inconnu : ${evt.header}`)
         }
       }
       i++
@@ -158,78 +173,105 @@ export class PdfPlanningParser {
       }
     })
 
+    // Correct rows
+    let headerOffset = false
     let activityOffset = false
     let summaryOffset = false
     let followsDate = false
-    let i = 0
+    let i = 1 // Commencer à la deuxième car la première est toujours bien alignée
     while (i < rows.length) {
       const row = rows[i]
 
       if (row.type === 'date') {
+        if (row.activity || row.summary || row.header) {
+          console.log(row)
+        }
         followsDate = true
         i++
         continue
       }
 
       if (followsDate) { // La première ligne suivant une ligne de date est bien alignée
-        activityOffset = 0
+        headerOffset = false
+        activityOffset = false
         summaryOffset = false
         followsDate = false
         i++
         continue
       }
 
-      if (row.header) { // Seules les lignes ayant un entête sont traitées
-        if (!activityOffset) {
-          activityOffset = this.hasActivityOffset(row, i, rows)
+      if (row.start?.length) { // Seules les lignes ayant une heure de début sont traitées
+        headerOffset = headerOffset || this.hasHeaderOffset(row, i, rows)
+        if (headerOffset) {
+          console.log('! DECALAGE de ligne d\'entète', row, row.header)
+          let prevHeader
+          if (hasNewline(row.header)) {
+            console.log('HEADER has newline', row.header)
+            const [pre, ...rest] = row.header.split('\n')
+            prevHeader = pre
+            row.header = rest.join('\n')
+            console.log('NEW header', row.header)
+          } else {
+            console.log('PLAIN header', row.header)
+            prevHeader = row.header
+            row.header = ''
+          }
+          // recopier l'entète dans la ligne précédente
+          rows[i - 1].header += prevHeader
+          console.log('PREV header', rows[i - 1].header)
         }
 
+        activityOffset = activityOffset || this.hasActivityOffset(row, i, rows)
         if (activityOffset) {
-          // console.log('! DECALAGE de ligne de code/numéro', row, row.activity)
+          console.log('! DECALAGE de ligne de code/numéro', row, row.activity)
           let prevActivity
-          if (row.activity.indexOf('\n') !== -1) {
-            // console.log('ACTIVITY has newline', row.activity)
-            const split = row.activity.split('\n')
-            prevActivity = split.shift()
-            row.activity = split.join('\n')
-            // console.log('NEW activity', row.activity)
+          if (hasNewline(row.activity)) {
+            console.log('ACTIVITY has newline', row.activity)
+            const [pre, ...rest] = row.activity.split('\n')
+            prevActivity = pre
+            row.activity = rest.join('\n')
+            console.log('NEW activity', row.activity)
           } else {
-            // console.log('PLAIN activity', row.activity)
+            console.log('PLAIN activity', row.activity)
             prevActivity = row.activity
             row.activity = ''
           }
-          if (i > 0) { // recopier le code activité dans la ligne précédente
-            rows[i - 1].activity += prevActivity
-            // console.log('PREV activity', rows[i - 1].activity)
-          }
+          // recopier le code activité dans la ligne précédente
+          rows[i - 1].activity += prevActivity
+          console.log('PREV activity', rows[i - 1].activity)
         }
 
-        if (!summaryOffset) {
-          summaryOffset = this.hasSummaryOffset(row, i, rows)
-        }
-
+        summaryOffset = summaryOffset || this.hasSummaryOffset(row, i, rows)
         if (summaryOffset) {
-          // console.log('! DECALAGE de ligne de description', row, row.summary)
+          console.log('! DECALAGE de ligne de description', row, row.summary)
           let prevSummary
-          if (row.summary.indexOf('\n') !== -1) {
-            // console.log('ROW has newline', row.summary)
-            const split = row.summary.split('\n')
-            prevSummary = split.shift()
-            row.summary = split.join('\n')
-            // console.log('NEW summary', row.summary)
+          if (hasNewline(row.summary)) {
+            console.log('SUMMARY has newline', row.summary)
+            const [pre, ...rest] = row.summary.split('\n')
+            prevSummary = pre
+            row.summary = rest.join('\n')
+            console.log('NEW summary', row.summary)
           } else {
-            // console.log('PLAIN row', row.summary)
+            console.log('PLAIN summary', row.summary)
             prevSummary = row.summary
             row.summary = ''
           }
-          if (i > 0) { // recopier le titre dans la ligne précédente
-            const prev = rows[i - 1]
-            if (prev.summary.length) {
-              prev.summary += ' ' + prevSummary
-            } else {
-              prev.summary = prevSummary
-            }
-            // console.log('PREV SUMMARY', prev.summary)
+          // recopier le titre dans la ligne précédente
+          const prev = rows[i - 1]
+          if (prev.summary.length) {
+            prev.summary += ' ' + prevSummary
+          } else {
+            prev.summary = prevSummary
+          }
+          console.log('PREV SUMMARY', prev.summary)
+        }
+
+        // Correction supplémentaire en cas de double décalage
+        const isLastOfRow = i === rows.length - 1 || rows[i + 1].type === 'date'
+        if (isEndDuty(row) || isEndRest(row) || isBeginDuty(row)) {
+          if (isLastOfRow && !_.isEmpty(row.activity)) {
+            rows[i - 1].activity += row.activity
+            row.activity = ''
           }
         }
       }
@@ -238,82 +280,64 @@ export class PdfPlanningParser {
     return rows
   }
 
+  hasHeaderOffset(row, i, rows) {
+    const prev = rows[i - 1]
+    if (hasNewline(prev.header)) return true
+    return row.header === 'Flt' && prev.header.includes('DHD Compagny')
+  }
+
   hasActivityOffset(row, i, rows) {
-    if (i > 0) {
-      const prev = rows[i - 1]
-      if (prev.activity.indexOf('\n') !== -1) {
-        // console.log('hasActivityOffset: saut de ligne sur ligne précédente', prev.activity, prev)
-        return true
-      }
+    const prev = rows[i - 1]
+    if (hasNewline(prev.activity)) {
+      // console.log('hasActivityOffset: saut de ligne sur ligne précédente', prev.activity, prev)
+      return true
     }
 
-    switch (row.header) {
-      case 'Duty Flight': // F
-      case 'DHD Flight': // O | P
-      case 'Train': // T
-      case 'Transfert': // S
-      case 'Ground Act.': // G
-        if (_.isEmpty(row.activity)) {
-          // console.log('hasActivityOffset: code requis mais absent', row.activity, row)
-          return true
-        }
-        break
-      case 'Begin Duty': // B
-      case 'End Duty': // D
-      case 'End Rest': // E
-      case 'HOTAC': // H
-        if (!_.isEmpty(row.activity)) {
-          // console.log('hasActivityOffset: code devrait être vide', row.activity, row)
-          return true
-        }
-        break
+    // Code activité a 1 seul chr + code activité précédent occupe toute la largeur de colonne (9 chr)
+    if (row.activity.length === 1 && prev.activity.length >= 9) {
+      return true
     }
-    return false
+
+    if (isDutyFlight(row) || isMEP(row) || isGroundAct(row)) {
+      return _.isEmpty(row.activity)
+    } else {
+      return !_.isEmpty(row.activity)
+    }
   }
 
   hasSummaryOffset(row, i, rows) {
-    if (i > 0) {
-      const prev = rows[i - 1]
-      if (_.includes(['Ground Act.', 'HOTAC'], prev.header) && prev.summary.indexOf('\n') !== -1) {
-        return true
-      }
+    const prev = rows[i - 1]
+    if (_.includes(['Ground Act.', 'HOTAC'], prev.header) && hasNewline(prev.summary)) {
+      return true
     }
 
-    const hasNewline = row.summary.indexOf('\n') !== -1
     let summary, nextSummary
-    if (hasNewline) {
-      const split = row.summary.split('\n')
-      summary = split.shift()
-      nextSummary = split.join('\n')
+    if (hasNewline(row.summary)) {
+      const [pre, ...rest] = row.summary.split('\n')
+      summary = pre
+      nextSummary = rest.join('\n')
     } else {
       summary = row.summary
       nextSummary = i < (rows.length - 1) ? rows[i + 1].summary : null
     }
 
-    switch (row.header) {
-      case 'Begin Duty': // B
-        // Summary peut être "Standard Duty" ou "Extended Duty"
-        if (!/duty$/i.test(summary) && /duty/i.test(nextSummary)) return true
-        break
-      case 'Duty Flight': // F
-        if (!FLIGHT_REG.test(summary) && FLIGHT_REG.test(nextSummary)) return true
-        break
-      case 'DHD Flight': // O | P
-      case 'Train': // T
-      case 'Transfert': // S
-        if (!MEP_REG.test(summary) && MEP_REG.test(nextSummary)) return true
-        break
-      case 'End Duty': // D
-      case 'End Rest': // E
-        if (summary.length && i > 0 && !nextSummary) return true
-        break
-      case 'Ground Act.': // G
-      case 'HOTAC': // H
-        break
+    if (isBeginDuty(row) && !/duty$/i.test(summary) && /duty/i.test(nextSummary)) {
+      return true
+    }
+    if (isDutyFlight(row) && !FLIGHT_REG.test(summary) && FLIGHT_REG.test(nextSummary)) {
+      return true
+    }
+    if (isMEP(row) && !MEP_REG.test(summary) && MEP_REG.test(nextSummary)) {
+      return true
+    }
+    if ((isEndDuty(row) || isEndRest(row)) && summary.length && i > 0 && !nextSummary) {
+      return true
     }
 
     // Cas jour OFF compagnie OFFG
-    if (row.activity === 'OFFG' && /^compag/.test(summary)) return true
+    if (prev.activity === 'OFFG' && /^compag/.test(summary)) {
+      return true
+    }
 
     return false
   }
@@ -395,8 +419,8 @@ export class PdfPlanningParser {
       tag: 'mep',
       fonction: event.fonction,
       summary: `MEP ${event.activity} (${m[1]}-${m[2]}) ${event.typeAvion}`,
-      num: event.activity,
-      title: event.activity,
+      num: event.activity || event.header,
+      title: event.activity || event.header,
       from: m[1],
       to: m[2],
       debut: this._date.set(this._parseTime(event.start)).setZone('Europe/Paris'),
@@ -492,7 +516,7 @@ export class PdfPlanningParser {
   }
 
   endRest(event) {
-    console.log('[addRest]', event.summary)
+    console.log('[endRest]', event.summary)
     // Réservé
   }
 
@@ -856,7 +880,6 @@ export class PdfPlanningParser {
       } else if (CREW_LINE_REG.test(line)) {
         // console.log(`Membre d'équipage : ${line}`)
         const m = line.match(CREW_LINE_REG)
-        console.log(m)
         if (key && m && m.length) {
           const crew = {
             name: m[1].trim().replace('©', ''),
