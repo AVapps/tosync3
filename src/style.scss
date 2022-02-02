@@ -1,3 +1,31 @@
+[data-theme=dark] {
+  ion-datetime {
+    --background: var(--ion-background-color);
+    --background-rgb: var(--ion-background-color-rgb);
+  }
+
+  ion-popover {
+    --backdrop-opacity: 0.3;
+  }
+}
+
+ion-modal.month-picker-modal {
+  --background: transparent;
+  --height: 250px;
+  --min-width: 220px;
+  --max-width: 250px;
+
+  &::part(content) {
+    border-radius: 10px;
+  }
+}
+
+ion-popover.month-picker-popover {
+  --min-width: 220px;
+  --max-width: 250px;
+}
+
+
 /* dm-mono-regular - latin */
 @font-face {
   font-family: 'DM Mono';

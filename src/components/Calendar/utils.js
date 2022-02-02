@@ -130,27 +130,27 @@ export async function getEvents({ userId, start, end }) {
   return Events.getInterval(userId, start, end)
 }
 
-export function getDayParams(events) {
-  // console.log('getDayParams', events)
-  const hasRotation = _.some(events, evt => {
-    return _.includes(['rotation', 'sv'], evt.tag)
-  })
-  if (hasRotation) {
-    return {
-      tag: 'rotation',
-      allday: false,
-      label: 'Rotation'
-    }
-  }
+// export function getDayParams(events) {
+//   // console.log('getDayParams', events)
+//   const hasRotation = _.some(events, evt => {
+//     return _.includes(['rotation', 'sv'], evt.tag)
+//   })
+//   if (hasRotation) {
+//     return {
+//       tag: 'rotation',
+//       allday: false,
+//       label: 'Rotation'
+//     }
+//   }
 
-  if (!events.length || !_.has(_.first(events), 'tag')) {
-    return { tag: 'blanc', allday: true, label: 'Blanc' }
-  }
+//   if (!events.length || !_.has(_.first(events), 'tag')) {
+//     return { tag: 'blanc', allday: true, label: 'Blanc' }
+//   }
 
-  const specialCategoryEvent = _.find(events, evt => _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag))
-  const tag = specialCategoryEvent ? specialCategoryEvent.tag : _.first(events).tag
-  return { tag, allday: isAlldayTag(tag), label: tagLabel(tag) }
-}
+//   const specialCategoryEvent = _.find(events, evt => _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag))
+//   const tag = specialCategoryEvent ? specialCategoryEvent.tag : _.first(events).tag
+//   return { tag, allday: isAlldayTag(tag), label: tagLabel(tag) }
+// }
 
 export function isAlldayTag(tag) {
   return _.includes(ALLDAY_TAGS, tag)
@@ -165,11 +165,11 @@ export function eventClass(evt, date) {
   }
 
   if (evt.start < dt) {
-    classes.push('span-left')
+    classes.push('sp-l')
   }
 
   if (evt.end > dt.endOf('day')) {
-    classes.push('span-right')
+    classes.push('sp-r')
   }
 
   return classes

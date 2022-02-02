@@ -6,16 +6,17 @@
       class="sv"
       :class="'events-count-' + sv?.events?.length"
     >
-      <span class="sv-start">{{ tsToTime(sv.start) }}</span>
+      <span class="d-start">{{ tsToTime(sv.start) }}</span>
       <div class="sv-event" v-for="etape in sv.events" :key="etape.slug">
-        <span class="bullet">&#8226;</span>
-        <span class="v-start">{{ tsToTime(etape.start) }}</span>
-        <span class="v-num">{{ etape.num }}</span>
-        <span class="v-from">{{ etape.from }}</span>
-        <span class="v-to">{{ etape.to }}</span>
-        <span class="v-end">{{ tsToTime(etape.end) }}</span>
+        <span class="v-title">
+          <span class="v-from">{{ etape.from }}</span>
+          <span class="v-divider">-</span>
+          <span class="v-to">{{ etape.to }}</span>
+        </span>
+        <span class="v-start">{{ tsToTime(etape.std ?? etape.start) }}</span>
+        <span class="v-end">{{ tsToTime(etape.sta ?? etape.end) }}</span>
       </div>
-      <span class="sv-end">{{ tsToTime(sv.end) }}</span>
+      <span class="d-end">{{ tsToTime(sv.end) }}</span>
     </div>
   </div>
 </template>
@@ -31,7 +32,7 @@ export default defineComponent({
     return {
       filteredSVs: computed(() => {
         const endOfDay = props.date.endOf('day')
-        return props.event.sv.filter(sv => {
+        return props.event.sv.filter((sv) => {
           return sv.start < endOfDay && sv.end > props.date
         })
       }),
@@ -43,69 +44,56 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .av-calendar-event.rotation {
+  font-family: 'DM Mono', 'SF Mono', monospace;
   display: grid;
   grid-template-columns: 100%;
-  grid-row-gap: 0.25rem;
-  background-color: var(--tosync-color-rotation);
+  row-gap: var(--cal-cell-padding);
 
   .sv {
     display: grid;
     grid-template-columns: 100%;
-    grid-row-gap: 0.25rem;
-    padding: 0.2rem;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 0.25rem;
+    row-gap: var(--cal-event-row-gap);
+    align-items: baseline;
+    background-color: var(--tosync-color-rotation-duty-bg);
 
-    .sv-start {
-      opacity: 0.8;
-      font-size: 0.5625rem;
+    .d-start {
+      opacity: 0.6;
     }
 
-    .sv-end {
+    .d-end {
       display: none;
-      opacity: 0.8;
-      justify-self: end;
-      font-size: 0.5625rem;
     }
 
     .sv-event {
       display: grid;
-      grid-template-columns: 1ch auto 1fr 1fr auto;
-      gap: 0 0.2rem;
+      grid-template-columns: 1fr auto auto;
+      align-items: baseline;
+      gap: var(--cal-event-row-gap) 0.25rem;
 
       > span {
-        line-height: 0.75rem;
-        font-size: 0.625rem;
+        line-height: 1;
       }
 
-      > .bullet {
-        font-weight: bold;
-        font-size: 1rem;
-        margin-left: -1px;
+      .v-title {
+        display: inline-block;
+        font-family: var(--cal-font-mono);
+        color: var(--tosync-color-rotation);
+
+        > .v-from {
+          font-weight: bold;
+        }
+
+        > .v-to {
+          font-weight: bold;
+        }
       }
 
       > .v-start {
         justify-self: start;
-        font-size: 0.5625rem;
-      }
-
-      > .v-num {
-        display: none;
-      }
-
-      > .v-from {
-        font-weight: bold;
-        justify-self: end;
-      }
-
-      > .v-to {
-        font-weight: bold;
-        justify-self: start;
       }
 
       > .v-end {
-        justify-self: end;
-        font-size: 0.5625rem;
+        opacity: 0.6;
       }
     }
   }
@@ -113,65 +101,44 @@ export default defineComponent({
   @media screen and (max-width: 991px) {
     .sv {
       .sv-event {
-        grid-template-columns: 1ch auto auto 1fr;
+        grid-template: 1em 1em / auto 1fr;
 
-        > .v-end {
-          display: none;
-        }
-      }
-    }
-  }
-
-  @media screen and (max-width: 799px) {
-    .sv {
-      .sv-event {
-        grid-template: 0.75rem 0.75rem / 1ch auto 1fr;
-
-        > .bullet {
-          grid-area: 1 / 1 / 3 / 2;
-          align-self: center;
+        > .v-title {
+          grid-area: 1 / 1 / 2 / 3;
+          align-self: end;
         }
 
         > .v-start {
-          grid-area: 1 / 2 / 2 / 4;
+          grid-area: 2 / 1 / 3 / 2;
         }
 
-        > .v-from {
+        > .v-end {
+          display: inline-block;
           grid-area: 2 / 2 / 3 / 3;
-          justify-self: start;
-        }
-
-        > .v-to {
-          grid-area: 2 / 3 / 3 / 4;
-        }
-      }
-
-      &:not(.events-count-1) {
-        .sv-event:last-of-type {
-          > .v-start {
-            display: none;
-          }
-
-          > .v-from {
-            grid-area: 1 / 2 / 2 / 3;
-            justify-self: start;
-          }
-
-          > .v-to {
-            grid-area: 1 / 3 / 2 / 4;
-          }
-
-          > .v-end {
-            display: inline-block;
-            grid-area: 2 / 2 / 3 / 4;
-            justify-self: start;
-          }
         }
       }
     }
   }
 
-  @media screen and (max-width: 599px) {
+  @media screen and (max-width: 549px) {
+    .sv {
+      .sv-event {
+        grid-template: none;
+        grid-template-columns: 100%;
+        grid-auto-rows: 1em;
+
+        .v-start,
+        .v-end {
+          display: none;
+        }
+
+        &:last-of-type .v-end {
+          display: inline-block;
+          grid-area: 2 / 1 / 3 / 2;
+          justify-self: end;
+        }
+      }
+    }
   }
 }
 </style>

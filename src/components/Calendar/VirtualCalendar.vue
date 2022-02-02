@@ -2,9 +2,24 @@
   <div class="av-calendar" :class="[displayMode]">
     <div class="av-calendar-header">
       <div class="datepicker">
-        <h2 class="month-label">
-          <input type="month" :value="isoMonth" @change="onMonthSelect" />
-        </h2>
+        <ion-button color="primary" fill="clear" id="current-month">
+          {{ activeMonthLabel }}
+        </ion-button>
+        <ion-popover class="month-picker-popover" trigger="current-month">
+          <ion-datetime
+            presentation="month-year"
+            :show-default-buttons="true"
+            cancel-text="Annuler"
+            clear-text="Effacer"
+            done-text="OK"
+            first-day-of-week="1"
+            :size="'cover'"
+            :min="'2021-01-01'"
+            :max="'2022-12-01'"
+            :value="isoMonth"
+            @ionChange="onMonthSelect"
+          />
+        </ion-popover>
       </div>
       <div class="actions">
         <ion-button
@@ -59,7 +74,7 @@
 
 <script>
 import { reactive, ref, onMounted, nextTick, provide } from 'vue'
-import { IonButton, IonIcon } from '@ionic/vue'
+import { IonButton, IonIcon, IonPopover, IonDatetime } from '@ionic/vue'
 import { chevronBack, chevronForward, ellipseOutline } from 'ionicons/icons'
 
 import SwiperCore, { Virtual } from 'swiper'
@@ -81,6 +96,8 @@ export default {
     CalendarMonth,
     IonIcon,
     IonButton,
+    IonPopover,
+    IonDatetime,
     SwiperSlide,
     Swiper
   },
@@ -176,7 +193,8 @@ export default {
     }
 
     const onMonthSelect = (e) => {
-      const month = DateTime.fromISO(e.target.value)
+      const sub = e.target.value?.substring(0, 7)
+      const month = DateTime.fromISO(sub)
       goToMonth(month)
     }
 
@@ -295,31 +313,17 @@ export default {
     align-items: center;
     padding-bottom: 1rem;
 
-    .datepicker {
-      .month-label {
-        color: var(--ion-color-success);
-        font-weight: bold;
-        text-transform: capitalize;
-        margin: 0;
-        transition: opacity 0.15s ease-in, transform 0.15s ease-in;
+    #current-month {
+      color: var(--ion-color-success);
+      font-weight: bold;
+      text-transform: capitalize;
+      transition: opacity 0.15s ease-in;
+      --padding-start: 0;
 
-        &.fade {
-          opacity: 0;
-          transform: translateX(-5px);
-          transition: opacity 0.15s ease-out, transform 0.15s ease-out;
-        }
-      }
-
-      input[type='month'] {
-        text-transform: capitalize;
-        padding: 0;
-        outline: none;
-        border: none;
-        background-image: none;
-        background-color: transparent;
-        -webkit-box-shadow: none;
-        -moz-box-shadow: none;
-        box-shadow: none;
+      &.fade {
+        opacity: 0;
+        transform: translateX(-5px);
+        transition: opacity 0.15s ease-out;
       }
     }
 

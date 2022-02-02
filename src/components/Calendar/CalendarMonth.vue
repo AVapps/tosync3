@@ -61,23 +61,40 @@ export default {
 
 <style lang="scss">
 .av-calendar-month {
+  --cal-title-font-size: 85%;
+  --cal-duty-time-font-size: 75%;
+  --cal-time-font-size: 75%;
+  --cal-font-mono: 'DM Mono', 'SF Mono', 'Roboto Mono', monospace;
+  --cal-font-sans: 'DM Sans', 'SF Pro', Roboto, sans-serif;
+  --cal-cell-padding: 0.25rem;
+  --cal-event-row-gap: 2px;
+  --cal-duty-padding: 2px;
+
   display: grid;
   grid-template: auto 1fr / 100%;
   height: 100%;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--cal-font-sans);
 
   .av-calendar-weekdays {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.25rem;
     font-weight: bold;
+    color: var(--cal-color-weekday);
 
     > * {
-      padding: 0.25rem;
+      padding: var(--cal-cell-padding);
     }
 
     .av-calendar-weekday-long {
       display: none;
+    }
+
+    @media screen and (max-width: 799px) {
+      font-size: 2vw; /** 16px */
+    }
+
+    @media screen and (max-width: 549px) {
+      font-size: 0.6875rem; /** 11px */
     }
   }
 
@@ -85,7 +102,6 @@ export default {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     grid-template-rows: repeat(7, minmax(0, 1fr));
-    gap: 0.25rem;
   }
 }
 </style>

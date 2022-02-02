@@ -3,6 +3,13 @@
     <div class="av-calendar-weekday">{{ day.weekday }}</div>
     <div class="av-calendar-date">{{ day.day }}</div>
     <div class="av-calendar-content">
+      <div class="av-calendar-day-hints">
+        <span
+          v-for="(hint, index) in state.hints"
+          :key="index"
+          :class="hint"
+        ></span>
+      </div>
       <div
         class="av-calendar-event"
         v-for="evt in state.events"
@@ -49,6 +56,7 @@ export default defineComponent({
         dayState || {
           date: props.day.iso,
           tags: [],
+          hints: [],
           allday: false,
           label: '',
           events: []
@@ -90,15 +98,32 @@ export default defineComponent({
 .av-calendar-day {
   display: grid;
   grid-template-columns: 100%;
-  grid-row-gap: 0.25rem;
+  grid-row-gap: 0rem;
   align-content: start;
-  font-size: 0.8rem;
-  border-radius: var(--border-radius);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.25rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--cal-color-divider);
+
+  &.today {
+    .av-calendar-date {
+      font-weight: bold;
+      color: var(--cal-color-today);
+    }
+  }
+
+  &:not(.sp-l) {
+    .av-calendar-day-hints {
+      padding-left: 0.25rem;
+    }
+  }
+
+  &:not(.sp-r) {
+    .av-calendar-day-hints {
+      padding-right: 0.25rem;
+    }
+  }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   &.hidden {
@@ -111,49 +136,156 @@ export default defineComponent({
 
   .av-calendar-weekday {
     display: none;
+    color: var(--cal-color-weekday);
   }
 
   .av-calendar-date {
     font-size: 1rem;
+    padding: 0.25rem 0.25rem 0;
+    color: var(--cal-color-date);
   }
 
-  &.calendar-dow-1 {
-    .av-calendar-content .av-calendar-event.span-left {
-      margin-left: -0.25rem;
-      padding-left: 0.5rem;
-    }
+  .d-start,
+  .d-end {
+    font-size: var(--cal-duty-time-font-size);
+    font-family: var(--cal-font-mono);
   }
 
-  &.calendar-dow-7 {
-    .av-calendar-content .av-calendar-event.span-right {
-      margin-right: -0.25rem;
-      padding-right: 0.5rem;
-    }
+  .v-start,
+  .v-end {
+    font-size: var(--cal-time-font-size);
+    font-family: var(--cal-font-mono);
+  }
+
+  .v-title {
+    font-size: var(--cal-title-font-size);
   }
 
   .av-calendar-content {
-    display: grid;
-    grid-auto-columns: 1fr;
-    gap: 2px;
+    display: flex;
+    flex: 1 1 100%;
+    flex-flow: column nowrap;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    touch-action: pan-y;
 
-    .av-calendar-event {
-      padding: 0.25rem;
-      border-radius: 0.5rem;
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
-      &.span-right {
-        margin-right: -0.375rem;
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-        padding-right: 0.625rem;
-      }
+    .av-calendar-day-hints {
+      display: flex;
+      justify-content: stretch;
+      height: 4px;
+      column-gap: calc(2 * var(--cal-cell-padding));
 
-      &.span-left {
-        margin-left: -0.375rem;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-        padding-left: 0.625rem;
+      > span {
+        display: inline-block;
+        flex: 1 0;
+
+        &.rotation {
+          background-color: var(--tosync-color-rotation);
+        }
+        &.vol {
+          background-color: var(--tosync-color-vol);
+        }
+        &.sv {
+          background-color: var(--tosync-color-sv);
+        }
+        &.mep {
+          background-color: var(--tosync-color-mep);
+        }
+        &.conges {
+          background-color: var(--tosync-color-conges);
+        }
+        &.repos {
+          background-color: var(--tosync-color-repos);
+        }
+        &.stage {
+          background-color: var(--tosync-color-stage);
+        }
+        &.greve {
+          background-color: var(--tosync-color-greve);
+        }
+        &.maladie {
+          background-color: var(--tosync-color-maladie);
+        }
+        &.asbsence {
+          background-color: var(--tosync-color-absence);
+        }
+        &.sanssolde {
+          background-color: var(--tosync-color-sanssolde);
+        }
+        &.jisap {
+          background-color: var(--tosync-color-jisap);
+        }
+        &.npl {
+          background-color: var(--tosync-color-npl);
+        }
+        &.sol {
+          background-color: var(--tosync-color-sol);
+        }
+        &.simu {
+          background-color: var(--tosync-color-simu);
+        }
+        &.syndicat {
+          background-color: var(--tosync-color-syndicat);
+        }
+        &.delegation {
+          background-color: var(--tosync-color-delegation);
+        }
+        &.reserve {
+          background-color: var(--tosync-color-reserve);
+        }
+        &.instructionSimu {
+          background-color: var(--tosync-color-instructionSimu);
+        }
+        &.instructionSol {
+          background-color: var(--tosync-color-instructionSol);
+        }
+        &.autre {
+          background-color: var(--tosync-color-autre);
+        }
+        &.blanc {
+          background-color: var(--tosync-color-blanc);
+        }
+        &.default {
+          background-color: var(--tosync-color-default);
+        }
       }
     }
+
+    .av-calendar-event {
+      margin-top: var(--cal-cell-padding);
+      padding: 0 var(--cal-cell-padding);
+
+      &.duty {
+        padding: var(--cal-duty-padding);
+        margin: var(--cal-cell-padding) var(--cal-cell-padding) 0;
+      }
+    }
+  }
+
+  @media screen and (max-width: 799px) {
+    .av-calendar-date {
+      font-size: 2vw; /** 16px */
+    }
+
+    .av-calendar-content {
+      font-size: 1.75vw; /** 14px */
+    }
+  }
+
+  @media screen and (max-width: 549px) {
+    .av-calendar-date {
+      font-size: 0.6875rem; /** 11px */
+    }
+    .av-calendar-content {
+      font-size: 0.625rem; /** 10px */
+    }
+  }
+
+  @media screen and (max-width: 499px) {
   }
 }
 </style>

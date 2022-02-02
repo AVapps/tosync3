@@ -64,9 +64,7 @@ http://ionicframework.com/docs/theming/ */
   --ion-color-light-contrast: #000000;
   --ion-color-light-contrast-rgb: 0,0,0;
   --ion-color-light-shade: #d7d7d7;
-  --ion-color-light-tint: #f5f5f5;
-
-  --border-radius: 0.5rem;
+  --ion-color-light-tint: #f5f5f5;  
 
   --ion-color-yellow: #ffc107;
   --ion-color-yellow-rgb: 255,193,7;
@@ -88,71 +86,6 @@ http://ionicframework.com/docs/theming/ */
   --ion-color-dark-red-contrast-rgb: 255,255,255;
   --ion-color-dark-red-shade: #b40030;
   --ion-color-dark-red-tint: #d11a4a;
-
-  --tosync-color-rotation: var(--ion-color-secondary);
-  --tosync-color-vol: var(--ion-color-secondary);
-  --tosync-color-sv: var(--ion-color-secondary);
-  --tosync-color-mep: var(--ion-color-secondary);
-
-  --tosync-color-conges: var(--ion-color-dark-green);
-
-  --tosync-color-repos: var(--ion-color-success);
-
-  --tosync-color-stage: var(--ion-color-dark-red);
-
-  --tosync-color-greve: var(--ion-color-yellow);
-  --tosync-color-maladie: var(--ion-color-yellow);
-  --tosync-color-asbsence: var(--ion-color-yellow);
-  --tosync-color-sanssolde: var(--ion-color-yellow);
-
-  --tosync-color-jisap: var(--ion-color-warning);
-  --tosync-color-npl: var(--ion-color-warning);
-
-  --tosync-color-sol: var(--ion-color-danger);
-  --tosync-color-simu: var(--ion-color-danger);
-  --tosync-color-syndicat: var(--ion-color-danger);
-  --tosync-color-delegation: var(--ion-color-danger);
-  --tosync-color-reserve: var(--ion-color-danger);
-  --tosync-color-instructionSimu: var(--ion-color-danger);
-  --tosync-color-instructionSol: var(--ion-color-danger);
-
-  --tosync-color-autre: var(--ion-color-medium);
-  --tosync-color-blanc: #333333;
-  --tosync-color-default: var(--ion-color-medium);
-
-  --tosync-duty-alpha: 0.3;
-
-  /* Duty BG */
-  --tosync-color-rotation-duty-bg: rgba(var(--ion-color-secondary-rgb),var(--tosync-duty-alpha));
-  --tosync-color-vol-duty-bg: rgba(var(--ion-color-secondary-rgb),var(--tosync-duty-alpha));
-  --tosync-color-sv-duty-bg: rgba(var(--ion-color-secondary-rgb),var(--tosync-duty-alpha));
-  --tosync-color-mep-duty-bg: rgba(var(--ion-color-secondary-rgb),var(--tosync-duty-alpha));
-
-  --tosync-color-conges-duty-bg: rgba(var(--ion-color-dark-green-rgb),var(--tosync-duty-alpha));
-
-  --tosync-color-repos-duty-bg: rgba(var(--ion-color-success-rgb),var(--tosync-duty-alpha));
-
-  --tosync-color-stage-duty-bg: rgba(var(--ion-color-dark-red-rgb),var(--tosync-duty-alpha));
-
-  --tosync-color-greve-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
-  --tosync-color-maladie-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
-  --tosync-color-asbsence-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
-  --tosync-color-sanssolde-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
-
-  --tosync-color-jisap-duty-bg: rgba(var(--ion-color-warning-rgb),var(--tosync-duty-alpha));
-  --tosync-color-npl-duty-bg: rgba(var(--ion-color-warning-rgb),var(--tosync-duty-alpha));
-
-  --tosync-color-sol-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
-  --tosync-color-simu-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
-  --tosync-color-syndicat-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
-  --tosync-color-reserve-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
-  --tosync-color-instructionSimu-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
-  --tosync-color-instructionSol-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
-
-  --tosync-color-autre-duty-bg: rgba(var(--ion-color-medium-rgb),var(--tosync-duty-alpha));
-  --tosync-color-blanc-duty-bg: transparent;
-  --tosync-color-default-duty-bg: rgba(var(--ion-color-medium-rgb),var(--tosync-duty-alpha));
-
 }
 
   /*
@@ -160,7 +93,7 @@ http://ionicframework.com/docs/theming/ */
    * -------------------------------------------
    */
 
-body.dark {
+[data-theme=dark] {
   --ion-color-primary: #00d66c;
   --ion-color-primary-rgb: 0,214,108;
   --ion-color-primary-contrast: #ffffff;
@@ -230,7 +163,7 @@ body.dark {
   * -------------------------------------------
   */
 
-.ios body.dark {
+.ios[data-theme=dark] {
   --ion-background-color: #000000;
   --ion-background-color-rgb: 0,0,0;
 
@@ -270,7 +203,7 @@ body.dark {
   * -------------------------------------------
   */
 
-.md body.dark {
+.md[data-theme=dark] {
   --ion-background-color: #121212;
   --ion-background-color-rgb: 18,18,18;
 
@@ -333,144 +266,4 @@ body.dark {
   --ion-color-contrast-rgb: var(--ion-color-dark-red-contrast-rgb);
   --ion-color-shade: var(--ion-color-dark-red-shade);
   --ion-color-tint: var(--ion-color-dark-red-tint);
-}
-
-.tosync-color-rotation {
-  color: var(--tosync-color-rotation);
-}
-.tosync-color-vol {
-  color: var(--tosync-color-vol);
-}
-.tosync-color-sv {
-  color: var(--tosync-color-sv);
-}
-.tosync-color-mep {
-  color: var(--tosync-color-mep);
-}
-.tosync-color-conges {
-  color: var(--tosync-color-conges);
-}
-.tosync-color-repos {
-  color: var(--tosync-color-repos);
-}
-.tosync-color-stage {
-  color: var(--tosync-color-stage);
-}
-.tosync-color-greve {
-  color: var(--tosync-color-greve);
-}
-.tosync-color-maladie {
-  color: var(--tosync-color-maladie);
-}
-.tosync-color-asbsence {
-  color: var(--tosync-color-absence);
-}
-.tosync-color-sanssolde {
-  color: var(--tosync-color-sanssolde);
-}
-.tosync-color-jisap {
-  color: var(--tosync-color-jisap);
-}
-.tosync-color-npl {
-  color: var(--tosync-color-npl);
-}
-.tosync-color-sol {
-  color: var(--tosync-color-sol);
-}
-.tosync-color-simu {
-  color: var(--tosync-color-simu);
-}
-.tosync-color-syndicat {
-  color: var(--tosync-color-syndicat);
-}
-.tosync-color-delegation {
-  color: var(--tosync-color-delegation);
-}
-.tosync-color-reserve {
-  color: var(--tosync-color-reserve);
-}
-.tosync-color-instructionSimu {
-  color: var(--tosync-color-instructionSimu);
-}
-.tosync-color-instructionSol {
-  color: var(--tosync-color-instructionSol);
-}
-.tosync-color-autre {
-  color: var(--tosync-color-autre);
-}
-.tosync-color-blanc {
-  color: var(--tosync-color-blanc);
-}
-.tosync-color-default {
-  color: var(--tosync-color-default);
-}
-
-.tosync-bg-rotation {
-  background-color: var(--tosync-color-rotation);
-}
-.tosync-bg-vol {
-  background-color: var(--tosync-color-vol);
-}
-.tosync-bg-sv {
-  background-color: var(--tosync-color-sv);
-}
-.tosync-bg-mep {
-  background-color: var(--tosync-color-mep);
-}
-.tosync-bg-conges {
-  background-color: var(--tosync-color-conges);
-}
-.tosync-bg-repos {
-  background-color: var(--tosync-color-repos);
-}
-.tosync-bg-stage {
-  background-color: var(--tosync-color-stage);
-}
-.tosync-bg-greve {
-  background-color: var(--tosync-color-greve);
-}
-.tosync-bg-maladie {
-  background-color: var(--tosync-color-maladie);
-}
-.tosync-bg-asbsence {
-  background-color: var(--tosync-color-absence);
-}
-.tosync-bg-sanssolde {
-  background-color: var(--tosync-color-sanssolde);
-}
-.tosync-bg-jisap {
-  background-color: var(--tosync-color-jisap);
-}
-.tosync-bg-npl {
-  background-color: var(--tosync-color-npl);
-}
-.tosync-bg-sol {
-  background-color: var(--tosync-color-sol);
-}
-.tosync-bg-simu {
-  background-color: var(--tosync-color-simu);
-}
-.tosync-bg-syndicat {
-  background-color: var(--tosync-color-syndicat);
-}
-.tosync-bg-delegation {
-  background-color: var(--tosync-color-delegation);
-}
-.tosync-bg-reserve {
-  background-color: var(--tosync-color-reserve);
-}
-.tosync-bg-instructionSimu {
-  background-color: var(--tosync-color-instructionSimu);
-}
-.tosync-bg-instructionSol {
-  background-color: var(--tosync-color-instructionSol);
-}
-.tosync-bg-autre {
-  background-color: var(--tosync-color-autre);
-}
-.tosync-bg-blanc {
-  background-color: var(--tosync-color-blanc);
-}
-.tosync-bg-default {
-  background-color: var(--tosync-color-default);
 }

@@ -1,0 +1,292 @@
+:root {
+  --cal-light-green-hsl: 151, 100%, 70%;
+  --cal-light-green-contrast-hsl: 151, 100%, 15%;
+
+  --cal-green-hsl: 151, 100%, 30%;
+  --cal-green-contrast-hsl: 151, 100%, 10%;
+
+  --cal-light-red-hsl: 344, 100%, 70%;
+  --cal-light-red-contrast-hsl: 344, 100%, 10%;
+
+  --cal-light-blue-hsl: 230, 100%, 75%;
+  --cal-light-blue-contrast-hsl: 230, 100%, 10%;
+
+  --cal-light-yellow-hsl: 45, 100%, 70%;
+  --cal-light-yellow-contrast-hsl: 45, 100%, 15%;
+
+  --cal-light-grey-hsl: 151, 5%, 85%;
+  --cal-light-grey-contrast-hsl: 0, 0%, 10%;
+
+  --cal-orange-hsl: 27, 100%, 55%;
+  --cal-orange-contrast-hsl: 27, 100%, 5%;
+
+  --cal-grey-hsl: 0, 0%, 30%;
+  --cal-grey-contrast-hsl: 0, 0%, 100%;
+
+  --cal-dark-green-hsl: 151, 80%, 20%;
+  --cal-dark-green-contrast-hsl: 0, 0%, 100%;
+
+  --cal-dark-red-hsl: 344, 80%, 35%;
+  --cal-dark-red-contrast-hsl: 0, 0%, 100%;
+
+  --cal-dark-blue-hsl: 255, 100%, 31%;
+  --cal-dark-blue-contrast-hsl: 0, 0%, 100%;
+
+  --cal-dark-yellow-hsl: 45, 100%, 25%;
+  --cal-dark-yellow-contrast-hsl: 0, 0%, 100%;
+
+  --cal-weekday-color: hsl(255,255,255,1);
+  --cal-date-color: hsl(255,255,255,1);
+  --cal-today-color: hsl(255,255,255,1);
+  --cal-divider-color: hsl(255,255,255,0.1);
+
+  --tosync-color-rotation: hsl(var(--cal-dark-blue-hsl));
+  --tosync-color-vol: hsl(var(--cal-dark-blue-hsl));
+  --tosync-color-sv: hsl(var(--cal-dark-blue-hsl));
+  --tosync-color-mep: hsl(var(--cal-dark-blue-hsl));
+
+  --tosync-color-conges: hsl(var(--cal-dark-green-hsl));
+
+  --tosync-color-repos: hsl(var(--cal-light-green-hsl));
+
+  --tosync-color-stage: hsl(var(--cal-dark-red-hsl));
+
+  --tosync-color-greve: hsl(var(--cal-light-yellow-hsl));
+  --tosync-color-maladie: hsl(var(--cal-light-yellow-hsl));
+  --tosync-color-asbsence: hsl(var(--cal-light-yellow-hsl));
+  --tosync-color-sanssolde: hsl(var(--cal-light-yellow-hsl));
+
+  --tosync-color-jisap: hsl(var(--cal-orange-hsl));
+  --tosync-color-npl: hsl(var(--cal-orange-hsl));
+
+  --tosync-color-sol: hsl(var(--cal-light-red-hsl));
+  --tosync-color-simu: hsl(var(--cal-light-red-hsl));
+  --tosync-color-syndicat: hsl(var(--cal-light-red-hsl));
+  --tosync-color-delegation: hsl(var(--cal-light-red-hsl));
+  --tosync-color-reserve: hsl(var(--cal-light-red-hsl));
+  --tosync-color-instructionSimu: hsl(var(--cal-light-red-hsl));
+  --tosync-color-instructionSol: hsl(var(--cal-light-red-hsl));
+
+  --tosync-color-blanc: hsl(var(--cal-light-grey-hsl));
+  --tosync-color-autre: hsl(var(--cal-grey-hsl));
+  --tosync-color-default: hsl(var(--cal-grey-hsl));
+
+  --tosync-duty-alpha: 0.3;
+
+  /* Duty BG */
+  --tosync-color-rotation-duty-bg: hsl(var(--cal-light-blue-hsl));
+  --tosync-color-rotation-duty-contrast: hsl(var(--cal-dark-blue-hsl));
+
+  --tosync-color-vol-duty-bg: rgba(var(--ion-color-secondary-rgb),var(--tosync-duty-alpha));
+  --tosync-color-sv-duty-bg: rgba(var(--ion-color-secondary-rgb),var(--tosync-duty-alpha));
+  --tosync-color-mep-duty-bg: rgba(var(--ion-color-secondary-rgb),var(--tosync-duty-alpha));
+
+  --tosync-color-conges-duty-bg: rgba(var(--ion-color-dark-green-rgb),var(--tosync-duty-alpha));
+
+  --tosync-color-repos-duty-bg: rgba(var(--ion-color-success-rgb),var(--tosync-duty-alpha));
+
+  --tosync-color-stage-duty-bg: rgba(var(--ion-color-dark-red-rgb),var(--tosync-duty-alpha));
+
+  --tosync-color-greve-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
+  --tosync-color-maladie-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
+  --tosync-color-asbsence-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
+  --tosync-color-sanssolde-duty-bg: rgba(var(--ion-color-yellow-rgb),var(--tosync-duty-alpha));
+
+  --tosync-color-jisap-duty-bg: rgba(var(--ion-color-warning-rgb),var(--tosync-duty-alpha));
+  --tosync-color-npl-duty-bg: rgba(var(--ion-color-warning-rgb),var(--tosync-duty-alpha));
+
+  --tosync-color-sol-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
+  --tosync-color-simu-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
+  --tosync-color-syndicat-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
+  --tosync-color-reserve-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
+  --tosync-color-instructionSimu-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
+  --tosync-color-instructionSol-duty-bg: rgba(var(--ion-color-danger-rgb),var(--tosync-duty-alpha));
+
+  --tosync-color-autre-duty-bg: rgba(var(--ion-color-medium-rgb),var(--tosync-duty-alpha));
+  --tosync-color-blanc-duty-bg: transparent;
+  --tosync-color-default-duty-bg: rgba(var(--ion-color-medium-rgb),var(--tosync-duty-alpha));
+}
+
+[data-theme=dark] {
+  --cal-color-weekday: rgba(255,255,255,0.8);
+  --cal-color-date: rgba(255,255,255,0.8);
+  --cal-color-today: rgba(255,255,255,1);
+  --cal-color-divider: rgba(255,255,255,0.2);
+
+  --tosync-color-rotation: hsl(var(--cal-light-blue-hsl));
+  --tosync-color-vol: hsl(var(--cal-light-blue-hsl));
+  --tosync-color-sv: hsl(var(--cal-light-blue-hsl));
+  --tosync-color-mep: hsl(var(--cal-light-blue-hsl));
+
+  --tosync-color-conges: hsl(var(--cal-green-hsl));
+
+  --tosync-color-repos: hsl(var(--cal-light-green-hsl));
+
+  --tosync-color-stage: hsl(var(--cal-dark-red-hsl));
+
+  --tosync-color-greve: hsl(var(--cal-light-yellow-hsl));
+  --tosync-color-maladie: hsl(var(--cal-light-yellow-hsl));
+  --tosync-color-asbsence: hsl(var(--cal-light-yellow-hsl));
+  --tosync-color-sanssolde: hsl(var(--cal-light-yellow-hsl));
+
+  --tosync-color-jisap: hsl(var(--cal-orange-hsl));
+  --tosync-color-npl: hsl(var(--cal-orange-hsl));
+
+  --tosync-color-sol: hsl(var(--cal-light-red-hsl));
+  --tosync-color-simu: hsl(var(--cal-light-red-hsl));
+  --tosync-color-syndicat: hsl(var(--cal-light-red-hsl));
+  --tosync-color-delegation: hsl(var(--cal-light-red-hsl));
+  --tosync-color-reserve: hsl(var(--cal-light-red-hsl));
+  --tosync-color-instructionSimu: hsl(var(--cal-light-red-hsl));
+  --tosync-color-instructionSol: hsl(var(--cal-light-red-hsl));
+
+  --tosync-color-blanc: hsl(var(--cal-light-grey-hsl));
+  --tosync-color-autre: hsl(var(--cal-grey-hsl));
+  --tosync-color-default: hsl(var(--cal-grey-hsl));
+
+  /* Duty BG */
+  --tosync-color-rotation-duty-bg: hsla(var(--cal-light-blue-hsl), 0.1);
+  --tosync-color-rotation-duty-contrast: hsl(var(--cal-dark-blue-hsl));
+  --tosync-color-sol-duty-bg: hsla(var(--cal-light-red-hsl), 0.1);
+  --tosync-color-sol-duty-contrast: hsl(var(--cal-dark-red-hsl));
+}
+
+.tosync-color-rotation {
+  color: var(--tosync-color-rotation);
+}
+.tosync-color-vol {
+  color: var(--tosync-color-vol);
+}
+.tosync-color-sv {
+  color: var(--tosync-color-sv);
+}
+.tosync-color-mep {
+  color: var(--tosync-color-mep);
+}
+.tosync-color-conges {
+  color: var(--tosync-color-conges);
+}
+.tosync-color-repos {
+  color: var(--tosync-color-repos);
+}
+.tosync-color-stage {
+  color: var(--tosync-color-stage);
+}
+.tosync-color-greve {
+  color: var(--tosync-color-greve);
+}
+.tosync-color-maladie {
+  color: var(--tosync-color-maladie);
+}
+.tosync-color-asbsence {
+  color: var(--tosync-color-absence);
+}
+.tosync-color-sanssolde {
+  color: var(--tosync-color-sanssolde);
+}
+.tosync-color-jisap {
+  color: var(--tosync-color-jisap);
+}
+.tosync-color-npl {
+  color: var(--tosync-color-npl);
+}
+.tosync-color-sol {
+  color: var(--tosync-color-sol);
+}
+.tosync-color-simu {
+  color: var(--tosync-color-simu);
+}
+.tosync-color-syndicat {
+  color: var(--tosync-color-syndicat);
+}
+.tosync-color-delegation {
+  color: var(--tosync-color-delegation);
+}
+.tosync-color-reserve {
+  color: var(--tosync-color-reserve);
+}
+.tosync-color-instructionSimu {
+  color: var(--tosync-color-instructionSimu);
+}
+.tosync-color-instructionSol {
+  color: var(--tosync-color-instructionSol);
+}
+.tosync-color-autre {
+  color: var(--tosync-color-autre);
+}
+.tosync-color-blanc {
+  color: var(--tosync-color-blanc);
+}
+.tosync-color-default {
+  color: var(--tosync-color-default);
+}
+
+.tosync-bg-rotation {
+  background-color: var(--tosync-color-rotation);
+}
+.tosync-bg-vol {
+  background-color: var(--tosync-color-vol);
+}
+.tosync-bg-sv {
+  background-color: var(--tosync-color-sv);
+}
+.tosync-bg-mep {
+  background-color: var(--tosync-color-mep);
+}
+.tosync-bg-conges {
+  background-color: var(--tosync-color-conges);
+}
+.tosync-bg-repos {
+  background-color: var(--tosync-color-repos);
+}
+.tosync-bg-stage {
+  background-color: var(--tosync-color-stage);
+}
+.tosync-bg-greve {
+  background-color: var(--tosync-color-greve);
+}
+.tosync-bg-maladie {
+  background-color: var(--tosync-color-maladie);
+}
+.tosync-bg-asbsence {
+  background-color: var(--tosync-color-absence);
+}
+.tosync-bg-sanssolde {
+  background-color: var(--tosync-color-sanssolde);
+}
+.tosync-bg-jisap {
+  background-color: var(--tosync-color-jisap);
+}
+.tosync-bg-npl {
+  background-color: var(--tosync-color-npl);
+}
+.tosync-bg-sol {
+  background-color: var(--tosync-color-sol);
+}
+.tosync-bg-simu {
+  background-color: var(--tosync-color-simu);
+}
+.tosync-bg-syndicat {
+  background-color: var(--tosync-color-syndicat);
+}
+.tosync-bg-delegation {
+  background-color: var(--tosync-color-delegation);
+}
+.tosync-bg-reserve {
+  background-color: var(--tosync-color-reserve);
+}
+.tosync-bg-instructionSimu {
+  background-color: var(--tosync-color-instructionSimu);
+}
+.tosync-bg-instructionSol {
+  background-color: var(--tosync-color-instructionSol);
+}
+.tosync-bg-autre {
+  background-color: var(--tosync-color-autre);
+}
+.tosync-bg-blanc {
+  background-color: var(--tosync-color-blanc);
+}
+.tosync-bg-default {
+  background-color: var(--tosync-color-default);
+}

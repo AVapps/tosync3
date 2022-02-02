@@ -1,8 +1,8 @@
 <template>
-  <div :class="['tosync-bg-' + event.tag]">
-    <span class="title">
+  <div :class="['tosync-color-' + event.tag]">
+    <div class="allday-title">
       {{ tagLabel(event.tag) }}
-    </span>
+    </div>
   </div>
 </template>
 
@@ -27,10 +27,15 @@ export default defineComponent({
   text-align: center;
   text-transform: uppercase;
   font-weight: bold;
-  font-family: 'DM Sans', Roboto, sans-serif;
 
-  &.span-left {
-    .title {
+  .allday-title {
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &.sp-l {
+    .allday-title {
       opacity: 0;
     }
   }
