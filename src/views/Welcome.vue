@@ -87,7 +87,7 @@ import { defineComponent, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 export default defineComponent({
-  name: 'Welcome',
+  name: 'WelcomePage',
   components: {
     IonButton,
     IonContent,

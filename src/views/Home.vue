@@ -84,7 +84,7 @@ import FilePicker from '@/components/FilePicker'
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: 'Home',
+  name: 'HomePage',
   components: {
     IonHeader,
     IonToolbar,

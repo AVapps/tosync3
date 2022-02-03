@@ -4,11 +4,17 @@
       v-for="sv in filteredSVs"
       :key="sv._id"
       class="sv"
-      :class="'events-count-' + sv?.events?.length"
+      :class="['events-count-' + sv?.events?.length, ...eventClass(sv, props.date)]"
     >
       <span class="d-start">{{ tsToTime(sv.start) }}</span>
-      <div class="sv-event" v-for="etape in sv.events" :key="etape.slug">
+      <div
+        class="sv-event"
+        v-for="etape in filterEventsByDate(sv.events, props.date)"
+        :class="eventClass(etape, props.date)"
+        :key="etape.slug"
+      >
         <span class="v-title">
+          <span class="v-num">{{ etape.num }}&nbsp;</span>
           <span class="v-from">{{ etape.from }}</span>
           <span class="v-divider">-</span>
           <span class="v-to">{{ etape.to }}</span>
@@ -21,24 +27,26 @@
   </div>
 </template>
 
-<script>
-import { defineComponent, computed } from 'vue'
+<script setup>
+import { computed } from 'vue'
 import { tsToTime } from '@/lib/helpers'
+import { DateTime } from 'luxon'
+import { eventClass, filterEventsByDate } from '../utils'
 
-export default defineComponent({
-  name: 'RotationEvent',
-  props: ['event', 'date'],
-  setup(props) {
-    return {
-      filteredSVs: computed(() => {
-        const endOfDay = props.date.endOf('day')
-        return props.event.sv.filter((sv) => {
-          return sv.start < endOfDay && sv.end > props.date
-        })
-      }),
-      tsToTime
-    }
+// eslint-disable-next-line
+const props = defineProps({
+  event: {
+    type: Object,
+    required: true
+  },
+  date: {
+    type: DateTime,
+    required: true
   }
+})
+
+const filteredSVs = computed(() => {
+  return filterEventsByDate(props.event.sv, props.date)
 })
 </script>
 
@@ -55,12 +63,21 @@ export default defineComponent({
     row-gap: var(--cal-event-row-gap);
     align-items: baseline;
     background-color: var(--tosync-color-rotation-duty-bg);
+    padding: var(--cal-duty-padding);
 
     .d-start {
       opacity: 0.6;
     }
 
     .d-end {
+      display: none;
+    }
+
+    &.sp-l > .d-start {
+      display: none;
+    }
+
+    &.sp-r > .d-end {
       display: none;
     }
 
@@ -71,13 +88,18 @@ export default defineComponent({
       gap: var(--cal-event-row-gap) 0.25rem;
 
       > span {
+        display: inline-block;
         line-height: 1;
       }
 
       .v-title {
-        display: inline-block;
         font-family: var(--cal-font-mono);
         color: var(--tosync-color-rotation);
+
+        > .v-num {
+          display: inline-block;
+          min-width: 7ch;
+        }
 
         > .v-from {
           font-weight: bold;
@@ -95,6 +117,19 @@ export default defineComponent({
       > .v-end {
         opacity: 0.6;
       }
+
+      &.sp-l > .v-start {
+        opacity: 0;
+      }
+      &.sp-r > .v-end {
+        opacity: 0;
+      }
+    }
+  }
+
+  @media screen and (max-width: 1320px) {
+    .sv .sv-event .v-title > .v-num {
+      display: none;
     }
   }
 

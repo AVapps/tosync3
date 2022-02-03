@@ -10,15 +10,15 @@
           :class="hint"
         ></span>
       </div>
-      <div
+      <component
         class="av-calendar-event"
         v-for="evt in state.events"
-        v-is="eventComponent(evt)"
+        :is="eventComponent(evt)"
         :key="evt._id"
         :event="evt"
         :date="day.date"
         :class="eventClass(evt, state.date)"
-      ></div>
+      ></component>
     </div>
   </div>
 </template>

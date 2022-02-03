@@ -1,7 +1,7 @@
 <template>
   <div class="duty">
     <div class="d-start">{{ tsToTime(event.start) }}</div>
-    <div v-for="evt in event.events" :key="evt.slug" class="duty-event">
+    <div v-for="evt in event.events" :key="evt.slug" class="duty-event" :class="eventClass(evt, date)">
       <span class="v-title" :class="'tosync-color-' + evt.tag">
         {{ evt.summary }}
       </span>
@@ -12,19 +12,20 @@
   </div>
 </template>
 
-<script>
-import { defineComponent } from 'vue'
+<script setup>
 import { tsToTime } from '@/lib/helpers'
-import { tagLabel } from '@/lib/Utils'
+import { DateTime } from 'luxon'
+import { eventClass } from '../utils'
 
-export default defineComponent({
-  name: 'DutyEvent',
-  props: ['event', 'date'],
-  setup() {
-    return {
-      tsToTime,
-      tagLabel
-    }
+// eslint-disable-next-line
+const props = defineProps({
+  event: {
+    type: Object,
+    required: true
+  },
+  date: {
+    type: DateTime,
+    required: true
   }
 })
 </script>
@@ -33,6 +34,7 @@ export default defineComponent({
 .av-calendar-event.duty {
   display: grid;
   grid-template-columns: 100%;
+  grid-auto-rows: 1em;
   row-gap: var(--cal-event-row-gap);
   margin: 0 var(--call-cell-padding);
   padding: var(--cal-duty-padding);
@@ -53,16 +55,12 @@ export default defineComponent({
     text-align: right;
   }
 
-  &.sp-r {
-    .d-end {
-      opacity: 0;
-    }
+  &.sp-r > .d-end {
+    opacity: 0;
   }
 
-  &.sp-l {
-    .d-start {
-      opacity: 0;
-    }
+  &.sp-l > .d-start {
+    opacity: 0;
   }
 
   > .duty-event {
@@ -84,6 +82,13 @@ export default defineComponent({
 
     .v-start {
       justify-self: start;
+    }
+
+    &.sp-l > .v-start {
+      display: none;
+    }
+    &.sp-r > .v-end {
+      display: none;
     }
 
     .v-end {

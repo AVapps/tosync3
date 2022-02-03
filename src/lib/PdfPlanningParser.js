@@ -8,7 +8,7 @@ Settings.defaultZoneName = 'Europe/Paris'
 const BASES = ['ORY', 'CDG', 'LYS', 'MPL', 'NTE']
 const FLIGHT_REG = /([A-Z]{3})-([A-Z]{3})(?:\s\(([A-Z]+)\))?/
 const MEP_REG = /([A-Z]{3})-([A-Z]{3})/
-const DATE_REG = /^\s[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
+const DATE_REG = /^\s?[A-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
 const TIME_REG = /^\d\d:\d\d$/
 const CREW_TITLE_REG = /\w+:/
 const CREW_LIST_REG = /^(\s+©?[A-Z]{3})+$/
@@ -257,7 +257,8 @@ export class PdfPlanningParser {
             row.summary = ''
           }
           // recopier le titre dans la ligne précédente
-          const prev = rows[i - 1]
+          const prev = rows[ i - 1 ]
+          console.log(row, prev, prev.summary)
           if (prev.summary.length) {
             prev.summary += ' ' + prevSummary
           } else {

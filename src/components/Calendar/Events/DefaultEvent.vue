@@ -56,6 +56,14 @@ export default defineComponent({
     opacity: 0.6;
   }
 
+  &.sp-r > .v-end {
+    opacity: 0;
+  }
+
+  &.sp-l > .v-start {
+    opacity: 0;
+  }
+
   @media screen and (max-width: 991px) {
     grid-template: 1em 1em 1em / 1fr;
 

@@ -24,7 +24,7 @@ import { IonTabBar, IonTabButton, IonTabs, IonIcon, IonPage, IonRouterOutlet } f
 import { homeOutline, calendarOutline, cogOutline } from 'ionicons/icons'
 
 export default {
-  name: 'Tabs',
+  name: 'TabsView',
   components: { IonTabs, IonTabBar, IonTabButton, IonIcon, IonPage, IonRouterOutlet },
   setup() {
     return {

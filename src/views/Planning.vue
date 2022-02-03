@@ -14,7 +14,7 @@ import VirtualCalendar from '@/components/Calendar/VirtualCalendar.vue'
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: 'Planning',
+  name: 'PlanningPage',
   components: {
     VirtualCalendar,
     IonContent,
