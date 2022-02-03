@@ -4,8 +4,7 @@ module.exports = {
     node: true
   },
   extends: [
-    'plugin:vue/vue3-essential',
-    'standard'
+    'plugin:vue/vue3-essential'
   ],
   parserOptions: {
     ecmaVersion: 2020
@@ -20,10 +19,7 @@ module.exports = {
     'vue/attribute-hyphenation': 'off',
     'vue/max-attributes-per-line': ['warn', {
       singleline: 4,
-      multiline: {
-        max: 1,
-        allowFirstLine: false
-      }
+      multiline: 1
     }]
   },
   overrides: [
