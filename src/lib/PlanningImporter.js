@@ -1,12 +1,11 @@
 import * as Comlink from 'comlink'
-import * as pdfjsLib from 'pdfjs-dist/webpack'
+import pdfjsLib from './pdfjs.js'
 import { groupPdfPageTables } from './groupPdfPageTables.js'
-// eslint-disable-next-line import/no-webpack-loader-syntax
-import PdfImportWorker from 'worker-loader!./PdfImportWorker.js'
 import { useEventsDatasource } from './useEventsDatasource.js'
 
 export async function importPdfFile(data) {
-  const { parsePageContent, importPdfPlanning } = Comlink.wrap(new PdfImportWorker())
+  const worker = new Worker(new URL('./PdfImportWorker.js', import.meta.url))
+  const { parsePageContent, importPdfPlanning } = Comlink.wrap(worker)
   const doc = await pdfjsLib.getDocument(data).promise
   const numPages = doc.numPages
   const pageTables = []
@@ -21,6 +20,6 @@ export async function importPdfFile(data) {
   console.log('PDF', pdf)
   const updateLog = await importPdfPlanning(pdf)
   console.log('importPdfFile.updateLog', updateLog)
-  const datasourceClient = useEventsDatasource()
-  return datasourceClient.bulkUpdate(updateLog)
+  // const datasourceClient = useEventsDatasource()
+  // return datasourceClient.bulkUpdate(updateLog)
 }

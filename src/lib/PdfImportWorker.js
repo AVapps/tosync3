@@ -1,5 +1,5 @@
 import * as Comlink from 'comlink'
-import { OPS } from 'pdfjs-dist/webpack'
+import { OPS } from 'pdfjs-dist'
 import _ from 'lodash'
 
 import { PdfPlanningParser } from './PdfPlanningParser.js'
@@ -141,8 +141,10 @@ async function parsePageContent(opList, textContent) {
           .reverse()
           .value()
         )
+
         if (row.size === 11) {
           _.forEach(items, item => {
+            if (item.length > 11) console.log(item)
             if (item.length) {
               const first = _.first(item)
               if ((first.y + first.h) < (top - 8)) { // Ajouter une ligne vide
@@ -162,7 +164,7 @@ async function parsePageContent(opList, textContent) {
       .value()
   })
 
-  console.log('Page number parsing done !', filledTable)
+  console.log('Page parsing done !', filledTable)
 
   return _.filter(_.flatMap(filledTable, row => {
     return _.map(row.lines, line => {

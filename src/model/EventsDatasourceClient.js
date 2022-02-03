@@ -1,6 +1,4 @@
 import * as Comlink from 'comlink'
-// eslint-disable-next-line import/no-webpack-loader-syntax
-import EventsWorker from 'worker-loader!./EventsWorker.js'
 import { DateTime } from 'luxon'
 import { reactive } from 'vue'
 
@@ -13,8 +11,9 @@ function checkUserId(userId) {
 }
 
 export class EventsDatasourceClient {
-  constructor() {
-    this.datasource = Comlink.wrap(new EventsWorker())
+  constructor () {
+    const worker = new Worker(new URL('./EventsWorker.js', import.meta.url))
+    this.datasource = Comlink.wrap(worker)
     this.daysMap = reactive(new Map())
     this.eventsIndex = reactive(new Map())
     this._watch = false
