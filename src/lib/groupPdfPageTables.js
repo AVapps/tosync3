@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
 const HEADER = ['Type', 'From', 'To', 'Activity', 'Fct', 'Routing / Description', 'A/C', 'Blk', 'Training', 'Crew Member', 'Remark'].join(';')
-const DATE_REG = /^[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
+const DATE_REG = /[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
 
 export function groupPdfPageTables(pageTables) {
   if (!pageTables || !pageTables.length) {
