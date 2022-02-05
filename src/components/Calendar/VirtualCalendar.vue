@@ -1,9 +1,11 @@
 <template>
-  <div class="av-calendar" :class="[displayMode]">
-    <div class="av-calendar-header">
+  <ion-content class="av-calendar" :class="[displayMode]" :fullscreen="true" :scroll-y="false">
+    <div class="av-calendar-header" slot="fixed">
       <div class="datepicker">
         <ion-button color="primary" fill="clear" id="current-month">
-          {{ activeMonthLabel }}
+          <span class="month">{{ activeMonthLabel.month }}</span>
+          &nbsp;
+          <span class="year">{{ activeMonthLabel.year }}</span>
         </ion-button>
         <ion-popover class="month-picker-popover" trigger="current-month">
           <ion-datetime
@@ -69,12 +71,12 @@
         </swiper-slide>
       </swiper>
     </div>
-  </div>
+  </ion-content>
 </template>
 
 <script>
 import { reactive, ref, onMounted, nextTick, provide } from 'vue'
-import { IonButton, IonIcon, IonPopover, IonDatetime } from '@ionic/vue'
+import { IonButton, IonIcon, IonPopover, IonDatetime, IonContent } from '@ionic/vue'
 import { chevronBack, chevronForward, ellipseOutline } from 'ionicons/icons'
 
 import SwiperCore, { Virtual } from 'swiper'
@@ -98,6 +100,7 @@ export default {
     IonButton,
     IonPopover,
     IonDatetime,
+    IonContent,
     SwiperSlide,
     Swiper
   },
@@ -129,12 +132,10 @@ export default {
       }))
     )
 
-    const activeMonthLabel = ref(
-      currentMonth.toLocaleString({
-        year: 'numeric',
-        month: 'long'
-      })
-    )
+    const activeMonthLabel = ref({
+      month:  currentMonth.toLocaleString({ month: 'long' }),
+      year: currentMonth.toLocaleString({ year: 'numeric' })
+    })
 
     const isoMonth = ref(currentMonth.toISODate().substring(0, 7))
 
@@ -144,10 +145,10 @@ export default {
 
     const onActiveIndexChange = (sw) => {
       const month = slides[sw.activeIndex]?.month
-      activeMonthLabel.value = month?.toLocaleString({
-        year: 'numeric',
-        month: 'long'
-      })
+      activeMonthLabel.value = {
+      month:  month?.toLocaleString({ month: 'long' }),
+      year: month?.toLocaleString({ year: 'numeric' })
+    }
       isoMonth.value = month?.toISODate().substring(0, 7)
     }
 
@@ -291,14 +292,24 @@ export default {
 </script>
 
 <style lang="scss">
-.av-calendar {
-  height: 100%;
+ion-content.av-calendar {
   display: grid;
+  width: 100vw;
+  height: 100%;
   grid-template: auto 1fr / 100%;
-  padding: var(--ion-safe-area-top) var(--ion-safe-area-right) 0
-    var(--ion-safe-area-left);
   overflow-x: visible;
   transition: opacity 0.15s ease-in;
+  --padding-start: 10px;
+  --padding-end: 10px;
+
+  &::part(scroll)::-webkit-scrollbar {
+    display: none;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
 
   &.fade {
     opacity: 0;
@@ -311,11 +322,16 @@ export default {
     flex-flow: row nowrap;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 1rem;
+    padding-left: max(10px, var(--ion-safe-area-left));
+    padding-top: var(--ion-safe-area-top);
+    padding-right: max(10px, var(--ion-safe-area-right));
+    width: 100vw;
+    background-color: rgba(var(--ion-background-color-rgb), 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 10;
 
-    #current-month {
+    ion-button#current-month {
       color: var(--ion-color-success);
-      font-weight: bold;
       text-transform: capitalize;
       transition: opacity 0.15s ease-in;
       --padding-start: 0;
@@ -324,6 +340,10 @@ export default {
         opacity: 0;
         transform: translateX(-5px);
         transition: opacity 0.15s ease-out;
+      }
+
+      .month {
+        font-weight: bold;
       }
     }
 

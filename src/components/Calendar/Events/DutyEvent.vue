@@ -2,7 +2,7 @@
   <div class="duty">
     <div class="d-start">{{ tsToTime(event.start) }}</div>
     <div v-for="evt in event.events" :key="evt.slug" class="duty-event" :class="eventClass(evt, date)">
-      <span class="v-title" :class="'tosync-color-' + evt.tag">
+      <span class="v-title">
         {{ evt.summary }}
       </span>
       <span class="v-start">{{ tsToTime(evt.start) }}</span>
@@ -39,6 +39,8 @@ const props = defineProps({
   margin: 0 var(--call-cell-padding);
   padding: var(--cal-duty-padding);
   background-color: var(--tosync-color-sol-duty-bg);
+  color: var(--tosync-color-sol-duty-text);
+  border-radius: var(--cal-duty-border-radius);
 
   .d-start {
     display: none;
@@ -78,6 +80,7 @@ const props = defineProps({
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow-x: hidden;
+      color: var(--tosync-color-sol-duty-title);
     }
 
     .v-start {

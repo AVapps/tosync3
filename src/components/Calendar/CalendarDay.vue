@@ -2,14 +2,14 @@
   <div class="av-calendar-day" :class="[...day.classes, ...state.tags]">
     <div class="av-calendar-weekday">{{ day.weekday }}</div>
     <div class="av-calendar-date">{{ day.day }}</div>
+    <div class="av-calendar-day-hints">
+      <span
+        v-for="(hint, index) in state.hints"
+        :key="index"
+        :class="hint"
+      ></span>
+    </div>
     <div class="av-calendar-content">
-      <div class="av-calendar-day-hints">
-        <span
-          v-for="(hint, index) in state.hints"
-          :key="index"
-          :class="hint"
-        ></span>
-      </div>
       <component
         class="av-calendar-event"
         v-for="evt in state.events"
@@ -100,8 +100,8 @@ export default defineComponent({
   grid-template-columns: 100%;
   grid-row-gap: 0rem;
   align-content: start;
-  font-size: 0.875rem;
-  border-bottom: 1px solid var(--cal-color-divider);
+  border-top: 1px solid var(--cal-color-divider);
+  font-size: var(--cal-content-font-size);
 
   &.today {
     .av-calendar-date {
@@ -137,12 +137,95 @@ export default defineComponent({
   .av-calendar-weekday {
     display: none;
     color: var(--cal-color-weekday);
+    font-size: var(--cal-weekday-font-size);
   }
 
   .av-calendar-date {
-    font-size: 1rem;
     padding: 0.25rem 0.25rem 0;
     color: var(--cal-color-date);
+    font-size: var(--cal-date-font-size);
+  }
+
+  .av-calendar-day-hints {
+    display: flex;
+    justify-content: stretch;
+    column-gap: calc(2 * var(--cal-cell-padding));
+
+    > span {
+      display: inline-block;
+      height: 4px;
+      flex: 1 0;
+
+      &.rotation {
+        background-color: var(--tosync-color-rotation);
+      }
+      &.vol {
+        background-color: var(--tosync-color-vol);
+      }
+      &.sv {
+        background-color: var(--tosync-color-sv);
+      }
+      &.mep {
+        background-color: var(--tosync-color-mep);
+      }
+      &.conges {
+        background-color: var(--tosync-color-conges);
+      }
+      &.repos {
+        background-color: var(--tosync-color-repos);
+      }
+      &.stage {
+        background-color: var(--tosync-color-stage);
+      }
+      &.greve {
+        background-color: var(--tosync-color-greve);
+      }
+      &.maladie {
+        background-color: var(--tosync-color-maladie);
+      }
+      &.asbsence {
+        background-color: var(--tosync-color-absence);
+      }
+      &.sanssolde {
+        background-color: var(--tosync-color-sanssolde);
+      }
+      &.jisap {
+        background-color: var(--tosync-color-jisap);
+      }
+      &.npl {
+        background-color: var(--tosync-color-npl);
+      }
+      &.sol {
+        background-color: var(--tosync-color-sol);
+      }
+      &.simu {
+        background-color: var(--tosync-color-simu);
+      }
+      &.syndicat {
+        background-color: var(--tosync-color-syndicat);
+      }
+      &.delegation {
+        background-color: var(--tosync-color-delegation);
+      }
+      &.reserve {
+        background-color: var(--tosync-color-reserve);
+      }
+      &.instructionSimu {
+        background-color: var(--tosync-color-instructionSimu);
+      }
+      &.instructionSol {
+        background-color: var(--tosync-color-instructionSol);
+      }
+      &.autre {
+        background-color: var(--tosync-color-autre);
+      }
+      &.blanc {
+        background-color: var(--tosync-color-blanc);
+      }
+      &.default {
+        background-color: var(--tosync-color-default);
+      }
+    }
   }
 
   .d-start,
@@ -173,88 +256,6 @@ export default defineComponent({
       display: none;
     }
 
-    .av-calendar-day-hints {
-      display: flex;
-      justify-content: stretch;
-      height: 4px;
-      column-gap: calc(2 * var(--cal-cell-padding));
-
-      > span {
-        display: inline-block;
-        flex: 1 0;
-
-        &.rotation {
-          background-color: var(--tosync-color-rotation);
-        }
-        &.vol {
-          background-color: var(--tosync-color-vol);
-        }
-        &.sv {
-          background-color: var(--tosync-color-sv);
-        }
-        &.mep {
-          background-color: var(--tosync-color-mep);
-        }
-        &.conges {
-          background-color: var(--tosync-color-conges);
-        }
-        &.repos {
-          background-color: var(--tosync-color-repos);
-        }
-        &.stage {
-          background-color: var(--tosync-color-stage);
-        }
-        &.greve {
-          background-color: var(--tosync-color-greve);
-        }
-        &.maladie {
-          background-color: var(--tosync-color-maladie);
-        }
-        &.asbsence {
-          background-color: var(--tosync-color-absence);
-        }
-        &.sanssolde {
-          background-color: var(--tosync-color-sanssolde);
-        }
-        &.jisap {
-          background-color: var(--tosync-color-jisap);
-        }
-        &.npl {
-          background-color: var(--tosync-color-npl);
-        }
-        &.sol {
-          background-color: var(--tosync-color-sol);
-        }
-        &.simu {
-          background-color: var(--tosync-color-simu);
-        }
-        &.syndicat {
-          background-color: var(--tosync-color-syndicat);
-        }
-        &.delegation {
-          background-color: var(--tosync-color-delegation);
-        }
-        &.reserve {
-          background-color: var(--tosync-color-reserve);
-        }
-        &.instructionSimu {
-          background-color: var(--tosync-color-instructionSimu);
-        }
-        &.instructionSol {
-          background-color: var(--tosync-color-instructionSol);
-        }
-        &.autre {
-          background-color: var(--tosync-color-autre);
-        }
-        &.blanc {
-          background-color: var(--tosync-color-blanc);
-        }
-        &.default {
-          background-color: var(--tosync-color-default);
-        }
-      }
-    }
-
     .av-calendar-event {
       margin-top: var(--cal-cell-padding);
       padding: 0 var(--cal-cell-padding);
@@ -264,28 +265,6 @@ export default defineComponent({
         margin: var(--cal-cell-padding) var(--cal-cell-padding) 0;
       }
     }
-  }
-
-  @media screen and (max-width: 799px) {
-    .av-calendar-date {
-      font-size: 2vw; /** 16px */
-    }
-
-    .av-calendar-content {
-      font-size: 1.75vw; /** 14px */
-    }
-  }
-
-  @media screen and (max-width: 549px) {
-    .av-calendar-date {
-      font-size: 0.6875rem; /** 11px */
-    }
-    .av-calendar-content {
-      font-size: 0.625rem; /** 10px */
-    }
-  }
-
-  @media screen and (max-width: 499px) {
   }
 }
 </style>

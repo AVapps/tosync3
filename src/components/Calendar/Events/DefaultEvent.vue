@@ -48,12 +48,14 @@ export default defineComponent({
   .v-start {
     grid-area: 1 / 2 / 2 / 3;
     justify-self: start;
+    color: var(--cal-color-time);
   }
 
   .v-end {
     grid-area: 2 / 1 / 3 / 3;
     justify-self: end;
     opacity: 0.6;
+    color: var(--cal-color-time);
   }
 
   &.sp-r > .v-end {

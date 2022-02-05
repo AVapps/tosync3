@@ -63,7 +63,31 @@ const filteredSVs = computed(() => {
     row-gap: var(--cal-event-row-gap);
     align-items: baseline;
     background-color: var(--tosync-color-rotation-duty-bg);
+    color: var(--tosync-color-rotation-duty-text);
     padding: var(--cal-duty-padding);
+    border-radius: var(--cal-duty-border-radius);
+    contain: content;
+
+    &.mep:not(.sp-l)::before {
+      content: 'MEP';
+      display: inline-block;
+      vertical-align: middle;
+      position: absolute;
+      border-bottom-left-radius: var(--cal-duty-border-radius);
+      background-color: var(--tosync-color-rotation-duty-bg);
+      color: var(--tosync-color-rotation-duty-title);
+      font-size: var(--cal-duty-time-font-size);
+      font-style: italic;
+      padding: 1px 2px 0px 4px;
+      top: 0px;
+      right: 0px;
+
+      @media screen and (max-width: 549px) {
+        font-size: 0.4rem;
+        padding: 1px 1px 0px 2px;
+      }
+
+    }
 
     .d-start {
       opacity: 0.6;
@@ -92,21 +116,37 @@ const filteredSVs = computed(() => {
         line-height: 1;
       }
 
-      .v-title {
-        font-family: var(--cal-font-mono);
-        color: var(--tosync-color-rotation);
-
-        > .v-num {
-          display: inline-block;
-          min-width: 7ch;
-        }
-
+      &.vol .v-title {
         > .v-from {
           font-weight: bold;
         }
 
         > .v-to {
           font-weight: bold;
+        }
+      }
+
+      &.mep .v-title {
+        > .v-from {
+          font-style: italic;
+        }
+
+        > .v-to {
+          font-style: italic;
+        }
+      }
+
+      .v-title {
+        font-family: var(--cal-font-mono);
+        color: var(--tosync-color-rotation-duty-title);
+
+        > * {
+          display: inline-block;
+        }
+
+        > .v-num {
+          display: inline-block;
+          min-width: 7ch;
         }
       }
 
@@ -136,7 +176,7 @@ const filteredSVs = computed(() => {
   @media screen and (max-width: 991px) {
     .sv {
       .sv-event {
-        grid-template: 1em 1em / auto 1fr;
+        grid-template: 1em 0.75em / auto 1fr;
 
         > .v-title {
           grid-area: 1 / 1 / 2 / 3;

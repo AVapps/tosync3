@@ -1,10 +1,6 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
-      <div id="calendar-wrapper">
-        <virtual-calendar :display-mode="calendarMode"></virtual-calendar>
-      </div>
-    </ion-content>
+    <virtual-calendar :display-mode="calendarMode"></virtual-calendar>
   </ion-page>
 </template>
 
@@ -17,7 +13,6 @@ export default defineComponent({
   name: 'PlanningPage',
   components: {
     VirtualCalendar,
-    IonContent,
     IonPage
   },
   data() {
@@ -28,9 +23,5 @@ export default defineComponent({
 })
 </script>
 
-<style lang="scss" scoped>
-#calendar-wrapper {
-  height: 100%;
-  padding: 10px;
-}
+<style lang="scss">
 </style>
