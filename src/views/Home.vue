@@ -25,6 +25,15 @@
             <crew-web-widget />
           </ion-card-content>
         </ion-card>
+        <ion-card v-if="isHybrid">
+          <ion-card-header>
+            <ion-card-title>CrewConnect</ion-card-title>
+            <ion-card-subtitle></ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <crew-connect-widget />
+          </ion-card-content>
+        </ion-card>
         <ion-card>
           <ion-card-header>
             <ion-card-title>Importer un fichier</ion-card-title>
@@ -36,7 +45,7 @@
             <file-picker></file-picker>
           </ion-card-content>
         </ion-card>
-        <ion-card v-if="isCordova">
+        <ion-card v-if="isHybrid">
           <ion-card-header>
             <ion-card-subtitle
               >Synchronisez votre planning avec vos agendas</ion-card-subtitle
@@ -61,7 +70,7 @@
   </ion-page>
 </template>
 
-<script>
+<script setup>
 import {
   IonPage,
   IonHeader,
@@ -73,40 +82,20 @@ import {
   IonCardContent,
   IonCardSubtitle,
   IonCardTitle,
-  isPlatform
+  isPlatform,
+  getPlatforms
 } from '@ionic/vue'
 
 import CrewWebWidget from '@/components/CrewWebWidget'
+import CrewConnectWidget from '@/components/CrewConnectWidget.vue'
 import CalendarSyncWidget from '@/components/CalendarSyncWidget'
 import ICalendarExportWidget from '@/components/ICalendarExportWidget'
 import FilePicker from '@/components/FilePicker'
 
 import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'HomePage',
-  components: {
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
-    IonPage,
-    IonCard,
-    IonCardHeader,
-    IonCardContent,
-    IonCardSubtitle,
-    IonCardTitle,
-    CalendarSyncWidget,
-    ICalendarExportWidget,
-    CrewWebWidget,
-    FilePicker
-  },
-  setup() {
-    return {
-      isCordova: isPlatform('cordova')
-    }
-  }
-})
+const isHybrid = isPlatform('hybrid')
+console.log(getPlatforms())
 </script>
 
 <style scoped lang="scss">

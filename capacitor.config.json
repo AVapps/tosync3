@@ -2,7 +2,7 @@
   "appId": "fr.avapps.tosync",
   "appName": "tosync3",
   "bundledWebRuntime": false,
-  "npmClient": "npm",
+  "npmClient": "yarn",
   "webDir": "dist",
   "plugins": {
     "SplashScreen": {

@@ -7,11 +7,11 @@ const routes = [
     path: '/',
     beforeEnter: (to, from, next) => {
       const store = useMainStore()
-      if (!store.userId) {
-        next('/welcome')
-      } else {
+      // if (!store.userId) {
+      //   next('/welcome')
+      // } else {
         next('/tabs')
-      }
+      // }
     }
   },
   {

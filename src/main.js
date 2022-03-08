@@ -1,6 +1,3 @@
-import 'core-js/stable'
-import 'regenerator-runtime/runtime'
-
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -30,9 +27,6 @@ import './theme/calendar.css'
 
 /* Global Styles */
 import './style.scss'
-
-import { Events } from '@/model/Events'
-window.Events = Events
 
 const app = createApp(App)
   .use(IonicVue, {
