@@ -1,54 +1,12 @@
 <template>
   <ion-content class="av-calendar" :class="[displayMode]" :fullscreen="true" :scroll-y="false">
     <div class="av-calendar-header" slot="fixed">
-      <div class="datepicker">
-        <ion-button color="primary" fill="clear" id="current-month">
-          <span class="month">{{ activeMonthLabel.month }}</span>
-          &nbsp;
-          <span class="year">{{ activeMonthLabel.year }}</span>
-        </ion-button>
-        <ion-popover class="month-picker-popover" trigger="current-month">
-          <ion-datetime
-            presentation="month-year"
-            :show-default-buttons="true"
-            cancel-text="Annuler"
-            clear-text="Effacer"
-            done-text="OK"
-            first-day-of-week="1"
-            :size="'cover'"
-            :min="'2021-01-01'"
-            :max="'2022-12-01'"
-            :value="isoMonth"
-            @ionChange="onMonthSelect"
-          />
-        </ion-popover>
-      </div>
-      <div class="actions">
-        <ion-button
-          color="primary"
-          fill="clear"
-          size="small"
-          @click="goToPrevMonth"
-        >
-          <ion-icon :icon="chevronBack"></ion-icon>
-        </ion-button>
-        <ion-button
-          color="primary"
-          fill="clear"
-          size="small"
-          @click="goToPresentMonth"
-        >
-          <ion-icon :icon="ellipseOutline"></ion-icon>
-        </ion-button>
-        <ion-button
-          color="primary"
-          fill="clear"
-          size="small"
-          @click="goToNextMonth"
-        >
-          <ion-icon :icon="chevronForward"></ion-icon>
-        </ion-button>
-      </div>
+      <month-picker
+        :month="isoMonth"
+        :min="minMonth"
+        :max="maxMonth"
+        @update:month="onMonthSelect"/>
+      <hs-widget :ehs="-4.35" :hdv="63.5" />
     </div>
     <div class="av-calendar-body">
       <swiper
@@ -76,13 +34,14 @@
 
 <script>
 import { reactive, ref, onMounted, nextTick, provide } from 'vue'
-import { IonButton, IonIcon, IonPopover, IonDatetime, IonContent } from '@ionic/vue'
-import { chevronBack, chevronForward, ellipseOutline } from 'ionicons/icons'
+import { IonContent } from '@ionic/vue'
 
 import SwiperCore, { Virtual } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/swiper.scss'
 
+import HsWidget from './HSWidget.vue'
+import MonthPicker from './MonthPicker.vue'
 import CalendarMonth from './CalendarMonth'
 
 import { DateTime } from 'luxon'
@@ -96,13 +55,11 @@ export default {
   name: 'VirtualCalendar',
   components: {
     CalendarMonth,
-    IonIcon,
-    IonButton,
-    IonPopover,
-    IonDatetime,
     IonContent,
     SwiperSlide,
-    Swiper
+    Swiper,
+    HsWidget,
+    MonthPicker
   },
   props: ['displayMode'],
   setup() {
@@ -111,11 +68,13 @@ export default {
     window.EventsData = datasource
 
     const today = DateTime.local()
-    const currentMonth = today.startOf('month')
+    const presentMonth = today.startOf('month')
 
+    const MIN_MONTH = '2021-01'
+    const endOfCalendar = today.startOf('month').plus({ months: 3 })
+    const MAX_MONTH = endOfCalendar.toISODate().substring(0, 7)
     const monthsList = []
-    let d = today.startOf('month').minus({ year: 1 })
-    const endOfCalendar = today.startOf('month').plus({ months: 2 })
+    let d = DateTime.fromISO(MIN_MONTH)
 
     while (d <= endOfCalendar) {
       monthsList.push(d)
@@ -125,31 +84,17 @@ export default {
     const slides = reactive(
       monthsList.map((month) => ({
         month,
-        isCurrent: month.hasSame(currentMonth, 'month'),
-        isPast: month < currentMonth,
-        isFuture: month > currentMonth,
+        isPresent: month.hasSame(presentMonth, 'month'),
+        isPast: month < presentMonth,
+        isFuture: month > presentMonth,
         subscribed: false
       }))
     )
 
-    const activeMonthLabel = ref({
-      month:  currentMonth.toLocaleString({ month: 'long' }),
-      year: currentMonth.toLocaleString({ year: 'numeric' })
-    })
+    const isoMonth = ref(presentMonth.toISODate().substring(0, 7))
 
-    const isoMonth = ref(currentMonth.toISODate().substring(0, 7))
-
-    const currentSlide = () => {
-      return slides.findIndex((s) => s.isCurrent)
-    }
-
-    const onActiveIndexChange = (sw) => {
-      const month = slides[sw.activeIndex]?.month
-      activeMonthLabel.value = {
-      month:  month?.toLocaleString({ month: 'long' }),
-      year: month?.toLocaleString({ year: 'numeric' })
-    }
-      isoMonth.value = month?.toISODate().substring(0, 7)
+    const presentSlide = () => {
+      return slides.findIndex((s) => s.isPresent)
     }
 
     let swiper
@@ -170,14 +115,17 @@ export default {
       }
     })
 
-    const goToPrevMonth = () => {
-      if (swiper) swiper.slidePrev()
+    // Month change triggered by swiper
+    const onActiveIndexChange = (sw) => {
+      const month = slides[sw.activeIndex]?.month
+      // console.log('onActiveIndexChange', month)
+      isoMonth.value = month?.toISODate().substring(0, 7)
     }
 
-    const goToPresentMonth = () => {
-      if (swiper) {
-        swiper.slideTo(currentSlide(), 300, false)
-      }
+    // Month change triggered by month picker
+    const onMonthSelect = (iso) => {
+      const month = DateTime.fromISO(iso)
+      goToMonth(month)
     }
 
     const goToMonth = (monthDT) => {
@@ -189,16 +137,6 @@ export default {
       }
     }
 
-    const goToNextMonth = () => {
-      if (swiper) swiper.slideNext()
-    }
-
-    const onMonthSelect = (e) => {
-      const sub = e.target.value?.substring(0, 7)
-      const month = DateTime.fromISO(sub)
-      goToMonth(month)
-    }
-
     const onTransitionEnd = () => {
       console.log('TRANSITION END')
       if (swiper) {
@@ -207,6 +145,7 @@ export default {
           swiper.activeIndex,
           swiper.virtual.to
         ]
+        
         for (const index of toSubscribeIndex) {
           const slide = slides[index]
           if (slide && !slide.subscribed) {
@@ -237,9 +176,9 @@ export default {
         monthString
       )
       try {
-        await datasource.subscribeMonth(state.userId, monthString, state.isPNT)
+        await datasource.subscribeMonth(state, monthString)
       } catch (e) {
-        // TODO : handle error
+        // TODO: handle error
         console.log(e)
       }
       slide.subscribed = true
@@ -259,6 +198,7 @@ export default {
         await nextTick()
         await datasource.unsubscribeMonth(state.userId, monthString)
       } catch (err) {
+        // TODO: handle error
         console.log(err)
       }
       slide.subscribed = false
@@ -277,15 +217,10 @@ export default {
       onMonthSelect,
       slides,
       isoMonth,
-      activeMonthLabel,
-      initialSlide: currentSlide(),
-      goToPrevMonth,
-      goToPresentMonth,
-      goToNextMonth,
+      initialSlide: presentSlide(),
       weekdays: WEEKDAYS,
-      chevronBack,
-      chevronForward,
-      ellipseOutline
+      minMonth: MIN_MONTH,
+      maxMonth: MAX_MONTH
     }
   }
 }
@@ -329,30 +264,6 @@ ion-content.av-calendar {
     background-color: rgba(var(--ion-background-color-rgb), 0.7);
     backdrop-filter: blur(4px);
     z-index: 10;
-
-    ion-button#current-month {
-      color: var(--ion-color-success);
-      text-transform: capitalize;
-      transition: opacity 0.15s ease-in;
-      --padding-start: 0;
-
-      &.fade {
-        opacity: 0;
-        transform: translateX(-5px);
-        transition: opacity 0.15s ease-out;
-      }
-
-      .month {
-        font-weight: bold;
-      }
-    }
-
-    .actions {
-      ion-button::part(native) {
-        --padding-start: 5px;
-        --padding-end: 5px;
-      }
-    }
   }
 
   .av-calendar-body {
