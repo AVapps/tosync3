@@ -39,7 +39,7 @@ export default {
   props: ['month'],
   setup(props) {
     console.time(`setup CalendarMonth ${props.month?.toISODate()}`)
-    const days = ref()
+    const days = ref([])
 
     // TODO : implement global state
     const state = {
@@ -47,9 +47,11 @@ export default {
       isPNT: true
     }
 
-    days.value = getDaysForMonth(props.month, state)
-
-    console.timeEnd(`setup CalendarMonth ${props.month?.toISODate()}`)
+    // TODO: est-ce mieux avec requestAnimationFrame ?
+    requestAnimationFrame(() => {
+      days.value = getDaysForMonth(props.month, state)
+      console.timeEnd(`setup CalendarMonth ${props.month?.toISODate()}`)
+    })
 
     return {
       days,
