@@ -25,7 +25,3 @@ export function remuForMonth(month, events, days, isPNT = false) {
     return remuMois(month, events, days)
   }
 }
-
-export function calculSalaire(month, isPNT = false) {
-
-}
