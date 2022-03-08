@@ -35,7 +35,7 @@
       <number-input slot="end" v-model="profile.classe" :min="1" :max="5" />
     </ion-item>
 
-    <ion-item :disabled="profile.fonction === 'CDB'">
+    <ion-item :disabled="profile?.fonction === 'CDB'">
       <ion-label>ATPL</ion-label>
       <ion-toggle slot="end" v-model="profile.atpl"></ion-toggle>
     </ion-item>
@@ -50,10 +50,9 @@
   </ion-list>
 </template>
 
-<script>
-import { defineComponent, computed, reactive } from 'vue'
+<script setup>
+import { computed } from 'vue'
 import { useMainStore } from '@/store'
-import { defaults } from 'lodash'
 
 import {
   IonItem,
@@ -69,27 +68,14 @@ import {
 import DateInput from '@/components/DateInput.vue'
 import NumberInput from '@/components/NumberInput.vue'
 
-export default defineComponent({
-  name: 'ProfileSettings',
-  components: {
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonNote,
-    IonSelect,
-    IonSelectOption,
-    IonToggle,
-    DateInput,
-    NumberInput
-  },
-  setup() {
-    const store = useMainStore()
-
-    return {
-      profile: computed(() => store.config.profile)
-    }
-  }
+const store = useMainStore()
+const profile = computed(() => store.config.profile || {
+  fonction: 'OPL',
+  categorie: 'A',
+  dateAnciennete: '2020-01-01',
+  classe: 5,
+  atpl: false,
+  eHS: 'AF'
 })
 </script>
 
