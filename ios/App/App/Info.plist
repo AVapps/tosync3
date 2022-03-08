@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>fr_FR</string>
 	<key>CFBundleDisplayName</key>
 	<string>TO.sync</string>
 	<key>CFBundleExecutable</key>
@@ -12,6 +12,15 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>fr</string>
+		<string>en</string>
+		<string>de</string>
+		<string>nl</string>
+		<string>it</string>
+		<string>pt-BR</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
@@ -21,11 +30,33 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.getcapacitor.capacitor</string>
+			<string>fr.avapps.tosync</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fr.avapps.tosync</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>Capacitor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>capacitor</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.apm.crewconnect</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.apm.crewconnect</string>
 			</array>
 		</dict>
 	</array>
@@ -38,21 +69,12 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>fr</string>
-		<string>en</string>
-		<string>de</string>
-		<string>nl</string>
-		<string>it</string>
-		<string>pt-BR</string>
-	</array>
-	<key>NSContactsUsageDescription</key>
-	<string>$CONTACTS_USAGE_DESCRIPTION</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>TO.sync demande l'accès à vos calendriers afin de synchroniser votre planning.</string>
+	<string>TO.sync demande l&apos;accès à vos calendriers afin de synchroniser votre planning.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>To Take Photos and Video</string>
+	<key>NSContactsUsageDescription</key>
+	<string>$CONTACTS_USAGE_DESCRIPTION</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Always allow Geolocation?</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -86,5 +108,12 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>WKAppBoundDomains</key>
+	<array>
+		<string>planning.to.aero</string>
+		<string>avapps.fr</string>
+		<string>crewmobile.to.aero</string>
+		<string>transaviafr.okta-emea.com</string>
+	</array>
 </dict>
 </plist>
