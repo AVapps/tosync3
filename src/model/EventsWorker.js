@@ -1,13 +1,8 @@
 import * as Comlink from 'comlink'
-import { EventsDatasource } from './EventsDatasource'
+import { PlanningDatasource } from './PlanningDatasource' 
 import { DateTime } from 'luxon'
 
-self.DateTime = DateTime
-
-const datasource = new EventsDatasource()
+const datasource = new PlanningDatasource()
 datasource.watchDb()
-
-self.Events = datasource.db
-self.datasource = datasource
 
 Comlink.expose(datasource)

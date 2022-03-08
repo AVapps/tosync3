@@ -1,14 +1,7 @@
 import * as Comlink from 'comlink'
 import { DateTime } from 'luxon'
 import { reactive } from 'vue'
-
-window.Comlink = Comlink
-
-function checkUserId(userId) {
-  if (!/^[A-Z]{3}$/.test(userId)) {
-    throw new Error('You must provide a valid userId !')
-  }
-}
+import { checkUserId, toISOMonth } from './utils'
 
 export class EventsDatasourceClient {
   constructor () {
@@ -67,12 +60,10 @@ export class EventsDatasourceClient {
   }
 
   // Data loading functions
-  async subscribeMonth(userId, month, isPNT) {
+  async subscribeMonth({ userId, isPNT = false }, month) {
     checkUserId(userId)
-    if (DateTime.isDateTime(month)) {
-      month = month.toISODate().substring(0, 7)
-    }
-    const key = await this.datasource.subscribeMonth(userId, month, isPNT)
+    month = toISOMonth(month)
+    const key = await this.datasource.subscribeMonth({ userId, isPNT }, month)
     return {
       stop: async () => {
         return this.datasource.unsubscribeMonth(userId, key)
@@ -80,23 +71,19 @@ export class EventsDatasourceClient {
     }
   }
 
-  async refreshMonth(userId, month) {
+  async refreshMonth({ userId, isPNT = false }, month) {
     checkUserId(userId)
-    if (DateTime.isDateTime(month)) {
-      month = month.toISODate().substring(0, 7)
-    }
-    return this.datasource.refreshMonth(userId, month)
+    month = toISOMonth(month)
+    return this.datasource.refreshMonth({ userId, isPNT }, month)
   }
 
   async unsubscribeMonth(userId, month) {
     checkUserId(userId)
-    if (DateTime.isDateTime(month)) {
-      month = month.toISODate().substring(0, 7)
-    }
+    month = toISOMonth(month)
     return this.datasource.unsubscribeMonth(userId, month)
   }
 
-  async subscribeInterval(userId, start, end, isPNT) {
+  async subscribeInterval({ userId, isPNT = false }, start, end) {
     checkUserId(userId)
     if (DateTime.isDateTime(start)) {
       start = start.toMillis()
@@ -105,7 +92,7 @@ export class EventsDatasourceClient {
       end = end.toMillis()
     }
 
-    const subKey = await this.datasource.subscribeInterval(userId, start, end, isPNT)
+    const subKey = await this.datasource.subscribeInterval({ userId, isPNT }, start, end)
     return {
       stop: async () => {
         return this.datasource.unsubscribe(userId, subKey)
@@ -113,7 +100,7 @@ export class EventsDatasourceClient {
     }
   }
 
-  async refreshInterval(userId, start, end, isPNT) {
+  async refreshInterval({ userId, isPNT = false }, start, end) {
     checkUserId(userId)
     if (DateTime.isDateTime(start)) {
       start = start.toMillis()
@@ -121,7 +108,7 @@ export class EventsDatasourceClient {
     if (DateTime.isDateTime(end)) {
       end = end.toMillis()
     }
-    return this.datasource.refreshInterval(userId, start, end, isPNT)
+    return this.datasource.refreshInterval({ userId, isPNT }, start, end)
   }
 
   async unsubscribe(userId, subKey) {

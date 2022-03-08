@@ -53,3 +53,72 @@ export function getIntervalDates(start, end) {
   }
   return dates
 }
+
+export function checkUserId(userId) {
+  if (!/^[A-Z]{3}$/.test(userId)) {
+    throw new Error('You must provide a valid userId !')
+  }
+}
+
+export function checkISODate(isoDate) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(isoDate)) {
+    throw new Error('You must provide a valid ISO string date !')
+  }
+}
+
+export function checkISOMonth(isoMonth) {
+  if (!/^\d{4}-\d\d/.test(isoMonth)) {
+    throw new Error('You must provide a valid ISO string month !')
+  }
+}
+
+const TIMEZONE = 'Europe/Paris'
+
+export function toISODate(date) {
+  if (DateTime.isDateTime(date)) {
+    return date.toISODate()
+  } else if (typeof date === 'string') {
+    checkISODate(date)
+    return date
+  } else if (typeof date === 'number') {
+    return DateTime.fromMillis(date, { zone: TIMEZONE }).toISODate()
+  } else if (date instanceof Date) {
+    return DateTime.fromJSDate(date, { zone: TIMEZONE }).toISODate()
+  } else {
+    throw new Error('You must provide a valid date !')
+  }
+}
+
+export function toISOMonth(date) {
+  if (DateTime.isDateTime(date)) {
+    return date.toISODate().substring(0, 7)
+  } else if (typeof date === 'string') {
+    checkISOMonth(date)
+    return date.substring(0, 7)
+  } else if (typeof date === 'number') {
+    return DateTime.fromMillis(date, { zone: TIMEZONE }).toISODate().substring(0, 7)
+  } else if (date instanceof Date) {
+    return DateTime.fromJSDate(date, { zone: TIMEZONE }).toISODate().substring(0, 7)
+  } else {
+    throw new Error('You must provide a valid date/month !')
+  }
+}
+
+
+// get DateTime from isoDate, timestamp or DateTime
+export function toDateTime(date) {
+  if (DateTime.isDateTime(date)) {
+    return date.setZone(TIMEZONE)
+  }
+  if (typeof date === 'number') {
+    return DateTime.fromMillis(date, { zone: TIMEZONE })
+  }
+  if (typeof date === 'string') {
+    checkISODate(date)
+    return DateTime.fromISO(date, { zone: TIMEZONE })
+  }
+  if (date instanceof Date) {
+    return DateTime.fromJSDate(date, { zone: TIMEZONE })
+  }
+  throw new Error('You must provide a valid date !')
+}
