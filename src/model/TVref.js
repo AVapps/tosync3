@@ -26,6 +26,16 @@ export class TVrefCollection {
     this.memo = new Map()
   }
 
+  /**
+   * Finds the TVref for a given serie, date and route
+   * @param {String} serie - 'TOA' ou 'TOB'
+   * @param {Object} params - Must contain 'route' or ('from' and 'to')
+   * @param {String} params.route - IATA codes route (ex: 'LHR-CDG')
+   * @param {Number} params.start - Timestamp of the start of the flight
+   * @param {Number} [params.from] - IATA code of the departure airport
+   * @param {Number} [params.to] - IATA code of the destination airport
+   * @returns 
+   */
   find(serie, { route, start, from, to }) {
     if (!route && from && to) {
       route = [from, to].join('-')
