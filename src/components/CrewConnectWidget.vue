@@ -1,7 +1,7 @@
 <template>
   <div class="crew-connect-widget">
     <loading-button
-      v-if="!state.isLoggedIn"
+      v-if="!connect.isConnected"
       @click="signIn()"
       :loading="state.status === 'connecting' || state.isLoading"
       class="full-width"
@@ -9,50 +9,110 @@
     >
       Connexion
     </loading-button>
-    <div id="osw-container"></div>
+    <p v-if="connect.user">
+      Connecté en tant que {{ connect.user?.userId }}
+    </p>
+    <loading-button
+      v-if="connect.isConnected"
+      @click="fetchEvents()"
+      :loading="state.status === 'connecting' || state.isLoading"
+      class="full-width"
+      shape="round"
+    >
+      Fetch Events
+    </loading-button>
+    <loading-button
+      @click="testImport()"
+      :loading="state.status === 'connecting' || state.isLoading"
+      class="full-width"
+      shape="round"
+    >
+      Test Importation
+    </loading-button>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useMainStore } from '@/store'
+import { useUserStore, useConnect } from '@/store'
 import LoadingButton from './LoadingButton.vue'
-import { OktaCapacitor } from 'okta-capacitor' 
 
-console.log(OktaCapacitor)
-window.OktaCapacitor = OktaCapacitor
+import { importCrewConnectPlanning } from '@/lib/CrewConnect/importPlanning.js'
 
-const store = useMainStore()
+import RosterData202106 from '@/data/2021-06-roster-calendars.json'
+import RosterData202107 from '@/data/2021-07-roster-calendars.json'
+import RosterData202108 from '@/data/2021-08-roster-calendars.json'
+import RosterData202109 from '@/data/2021-09-roster-calendars.json'
+import RosterData202110 from '@/data/2021-10-roster-calendars.json'
+import RosterData202111 from '@/data/2021-11-roster-calendars.json'
+import RosterData202112 from '@/data/2021-12-roster-calendars.json'
+import RosterData202201 from '@/data/2022-01-roster-calendars.json'
+import RosterData202202 from '@/data/2022-02-roster-calendars.json'
+import RosterData202203 from '@/data/2022-03-roster-calendars.json'
+import RosterData202204 from '@/data/2022-04-roster-calendars.json'
+
+const store = useUserStore()
 const loading = ref(false)
 const state = reactive({
   isLoading: false,
   isLoggedIn: false,
-  status: 'disconnected'
+  status: 'disconnected',
+  user: null
 })
 
-const config = {
-  discoveryUri: 'https://transaviafr.okta-emea.com',
-  clientId: '0oa3r2zbnhZlT9SUy0i7',
-  redirectUri: 'com.apm.crewconnect:/callback',
-  logoutRedirectUri: 'com.apm.crewconnect:/',
-  scopes: ['openid', 'profile', 'offline_access']
-}
+const connect = useConnect()
 
 const signIn = async () => {
   try {
     state.isLoading = true
-    const success = await OktaCapacitor.createConfig(config)
-    console.log(success)
-    const result = await OktaCapacitor.signIn()
-    console.log(result)
+    const resp = await connect.signIn('IEN')
+    console.log(resp)
+    console.log(connect.user)
     state.isLoggedIn = true
+    // await connect.getRosterChanges()
+    // await connect.getCrewsIndex()
+    const data = await connect.getRosterCalendars({
+      dateFrom: '2022-03-01T00:00:00Z',
+      dateTo: '2022-03-30T23:59:59Z'
+    })
+    console.log(data)
   } catch (e) {
-    console.log(e, e.errorCode, e.errorSummary, e.errorCauses, e.errorLink)
+    console.log(e, e.errorCode)
     state.isLoggedIn = false
   } finally {
     state.isLoading = false
   }
 }
+
+const fetchEvents = async () => {
+  try {
+    state.isLoading = true
+    const data = await connect.getRosterCalendars({
+      dateFrom: '2022-03-01T00:00:00Z',
+      dateTo: '2022-04-16T23:59:59Z'
+    })
+    console.log(data)
+  } catch (e) {
+    console.log(e, e.errorCode)
+    state.isLoggedIn = false
+  } finally {
+    state.isLoading = false
+  }
+}
+
+const testImport = async () => {
+  state.isLoading = true
+  for (const data of [RosterData202106, RosterData202107, RosterData202108, RosterData202109, RosterData202110, RosterData202111, RosterData202112, RosterData202201, RosterData202202, RosterData202203, RosterData202204]) {
+    try {
+      const result = await importCrewConnectPlanning(data)
+      console.log(result)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+  state.isLoading = false
+}
+
 </script>
 
 <style lang="scss">
