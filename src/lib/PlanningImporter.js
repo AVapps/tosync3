@@ -1,10 +1,10 @@
 import * as Comlink from 'comlink'
-import pdfjsLib from './pdfjs.js'
-import { groupPdfPageTables } from './groupPdfPageTables.js'
+import pdfjsLib from './PdfPlanning/pdfjs.js'
+import { groupPdfPageTables } from './PdfPlanning/groupPdfPageTables.js'
 import { useEventsDatasource } from './useEventsDatasource.js'
 
 export async function importPdfFile(data) {
-  const worker = new Worker(new URL('./PdfImportWorker.js', import.meta.url))
+  const worker = new Worker(new URL('./PdfPlanning/PdfImportWorker.js', import.meta.url))
   const { parsePageContent, importPdfPlanning } = Comlink.wrap(worker)
   const doc = await pdfjsLib.getDocument(data).promise
   const numPages = doc.numPages

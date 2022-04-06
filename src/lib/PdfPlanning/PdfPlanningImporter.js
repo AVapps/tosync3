@@ -1,6 +1,6 @@
 import { DateTime, Settings } from 'luxon'
 import _ from 'lodash'
-import { slug as getSlug } from './Utils.js'
+import { slug as getSlug } from '@/helpers/events.js'
 import {
   rotationSchema,
   svSchema,

@@ -1,6 +1,7 @@
 import { DateTime, Duration, Settings } from 'luxon'
 import _ from 'lodash'
-import { findTag, findCodeInstruction, ALLDAY_TAGS } from './Utils.js'
+import { findTag, findCodeInstruction } from '@/helpers/events.js'
+import { ALLDAY_TAGS } from '@/data/tags'
 
 Settings.defaultLocale = 'fr'
 Settings.defaultZoneName = 'Europe/Paris'
