@@ -7,7 +7,7 @@
 <script>
 import { IonApp, IonRouterOutlet } from '@ionic/vue'
 import { defineComponent, watchEffect } from 'vue'
-import { useMainStore } from '@/store'
+import { useMainStore, useUserStore } from '@/store'
 import { useRouter } from 'vue-router'
 
 export default defineComponent({
@@ -18,11 +18,12 @@ export default defineComponent({
   },
   setup() {
     const store = useMainStore()
+    const userStore = useUserStore()
     const router = useRouter()
 
-    store.init().then(
+    userStore.init().then(
       () => {
-        if (store.userId) {
+        if (userStore.userId) {
           router.push('/tabs')
         }
       },
@@ -32,17 +33,20 @@ export default defineComponent({
     )
 
     watchEffect(() => {
-      switch (store.config?.theme) {
-        case 'light':
-          document.body.classList.add('light')
-          document.body.classList.remove('dark')
-          break
-        case 'dark':
-          document.body.classList.add('dark')
-          document.body.classList.remove('light')
-          break
-      }
+      watchEffect(() => {
+        switch (userStore.config?.theme) {
+          case 'light':
+            document.body.classList.add('light')
+            document.body.classList.remove('dark')
+            break
+          case 'dark':
+            document.body.classList.add('dark')
+            document.body.classList.remove('light')
+            break
+        }
+      })
     })
+    
     return {}
   }
 })
