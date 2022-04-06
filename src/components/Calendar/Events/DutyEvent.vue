@@ -13,9 +13,9 @@
 </template>
 
 <script setup>
-import { tsToTime } from '@/lib/helpers'
+import { tsToTime } from '@/helpers/dates'
 import { DateTime } from 'luxon'
-import { eventClass } from '../utils'
+import { eventClass } from '@/helpers/calendar'
 
 // eslint-disable-next-line
 const props = defineProps({

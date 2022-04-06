@@ -1,5 +1,4 @@
 import SimpleSchema from 'simpl-schema'
-import { TAGS } from '@/lib/Utils.js'
 
 export const eventSchema = new SimpleSchema({
   _id: {
@@ -11,10 +10,10 @@ export const eventSchema = new SimpleSchema({
   userId: {
     type: String
   },
-  tag: {
-    type: String,
-    allowedValues: TAGS
-  },
+  // tag: {
+  //   type: String,
+  //   allowedValues: TAGS
+  // },
   slug: {
     type: String
   },
@@ -26,6 +25,11 @@ export const eventSchema = new SimpleSchema({
   },
 
   // Optional fields
+  remu: {
+    type: Object,
+    optional: true,
+    blackbox: true
+  },
   category: {
     type: String,
     optional: true
@@ -34,7 +38,7 @@ export const eventSchema = new SimpleSchema({
     type: String,
     optional: true
   },
-  remark: {
+  remarks: {
     type: String,
     optional: true
   },

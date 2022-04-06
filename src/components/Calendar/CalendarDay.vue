@@ -26,7 +26,7 @@
 <script>
 import { defineComponent, inject, ref, computed } from 'vue'
 import { DateTime, Settings } from 'luxon'
-import { eventClass, isAlldayTag } from './utils'
+import { eventClass, isAlldayTag } from '@/helpers/calendar'
 
 import AlldayEvent from './Events/AlldayEvent'
 import DefaultEvent from './Events/DefaultEvent'

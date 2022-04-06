@@ -45,7 +45,7 @@ import MonthPicker from './MonthPicker.vue'
 import CalendarMonth from './CalendarMonth'
 
 import { DateTime } from 'luxon'
-import { WEEKDAYS } from './utils'
+import { WEEKDAYS } from '@/helpers/calendar'
 import { useEventsDatasource } from '@/lib/useEventsDatasource'
 
 SwiperCore.use([Virtual])

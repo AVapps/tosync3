@@ -29,9 +29,9 @@
 
 <script setup>
 import { computed } from 'vue'
-import { tsToTime } from '@/lib/helpers'
+import { tsToTime } from '@/helpers/dates'
 import { DateTime } from 'luxon'
-import { eventClass, filterEventsByDate } from '../utils'
+import { eventClass, filterEventsByDate } from '@/helpers/calendar'
 
 // eslint-disable-next-line
 const props = defineProps({

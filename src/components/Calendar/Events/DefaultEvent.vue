@@ -10,8 +10,8 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { tsToTime } from '@/lib/helpers'
-import { tagLabel } from '@/lib/Utils'
+import { tsToTime } from '@/helpers/dates'
+import { tagLabel } from '@/helpers/events'
 
 export default defineComponent({
   name: 'DefaultEvent',

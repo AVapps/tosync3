@@ -4,7 +4,7 @@ import { Keychain as CapKeychain } from '@ionic-native/keychain'
 
 import { reactive, toRaw } from 'vue'
 import { has } from 'lodash'
-import { wait } from './Utils'
+import { wait } from '@/helpers/events'
 
 // const ROOT_URL = 'https://planning.to.aero/'
 const SIGN_ON_URL = 'https://planning.to.aero/SAML/SingleSignOn'

@@ -19,7 +19,7 @@
 
 <script setup>
 import { IonChip } from '@ionic/vue'
-import { formatNumber, formatAsHours } from '@/lib/helpers'
+import { formatNumber, formatAsHours } from '@/helpers/dates'
 
 // eslint-disable-next-line no-undef
 const props = defineProps({

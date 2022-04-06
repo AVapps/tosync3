@@ -29,7 +29,7 @@
 <script>
 import { ref } from 'vue'
 import CalendarDay from './CalendarDay'
-import { getDaysForMonth, WEEKDAYS } from './utils'
+import { getDaysForMonth, WEEKDAYS } from '@/helpers/calendar'
 
 export default {
   name: 'CalendarMonth',

@@ -3,10 +3,10 @@ import { AsyncTasksQueue } from './TasksQueue'
 import { Events } from './Events'
 import { DateTime, Interval, Settings } from 'luxon'
 import { getIntervalDates, checkUserId, checkISODate, toDateTime } from './utils'
-import { getDayParams } from './CalendarUtils'
+import { getDayParams } from '@/helpers/calendar'
 import { compact, difference, has, remove, some } from 'lodash'
 import { remuForEvent, remuForDay, remuForMonth } from '@/lib/Remu/Remu'
-import { calculSalaireAF } from '../lib/Remu/calculSalairePNT'
+import { calculSalaireAF } from '@/lib/Remu/calculSalairePNT'
 
 const TIMEZONE = 'Europe/Paris'
 

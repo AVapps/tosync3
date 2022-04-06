@@ -1,11 +1,37 @@
 import { DateTime, Interval, Settings } from 'luxon'
+import Big from 'big.js'
 import _ from 'lodash'
-import { SOL_TAGS, TAGS } from '../Utils'
+
+import { SOL_TAGS, TAGS } from '@/data/tags'
 import { TVref } from '@/model/TVref'
 
 import CONFIG_AF from './configAF'
 import CONFIG_TO from './configTO'
 // import CONFIG_RU from './configRU'
+
+Big.DP = 2
+
+Big.max = (...args) => {
+  let i
+  let y
+  let x = new Big(args[0])
+  for (i = 1; i < args.length; i++) {
+    y = new Big(args[i])
+    if (x.lt(y)) x = y
+  }
+  return x
+}
+
+Big.min = (...args) => {
+  let i
+  let y
+  let x = new Big(args[0])
+  for (i = 1; i < args.length; i++) {
+    y = new Big(args[i])
+    if (x.gt(y)) x = y
+  }
+  return x
+}
 
 const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
@@ -22,7 +48,7 @@ function duree(debut, fin) {
   if (!DateTime.isDateTime(fin)) {
     fin = DateTime.fromMillis(fin)
   }
-  return fin.diff(debut).as('hours')
+  return Big(fin.diff(debut).as('hours'))
 }
 
 function nj(debut, fin) {
@@ -55,30 +81,30 @@ function jours(events, month) {
 function sumBy(collection, key) {
   return _.reduce(collection, (sum, object) => {
     if (_.has(object, key)) {
-      return sum + (_.get(object, key) || 0)
+      return sum.plus(_.get(object, key) || 0)
     } else {
       return sum
     }
-  }, 0)
+  }, Big(0))
 }
 
 function sumRemuByMonth(collection, key, month, startKey = 'debut') {
   return _.reduce(collection, (sum, object) => {
     // L'objet a un objet split
     if (_.has(object.remu, ['split', month, key].join('.'))) {
-      return sum + (_.get(object.remu, ['split', month, key].join('.')) || 0)
+      return sum.plus(_.get(object.remu, ['split', month, key].join('.')) || 0)
     // L'objet a un DateTime Luxon de début
     } else if (_.has(object.remu, key) && _.has(object.remu, startKey) && _.get(object.remu, startKey).month === month) {
-      return sum + (_.get(object.remu, key) || 0)
+      return sum.plus(_.get(object.remu, key) || 0)
 
     // L'objet a un timestamp de début
     } else if (_.has(object.remu, key) && _.has(object, 'start') &&
       toDateTime(_.get(object, 'start')).month === month) {
-      return sum + (_.get(object.remu, key) || 0)
+      return sum.plus(_.get(object.remu, key) || 0)
     } else {
       return sum
     }
-  }, 0)
+  }, Big(0))
 }
 
 function hdn(debut, fin, configHDN) {
@@ -99,7 +125,7 @@ function hdn(debut, fin, configHDN) {
   const prevInt = interval.intersection(prevNight)
   const nextInt = interval.intersection(nextNight)
 
-  return (prevInt ? prevInt.length('hours') : 0) + (nextInt ? nextInt.length('hours') : 0)
+  return Big((prevInt ? prevInt.length('hours') : 0) + (nextInt ? nextInt.length('hours') : 0))
 }
 
 export function remuRotation(rot) {
@@ -143,9 +169,9 @@ export function remuRotation(rot) {
   remu.HcaTO = remu.nbjoursTO * CONFIG_TO.hcaParJour
   remu.HcaAF = remu.nbjoursAF * CONFIG_AF.hcaParJour
 
-  remu.H2TO = Math.max(remu.HcaTO, remu.H1TO)
-  remu.H2AF = Math.max(remu.HcaAF, remu.H1AF)
-  remu.H2rAF = Math.max(remu.HcaAF, remu.H1rAF)
+  remu.H2TO = Big.max(remu.HcaTO, remu.H1TO)
+  remu.H2AF = Big.max(remu.HcaAF, remu.H1AF)
+  remu.H2rAF = Big.max(remu.HcaAF, remu.H1rAF)
 
   const debut = debutAbs
   const fin = lastSV.remu.finTSVrAF
@@ -173,23 +199,31 @@ export function remuRotation(rot) {
     }
 
     const prorata = {
-      [debut.month]: (remu.split[debut.month].tv + (remu.split[debut.month].mep / 2)) / (rot.tv + (rot.mep / 2)),
-      [fin.month]: (remu.split[fin.month].tv + (remu.split[fin.month].mep / 2)) / (rot.tv + (rot.mep / 2))
+      [debut.month]: remu.split[debut.month].tv.plus(remu.split[debut.month].mep.div(2)).div(remu.tv.plus(remu.mep.div(2))),
+      [fin.month]: remu.split[fin.month].tv.plus(remu.split[fin.month].mep.div(2)).div(remu.tv.plus(remu.mep.div(2)))
     }
 
     _.assign(remu.split[debut.month], {
-      H2TO: remu.H2TO * prorata[debut.month],
-      H2AF: remu.H2AF * prorata[debut.month],
-      H2rAF: remu.H2rAF * prorata[debut.month]
+      H2TO: Big(remu.H2TO).times(prorata[debut.month]),
+      H2AF: Big(remu.H2AF).times(prorata[debut.month]),
+      H2rAF: Big(remu.H2rAF).times(prorata[debut.month])
     })
 
     _.assign(remu.split[fin.month], {
-      H2TO: remu.H2TO * prorata[fin.month],
-      H2AF: remu.H2AF * prorata[fin.month],
-      H2rAF: remu.H2rAF * prorata[fin.month]
+      H2TO: Big(remu.H2TO).times(prorata[fin.month]),
+      H2AF: Big(remu.H2AF).times(prorata[fin.month]),
+      H2rAF: Big(remu.H2rAF).times(prorata[fin.month])
     })
   }
-  return remu
+
+  _.forEach(rot.sv, sv => {
+    _.forEach(sv.events, s => {
+      s.remu = exportRemuData(s.remu)
+    })
+    sv.remu = exportRemuData(sv.remu)
+  })
+
+  return exportRemuData(remu)
 }
 
 export function remuSV(sv) {
@@ -205,45 +239,12 @@ export function remuSV(sv) {
     countMEP: counts.mep
   }
 
-  remu.tme = counts.vol ? remu.tv / counts.vol : 0
-  remu.cmt = counts.vol ? Math.max(70 / (21 * Math.max(remu.tme, 1) + 30), 1) : 0
+  remu.tme = counts.vol ? remu.tv.div(counts.vol) : 0
+  remu.cmt = counts.vol ? Big.max(Big(70).div(Big.max(remu.tme, 1).times(21).plus(30)), 1) : 0
 
   const first = _.first(sv.events)
   const last = _.last(sv.events)
   const lastVol = _.last(groups.vol)
-  // let preTs, preTsv, postTs, postTsv
-
-  // // Calcul TR, TS et TSV
-  // if (first.tag === 'mep') {
-  //   // Le service de vol commence par une MEP
-  //   preTs = CONFIG_RU.preTsMep
-  //   preTsv = CONFIG_RU.preTsvMep
-  // } else if (first.from === 'ORY') {
-  //   // Le service de vol commence en base
-  //   preTs = CONFIG_RU.preTsBase
-  //   preTsv = CONFIG_RU.preTsvBase
-  // } else {
-  //   // Le service de vol commence en escale
-  //   preTs = CONFIG_RU.preTsEscale
-  //   preTsv = CONFIG_RU.preTsvEscale
-  // }
-
-  // if (last.tag === 'mep') {
-  //   // Le service de vol termine par une MEP
-  //   postTs = CONFIG_RU.postTsMep
-  //   postTsv = CONFIG_RU.postTsvMep
-  // } else {
-  //   // Le service de vol termine par un vol
-  //   postTs = CONFIG_RU.postTs
-  //   postTsv = CONFIG_RU.postTsv
-  // }
-
-  // _.extend(sv, {
-  //   tsStart: first.debut.minus({ hours: preTs }),
-  //   tsvStart: first.debut.minus({ hours: preTsv }),
-  //   tsEnd: last.tag === 'vol' ? last.finR.plus({ hours: postTs }) : last.fin.plus({ hours: postTs }),
-  //   tsvEnd: sv.countVol ? lastVol.finR.plus({ hours: postTsv }) : first.debut.minus({ hours: preTsv })
-  // })
 
   if (sv.tag === 'sv') {
     remu.debutTR = toDateTime(first.tag === 'vol' ? Math.min(first.std, first.start) : first.start, { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
@@ -254,25 +255,25 @@ export function remuSV(sv) {
     remu.HctTO = Math.max(duree(remu.debutTR, remu.finTR), CONFIG_TO.TRMini) * CONFIG_TO.coefTR
 
     const tsvrAF = duree(remu.debutTR, remu.finTSVrAF)
-    if (CONFIG_AF.coefTSV10 && tsvrAF > 10) {
-      remu.HctAF = tsvrAF * CONFIG_AF.coefTSV10
+    if (CONFIG_AF.coefTSV10 && tsvrAF.gt(10)) {
+      remu.HctAF = tsvrAF.times(CONFIG_AF.coefTSV10)
     } else {
-      remu.HctAF = Math.max(tsvrAF, CONFIG_AF.tsvMini) * CONFIG_AF.coefTSV
+      remu.HctAF = Big.max(tsvrAF, CONFIG_AF.tsvMini).times(CONFIG_AF.coefTSV)
     }
   } else {
     remu.debutTR = toDateTime(first.start).minus({ hours: CONFIG_TO.preTR })
     remu.finTR = remu.debutTR
     remu.finTSVrAF = toDateTime(last.end).plus({ hours: CONFIG_AF.postTSVr })
     remu.HctTO = 0
-    remu.HctAF = duree(remu.debutTR, remu.finTSVrAF) * CONFIG_AF.coefTSV
+    remu.HctAF = duree(remu.debutTR, remu.finTSVrAF).times(CONFIG_AF.coefTSV)
   }
 
-  remu.HcvTO = (sumBy(groups.vol, 'remu.hv100TO') * remu.cmt) + (sumBy(groups.mep, 'mep') / 2)
-  remu.H1TO = Math.max(remu.HctTO, remu.HcvTO)
-  remu.HcvAF = (sumBy(groups.vol, 'remu.hv100AF') * remu.cmt) + (sumBy(groups.mep, 'mep') / 2)
-  remu.HcvrAF = (sumBy(groups.vol, 'remu.hv100rAF') * remu.cmt) + (sumBy(groups.mep, 'mep') / 2)
-  remu.H1AF = Math.max(remu.HctAF, remu.HcvAF)
-  remu.H1rAF = Math.max(remu.HctAF, remu.HcvrAF)
+  remu.HcvTO = sumBy(groups.vol, 'remu.hv100TO').times(remu.cmt).plus(sumBy(groups.mep, 'mep').div(2))
+  remu.H1TO = Big.max(remu.HctTO, remu.HcvTO)
+  remu.HcvAF = sumBy(groups.vol, 'remu.hv100AF').times(remu.cmt).plus(sumBy(groups.mep, 'mep').div(2))
+  remu.HcvrAF = sumBy(groups.vol, 'remu.hv100rAF').times(remu.cmt).plus(sumBy(groups.mep, 'mep').div(2))
+  remu.H1AF = Big.max(remu.HctAF, remu.HcvAF)
+  remu.H1rAF = Big.max(remu.HctAF, remu.HcvrAF)
 
   if (sv.tag === 'mep') {
     remu.TSVnuit = 0
@@ -280,13 +281,13 @@ export function remuSV(sv) {
     const MEPnuit = counts.mep
       ? _.reduce(groups.mep, (sum, evt) => {
         if (evt.tag === 'mep') {
-          return sum + hdn(evt.start, evt.end, CONFIG_AF.hdn)
+          return hdn(evt.start, evt.end, CONFIG_AF.hdn).plus(sum)
         } else {
           return sum
         }
       }, 0)
       : 0
-    remu.TSVnuit = hdn(remu.debutTR, remu.finTSVrAF, CONFIG_AF.hdn) - MEPnuit
+    remu.TSVnuit = hdn(remu.debutTR, remu.finTSVrAF, CONFIG_AF.hdn).minus(MEPnuit)
 
     if (remu.debutTR.month !== remu.finTSVrAF.month) {
       const splitMEPnuit = counts.mep
@@ -295,11 +296,11 @@ export function remuSV(sv) {
             const debut = toDateTime(evt.start)
             const fin = toDateTime(evt.end)
             if (debut.month !== fin.month) {
-              split[debut.month] += hdn(debut, debut.endOf('month'), CONFIG_AF.hdn)
-              split[fin.month] += hdn(fin.startOf('month'), fin, CONFIG_AF.hdn)
+              split[debut.month] = hdn(debut, debut.endOf('month'), CONFIG_AF.hdn).plus(split[debut.month])
+              split[fin.month] = hdn(fin.startOf('month'), fin, CONFIG_AF.hdn).plus(split[fin.month])
               return split
             } else {
-              split[debut.month] += hdn(debut, fin, CONFIG_AF.hdn)
+              split[debut.month] = hdn(debut, fin, CONFIG_AF.hdn).plus(split[debut.month])
               return split
             }
           } else {
@@ -310,10 +311,10 @@ export function remuSV(sv) {
 
       remu.split = {
         [remu.debutTR.month]: {
-          TSVnuit: hdn(remu.debutTR, remu.debutTR.endOf('month'), CONFIG_AF.hdn) - splitMEPnuit[remu.debutTR.month]
+          TSVnuit: hdn(remu.debutTR, remu.debutTR.endOf('month'), CONFIG_AF.hdn).minus(splitMEPnuit[remu.debutTR.month])
         },
         [remu.finTSVrAF.month]: {
-          TSVnuit: hdn(remu.finTSVrAF.startOf('month'), remu.finTSVrAF, CONFIG_AF.hdn) - splitMEPnuit[remu.finTSVrAF.month]
+          TSVnuit: hdn(remu.finTSVrAF.startOf('month'), remu.finTSVrAF, CONFIG_AF.hdn).minus(splitMEPnuit[remu.finTSVrAF.month])
         }
       }
     }
@@ -340,14 +341,14 @@ export function remuVol(vol) {
 
   if ((vol.from === 'CDG' && vol.to === 'ORY') || (vol.from === 'ORY' && vol.to === 'CDG')) {
     remu.pogo = true
-    remu.hv100TO = CONFIG_TO.hcPogo
-    remu.hv100AF = CONFIG_AF.hcPogo
-    remu.hv100rAF = CONFIG_AF.hcPogo
+    remu.hv100TO = Big(CONFIG_TO.hcPogo)
+    remu.hv100AF = Big(CONFIG_AF.hcPogo)
+    remu.hv100rAF = Big(CONFIG_AF.hcPogo)
   } else {
-    remu.hv100TO = TVref.find('TOA', vol) || vol.tvp
-    remu.tvrefAF = TVref.find('TOB', vol) || vol.tvp
-    remu.hv100AF = Math.max(remu.tvrefAF, remu.tv)
-    remu.hv100rAF = remu.tvrefAF + CONFIG_AF.bonusEtape // TODO: Bonus majoré des étapes de plus de 2100 (aucune à ce jour)
+    remu.hv100TO = Big(TVref.find('TOA', vol) || remu.tvp)
+    remu.tvrefAF = Big(TVref.find('TOB', vol) || remu.tvp)
+    remu.hv100AF = Big.max(remu.tvrefAF, remu.tv)
+    remu.hv100rAF = remu.tvrefAF.plus(CONFIG_AF.bonusEtape) // TODO: Bonus majoré des étapes de plus de 2100 (aucune à ce jour)
   }
 
   if (debutR.month !== finR.month) {
@@ -370,12 +371,12 @@ export function remuVol(vol) {
 export function remuMEP(mep) {
   const debut = toDateTime(mep.start)
   const fin = toDateTime(mep.end)
-  const remu = {}
-
-  mep.mep = mep.category === 'ENGS' ? 0 : duree(debut, fin)
-  mep.tv = 0
-  mep.tvp = 0
-  remu.HVnuit = 0
+  const remu = {
+    mep: mep.category === 'ENGS' ? 0 : duree(debut, fin),
+    tv: Big(0),
+    tvp: Big(0),
+    HVnuit: Big(0)
+  }
 
   if (debut.month !== fin.month) {
     remu.split = {
@@ -396,7 +397,7 @@ export function remuSimuAF(simu) {
   if (_.has(simu, 'events')) {
     Hsimu = _.reduce(simu.events, (h, s) => {
       if (s.tag === 'simu') {
-        return h + duree(s.start, s.end)
+        return duree(s.start, s.end).plus(h)
       } else {
         return h
       }
@@ -404,9 +405,9 @@ export function remuSimuAF(simu) {
   } else {
     Hsimu = duree(simu.start, simu.end)
   }
-  return {
-    HcsAF: Hsimu > 2 ? CONFIG_AF.HcSimu : CONFIG_AF.HcDemiSimu
-  }
+  return exportRemuData({
+    HcsAF: Hsimu.gt(2) ? CONFIG_AF.HcSimu : CONFIG_AF.HcDemiSimu
+  })
 }
 
 export function remuSimuInstAF(simu) {
@@ -414,7 +415,7 @@ export function remuSimuInstAF(simu) {
   if (_.has(simu, 'events')) {
     Hsimu = _.reduce(simu.events, (h, s) => {
       if (s.tag === 'instructionSimu' || s.tag === 'simu') {
-        return h + duree(s.start, s.end)
+        return duree(s.start, s.end).plus(h)
       } else {
         return h
       }
@@ -426,9 +427,9 @@ export function remuSimuInstAF(simu) {
   const HsimuNuit = hdn(simu.start, simu.end, CONFIG_AF.hdnSimuInstruction)
 
   const remu = {
-    HcsAF: Hsimu > 2 ? CONFIG_AF.HcSimuInstruction : CONFIG_AF.HcDemiSimuInstruction,
-    PVAF: Hsimu > 2 ? CONFIG_AF.PVSimuInstruction : CONFIG_AF.PVDemiSimuInstruction,
-    majoNuitPVAF: HsimuNuit * CONFIG_AF.coefMajoNuit
+    HcsAF: Hsimu.gt(2) ? CONFIG_AF.HcSimuInstruction : CONFIG_AF.HcDemiSimuInstruction,
+    PVAF: Hsimu.gt(2) ? CONFIG_AF.PVSimuInstruction : CONFIG_AF.PVDemiSimuInstruction,
+    majoNuitPVAF: HsimuNuit.times(CONFIG_AF.coefMajoNuit)
   }
 
   // TODO : rémunération majorée des intructeurs référents
@@ -437,11 +438,11 @@ export function remuSimuInstAF(simu) {
     const tags = _.flatMap(simu.instruction.own, task => task.tags)
     if (tags.includes('cdb') || tags.includes('qt')) {
       // majoration de 6,5% de la rémunération des séances intégration et lâcher CDB
-      remu.PVAF = 1.065 * remu.PVAF
+      remu.PVAF = Big(remu.PVAF).times(1.065)
     }
   }
 
-  return remu
+  return exportRemuData(remu)
 }
 
 export function remuJourSol(day) {
@@ -715,4 +716,19 @@ function isDemiJournée(jourSol, splitHour = 12) {
   if (jourSol.debut >= mijournée || jourSol.fin <= mijournée) return true
 
   return false
+}
+
+function exportRemuData(remu) {
+  return _.chain(remu)
+    .omitBy(DateTime.isDateTime)
+    .mapValues((value, key) => {
+      if (value instanceof Big || typeof value === 'number') {
+        return value.toFixed(2)
+      }
+      if (key === 'split') {
+        return _.mapValues(value, split => exportRemuData(split))
+      }
+      return value
+    })
+    .value()
 }

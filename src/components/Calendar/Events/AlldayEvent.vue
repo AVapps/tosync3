@@ -8,7 +8,7 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { tagLabel } from '@/lib/Utils'
+import { tagLabel } from '@/helpers/events'
 
 export default defineComponent({
   name: 'AlldayEvent',

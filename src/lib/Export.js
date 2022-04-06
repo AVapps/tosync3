@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
 import { isEmpty, filter, get, keys, has, first, last } from 'lodash'
 import { renderEventDescription, renderEventTitle } from './Exporter'
-import { ALLDAY_TAGS, slug } from './Utils'
+import { slug } from '@/helpers/events'
+import { ALLDAY_TAGS } from '@/data/tags'
 
 import { Events } from '@/model/Events'
 

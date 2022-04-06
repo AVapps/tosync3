@@ -1,5 +1,5 @@
 import SimpleSchema from 'simpl-schema'
-import { TAGS } from '@/lib/Utils.js'
+import { TAGS } from '@/data/tags'
 
 export const dutySubEventSchema = new SimpleSchema({
   tag: {
