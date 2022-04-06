@@ -2,11 +2,11 @@ import { SimpleEventEmitter } from '@/lib/EventEmitter'
 import { AsyncTasksQueue } from './TasksQueue'
 import { Events } from './Events'
 import { DateTime, Interval, Settings } from 'luxon'
-import { getIntervalDates, checkUserId, checkISODate, toDateTime } from './utils'
+import { getIntervalDates, toDateTime } from '@/helpers/dates'
+import { checkUserId, checkISODate} from '@/helpers/check'
 import { getDayParams } from '@/helpers/calendar'
 import { compact, difference, has, remove, some } from 'lodash'
 import { remuForEvent, remuForDay, remuForMonth } from '@/lib/Remu/Remu'
-import { calculSalaireAF } from '@/lib/Remu/calculSalairePNT'
 
 const TIMEZONE = 'Europe/Paris'
 
@@ -250,7 +250,7 @@ export class EventsDatasource extends SimpleEventEmitter {
       }
       evt._dates = _dates
 
-      this.setRemuOfEvent(evt, isPNT)
+      // this.setRemuOfEvent(evt, isPNT)
 
       if (evt.tag === 'rotation') {
         evt.sv.forEach(sv => {
@@ -393,7 +393,7 @@ export class EventsDatasource extends SimpleEventEmitter {
     if (doc.tag === 'rotation' && !has(doc, 'sv')) {
       doc.sv = []
     }
-    this.setRemuOfEvent(doc)
+    // this.setRemuOfEvent(doc)
     this._events.set(doc._id, doc)
     this.emit('events.set', { events: [doc] })
 
@@ -416,7 +416,7 @@ export class EventsDatasource extends SimpleEventEmitter {
   }
 
   updateEvent(doc) {
-    this.setRemuOfEvent(doc)
+    // this.setRemuOfEvent(doc)
     // save event in index
     this._events.set(doc._id, doc)
     this.emit('events.set', { events: [doc] })
@@ -483,7 +483,7 @@ export class EventsDatasource extends SimpleEventEmitter {
       } else {
         rotation.sv.splice(position, 0, doc)
       }
-      this.setRemuOfEvent(rotation)
+      // this.setRemuOfEvent(rotation)
       this.emit('events.set', { events: [rotation] })
       // update days
       if (!this._days.has(doc.userId)) return // User has no subscriptions yet : skip
@@ -515,7 +515,7 @@ export class EventsDatasource extends SimpleEventEmitter {
           rotation.sv.splice(position, 0, doc)
         }
       }
-      this.setRemuOfEvent(rotation)
+      // this.setRemuOfEvent(rotation)
       this.emit('events.set', { events: [rotation] })
       // update days
       if (!this._days.has(doc.userId)) return // User has no subscriptions yet : skip
@@ -536,7 +536,7 @@ export class EventsDatasource extends SimpleEventEmitter {
     // update rotation if it exists
     if (rotation) {
       remove(rotation.sv, { _id: doc._id })
-      this.setRemuOfEvent(rotation)
+      // this.setRemuOfEvent(rotation)
       this.emit('events.set', { events: [rotation] })
       // update days
       if (!this._days.has(doc.userId)) return // User has no subscriptions yet : skip

@@ -1,7 +1,8 @@
 import * as Comlink from 'comlink'
 import { DateTime } from 'luxon'
 import { reactive } from 'vue'
-import { checkUserId, toISOMonth } from './utils'
+import { checkUserId } from '@/helpers/check'
+import { toISOMonth } from '@/helpers/dates'
 
 export class EventsDatasourceClient {
   constructor () {

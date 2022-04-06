@@ -2,7 +2,8 @@ import { SimpleEventEmitter } from '@/lib/EventEmitter'
 import { AsyncTasksQueue } from './TasksQueue'
 import { Events } from './Events'
 import { DateTime, Interval, Settings } from 'luxon'
-import { getIntervalDates, checkUserId } from './utils'
+import { getIntervalDates, toDateTime } from '@/helpers/dates'
+import { checkUserId, checkISODate} from '@/helpers/check'
 import { getDayParams } from '@/helpers/calendar'
 import { compact, difference, has, remove, some } from 'lodash'
 import { remuForEvent, remuForDay, remuForMonth } from '@/lib/Remu/Remu'
@@ -17,24 +18,6 @@ function checkDate(isoDate) {
   if (!/^\d{4}-\d\d-\d\d$/.test(isoDate)) {
     throw new Error('You must provide a valid ISO string date !')
   }
-}
-
-// get DateTime from isoDate, timestamp or DateTime
-function toDateTime(date) {
-  if (DateTime.isDateTime(date)) {
-    return date
-  }
-  if (typeof date === 'number') {
-    return DateTime.fromMillis(date)
-  }
-  if (typeof date === 'string') {
-    checkDate(date)
-    return DateTime.fromISO(date)
-  }
-  if (date instanceof Date) {
-    return DateTime.fromJSDate(date)
-  }
-  throw new Error('You must provide a valid date !')
 }
 
 export class EventsDatasource extends SimpleEventEmitter {
