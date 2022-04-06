@@ -17,7 +17,6 @@ module.exports = {
     'import/no-absolute-path': 'off',
     'space-before-function-paren': 'off',
     'vue/attribute-hyphenation': 'off',
-    'vue/no-deprecated-slot-attribute': 'off',
     'vue/max-attributes-per-line': ['warn', {
       singleline: 4,
       multiline: 1
