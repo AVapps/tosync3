@@ -1,5 +1,7 @@
 <template>
   <div class="calendar-sync-widget">
+    <p v-if="!hasPermission">Vous n'avez pas autorisé TO.sync à accéder à vos calendriers : activeze l'accès depuis Réglages > TO.sync.</p>
+
     <ion-list v-if="availableCalendars.length" inset="true">
       <ion-item>
         <ion-select
@@ -73,8 +75,9 @@ import {
 } from '@ionic/vue'
 
 import { difference, remove } from 'lodash'
-import { useMainStore } from '@/store'
+import { useUserStore } from '@/store'
 import {
+  checkPermissions,
   listCalendars,
   syncEventsInRange,
   minSyncDate,
@@ -95,10 +98,20 @@ export default defineComponent({
     LoadingButton
   },
   setup(_, { emit }) {
-    const store = useMainStore()
+    const store = useUserStore()
     const loading = ref(false)
 
     const syncCategories = Object.keys(SYNC_CATEGORIES)
+    const hasPermission = ref(false)
+
+    checkPermissions()
+      .then(state => {
+        console.log(state)
+        hasPermission.value = state.calendar !== 'denied'
+      })
+      .catch(err => {
+        console.error(err)
+      })
 
     const availableCalendars = ref([])
     const availableCalendarsMap = computed(
@@ -178,6 +191,7 @@ export default defineComponent({
     }
 
     return {
+      hasPermission,
       availableCalendars,
       availableCalendarsMap,
       selectedCalendarIds,

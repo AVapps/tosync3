@@ -14,7 +14,7 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { useMainStore } from '@/store'
+import { useUserStore } from '@/store'
 
 import {
   IonButton
@@ -26,7 +26,7 @@ export default defineComponent({
     IonButton
   },
   setup() {
-    const store = useMainStore()
+    const store = useUserStore()
 
     return {
       userId: 'IEN',

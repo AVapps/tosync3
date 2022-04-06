@@ -43,7 +43,7 @@ import {
 } from '@ionic/vue'
 import LoadingButton from './LoadingButton.vue'
 
-import { useMainStore } from '@/store'
+import { useUserStore } from '@/store'
 import { SYNC_CATEGORIES, exportIcs } from '@/lib/Export.js'
 import { minSyncDate, maxSyncDate } from '@/lib/CalendarSync'
 
@@ -58,7 +58,7 @@ export default defineComponent({
     LoadingButton
   },
   setup() {
-    const store = useMainStore()
+    const store = useUserStore()
     const loading = ref(false)
     const syncCategories = Object.keys(SYNC_CATEGORIES)
 

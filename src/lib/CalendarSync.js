@@ -16,7 +16,12 @@ export function minSyncDate() {
   return DateTime.now().setZone(TIMEZONE).startOf('month')
 }
 
+export async function checkPermissions() {
+  return Calendar.checkPermissions()
+}
+
 export async function listCalendars() {
+  await Calendar.requestPermissions()
   const { availableCalendars } = await Calendar.getAvailableCalendars()
   return availableCalendars
 }

@@ -94,7 +94,7 @@ import {
   syncOutline,
   ellipse
 } from 'ionicons/icons'
-import { useMainStore } from '@/store'
+import { useUserStore } from '@/store'
 import { useCrewWebPlus } from '@/lib/useCrewWebPlus'
 import { importPdfFile } from '@/lib/PlanningImporter.js'
 
@@ -119,7 +119,7 @@ export default defineComponent({
     LoadingButton
   },
   setup(_, { emit }) {
-    const store = useMainStore()
+    const store = useUserStore()
     const crewWeb = useCrewWebPlus()
     const loading = ref(false)
     window.crewWeb = crewWeb

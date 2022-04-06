@@ -52,7 +52,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useMainStore } from '@/store'
+import { useUserStore } from '@/store'
 
 import {
   IonItem,
@@ -68,7 +68,7 @@ import {
 import DateInput from '@/components/DateInput.vue'
 import NumberInput from '@/components/NumberInput.vue'
 
-const store = useMainStore()
+const store = useUserStore()
 const profile = computed(() => store.config.profile || {
   fonction: 'OPL',
   categorie: 'A',
