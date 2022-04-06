@@ -1,60 +1,36 @@
 import SimpleSchema from 'simpl-schema'
 
-const instructionObjectSchema = new SimpleSchema({
-  code: {
+const trainingDetailSchema = new SimpleSchema({
+  trainingCode: {
     type: String
   },
-  type: {
-    type: String,
-    optional: true
-  },
-  title: {
-    type: String,
-    optional: true
-  },
-  inst: {
-    type: String,
-    regEx: /^[A-Z]{3}$/,
-    optional: true
-  },
-  fonction: {
-    type: String,
-    optional: true
-  },
-  tags: {
+  instructors: {
     type: Array,
-    optional: true
   },
-  'tags.$': {
+  'instructors.$': {
     type: String,
-    optional: true
   },
-  peq: {
-    type: Object,
-    optional: true,
-    blackbox: true
+  trainees: {
+    type: Array,
+  },
+  'trainees.$': {
+    type: String,
+  },
+  standins: {
+    type: Array,
+  },
+  'standins.$': {
+    type: String,
   }
 })
 
 export const instructionSchema = new SimpleSchema({
   instruction: {
-    type: Object,
-    optional: true
-  },
-  'instruction.own': {
     type: Array,
     optional: true
   },
-  'instruction.own.$': {
-    type: instructionObjectSchema,
-    optional: true
-  },
-  'instruction.other': {
-    type: Array,
-    optional: true
-  },
-  'instruction.other.$': {
-    type: instructionObjectSchema,
+  'instruction.$': {
+    type: trainingDetailSchema,
     optional: true
   }
 })

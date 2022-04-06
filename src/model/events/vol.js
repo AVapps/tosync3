@@ -1,7 +1,7 @@
 import SimpleSchema from 'simpl-schema'
 import { mepSchema } from './mep.js'
 
-const volSchema = new SimpleSchema({
+export const volSchema = new SimpleSchema({
   tag: {
     type: String,
     allowedValues: ['vol']
@@ -19,5 +19,3 @@ const volSchema = new SimpleSchema({
 })
 
 volSchema.extend(mepSchema)
-
-export { volSchema }

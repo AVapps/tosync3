@@ -1,6 +1,6 @@
 import SimpleSchema from 'simpl-schema'
 
-const mepSchema = new SimpleSchema({
+export const mepSchema = new SimpleSchema({
   tag: {
     type: String,
     allowedValues: ['mep']
@@ -25,7 +25,11 @@ const mepSchema = new SimpleSchema({
     type: String,
     regEx: /^[A-Z]{3}$/
   },
-  tz: {
+  depTz: {
+    type: String,
+    optional: true
+  },
+  arrTz: {
     type: String,
     optional: true
   },
@@ -34,7 +38,7 @@ const mepSchema = new SimpleSchema({
     regEx: /^[A-Z]{3}$/,
     optional: true
   },
-  remark: {
+  remarks: {
     type: String,
     optional: true
   },
@@ -43,7 +47,10 @@ const mepSchema = new SimpleSchema({
   },
   end: {
     type: SimpleSchema.Integer // Datetime timestamp
+  },
+  remu: {
+    type: Object,
+    optional: true,
+    blackbox: true
   }
 })
-
-export { mepSchema }

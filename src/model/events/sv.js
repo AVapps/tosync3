@@ -20,8 +20,9 @@ const svSchema = new SimpleSchema({
     type: SimpleSchema.oneOf(mepSchema, volSchema)
   },
   hotel: {
-    type: String,
-    optional: true
+    type: Object,
+    optional: true,
+    blackbox: true
   }
 })
 

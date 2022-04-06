@@ -5,7 +5,7 @@ const crewSchema = new SimpleSchema({
     type: String,
     regEx: /^[A-Z]{3}$/
   },
-  name: {
+  fct: {
     type: String,
     optional: true
   },
@@ -17,54 +17,10 @@ const crewSchema = new SimpleSchema({
 
 export const peqSchema = new SimpleSchema({
   peq: {
-    type: Object,
-    optional: true
-  },
-
-  'peq.pnt': {
     type: Array,
     optional: true
   },
-  'peq.pnt.$': {
-    type: crewSchema
-  },
-
-  'peq.pnc': {
-    type: Array,
-    optional: true
-  },
-  'peq.pnc.$': {
-    type: crewSchema
-  },
-
-  'peq.mep': {
-    type: Array,
-    optional: true
-  },
-  'peq.mep.$': {
-    type: crewSchema
-  }
-})
-
-export const groundCrewSchema = new SimpleSchema({
-  peq: {
-    type: Object,
-    optional: true
-  },
-
-  'peq.sol': {
-    type: Array,
-    optional: true
-  },
-  'peq.sol.$': {
-    type: crewSchema
-  },
-
-  'peq.mep': {
-    type: Array,
-    optional: true
-  },
-  'peq.mep.$': {
+  'peq.$': {
     type: crewSchema
   }
 })
