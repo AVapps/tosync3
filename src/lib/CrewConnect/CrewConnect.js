@@ -45,7 +45,7 @@ export class CrewConnect extends EventEmitter {
     throw new Error('You cannot set the userId')
   }
 
-  setUserId(userId) {
+  _setUserId(userId) {
     this._userId = userId
     this.emit('login', userId)
   }
@@ -94,7 +94,7 @@ export class CrewConnect extends EventEmitter {
     console.log('login', status, data)
 
     if (status === 200 && data.token && data.userId) {
-      this.setUserId(data.userId)
+      this._setUserId(data.userId)
       this._token = data.token
       await this.saveToken()
       return {
@@ -112,7 +112,7 @@ export class CrewConnect extends EventEmitter {
     const valid = await this.checkToken(token)
     if (!valid) return
     this._token = token
-    this.setUserId(userId)
+    this._setUserId(userId)
     return {
       success: true,
       userId
@@ -238,16 +238,14 @@ export class CrewConnect extends EventEmitter {
 
   async signRosterChanges(changes) {
     console.log('signRosterChanges', this.userId, changes)
-    const { status, data } = await Http.post({
+    const { status } = await Http.post({
       ...defaultOptions,
       url: `${CREWS_API_URL}/${this.userId}/sign-roster-changes`,
       headers: this._headersWithToken(),
       data: changes
     })
-    console.log('sign-roster-changes', status, data)
-    if (status === 200) {
-      return data
-    }
+    console.log('sign-roster-changes', status)
+    return status === 200
   }
 
   _headersWithToken() {
