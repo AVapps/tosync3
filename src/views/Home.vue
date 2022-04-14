@@ -15,34 +15,11 @@
       <div class="cards-grid">
         <ion-card>
           <ion-card-header>
-            <ion-card-title>Crew Web Plus</ion-card-title>
-            <ion-card-subtitle
-              >Connectez-vous à Crew Web Plus pour importer votre
-              planning</ion-card-subtitle
-            >
-          </ion-card-header>
-          <ion-card-content>
-            <crew-web-widget />
-          </ion-card-content>
-        </ion-card>
-        <ion-card v-if="isHybrid">
-          <ion-card-header>
             <ion-card-title>CrewConnect</ion-card-title>
             <ion-card-subtitle></ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
             <crew-connect-widget />
-          </ion-card-content>
-        </ion-card>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Importer un fichier</ion-card-title>
-            <ion-card-subtitle
-              >Planning téléchargé depuis planning.to.aero</ion-card-subtitle
-            >
-          </ion-card-header>
-          <ion-card-content>
-            <file-picker></file-picker>
           </ion-card-content>
         </ion-card>
         <ion-card v-if="isHybrid">
@@ -56,6 +33,7 @@
             <calendar-sync-widget></calendar-sync-widget>
           </ion-card-content>
         </ion-card>
+        <!--
         <ion-card>
           <ion-card-header>
             <ion-card-subtitle></ion-card-subtitle>
@@ -64,8 +42,10 @@
           <ion-card-content>
             <i-calendar-export-widget></i-calendar-export-widget>
           </ion-card-content>
-        </ion-card>
+        </ion-card> -->
       </div>
+
+      <p style="text-align: center">{{ platforms }}</p>
     </ion-content>
   </ion-page>
 </template>
@@ -86,16 +66,15 @@ import {
   getPlatforms
 } from '@ionic/vue'
 
-import CrewWebWidget from '@/components/CrewWebWidget'
 import CrewConnectWidget from '@/components/CrewConnectWidget.vue'
 import CalendarSyncWidget from '@/components/CalendarSyncWidget'
-import ICalendarExportWidget from '@/components/ICalendarExportWidget'
-import FilePicker from '@/components/FilePicker'
+// import ICalendarExportWidget from '@/components/ICalendarExportWidget'
 
 import { defineComponent } from 'vue'
 
 const isHybrid = isPlatform('hybrid')
 console.log(getPlatforms())
+const platforms = getPlatforms().join(' ')
 </script>
 
 <style scoped lang="scss">
