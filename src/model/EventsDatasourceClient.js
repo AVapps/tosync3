@@ -117,11 +117,9 @@ export class EventsDatasourceClient {
     return this.datasource.unsubscribe(userId, subKey)
   }
 
-  async bulkUpdate(updateLog) {
-    if (updateLog.insert.length ||
-      updateLog.update.length ||
-      updateLog.remove.length) {
-      return this.datasource.bulkUpdate(updateLog)
+  async bulkUpdate({ insert = [], update = [], remove = [] }) {
+    if (insert.length || update.length || remove.length) {
+      return this.datasource.bulkUpdate({ insert, update, remove })
     }
   }
 
