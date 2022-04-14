@@ -4,7 +4,7 @@
       <ion-item>
         <ion-label>Catégories</ion-label>
         <ion-select
-          v-model="store.config.icalendarOptions.tags"
+          v-model="user.config.icalendarOptions.tags"
           cancel-text="Annuler"
           ok-text="Valider"
           multiple="true"
@@ -43,7 +43,7 @@ import {
 } from '@ionic/vue'
 import LoadingButton from './LoadingButton.vue'
 
-import { useUserStore } from '@/store'
+import { useUser } from '@/store'
 import { SYNC_CATEGORIES, exportIcs } from '@/lib/Export.js'
 import { minSyncDate, maxSyncDate } from '@/lib/CalendarSync'
 
@@ -58,7 +58,7 @@ export default defineComponent({
     LoadingButton
   },
   setup() {
-    const store = useUserStore()
+    const user = useUser()
     const loading = ref(false)
     const syncCategories = Object.keys(SYNC_CATEGORIES)
 
@@ -67,8 +67,8 @@ export default defineComponent({
       const minDate = minSyncDate()
       const maxDate = maxSyncDate()
 
-      const options = toRaw(store.config.icalendarOptions)
-      console.log(store.userId, minDate.toISO(), maxDate.toISO(), options)
+      const options = toRaw(user.config.icalendarOptions)
+      console.log(user.userId, minDate.toISO(), maxDate.toISO(), options)
 
       try {
         await exportIcs('IEN', minDate, maxDate, options)
@@ -83,7 +83,7 @@ export default defineComponent({
     }
 
     return {
-      store,
+      user,
       exportEvents,
       loading,
       syncCategories

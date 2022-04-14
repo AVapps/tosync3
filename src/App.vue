@@ -1,53 +1,29 @@
 <template>
   <ion-app>
-    <ion-router-outlet />
+    <loading-page v-if="!user.isReady" />
+    <ion-router-outlet v-if="user.isReady && user.userId" />
+    <welcome-page v-if="user.isReady && !user.userId" />
   </ion-app>
 </template>
 
-<script>
+<script setup>
 import { IonApp, IonRouterOutlet } from '@ionic/vue'
-import { defineComponent, watchEffect } from 'vue'
-import { useMainStore, useUserStore } from '@/store'
+import LoadingPage from '@/views/LoadingPage.vue'
+import WelcomePage from './views/Welcome.vue'
+import { watchEffect } from 'vue'
+import { useMainStore, useUser, useCrews } from '@/store'
 import { useRouter } from 'vue-router'
 
-export default defineComponent({
-  name: 'App',
-  components: {
-    IonApp,
-    IonRouterOutlet
-  },
-  setup() {
-    const store = useMainStore()
-    const userStore = useUserStore()
-    const router = useRouter()
+const store = useMainStore()
+const user = useUser()
+const crews = useCrews()
+const router = useRouter()
 
-    userStore.init().then(
-      () => {
-        if (userStore.userId) {
-          router.push('/tabs')
-        }
-      },
-      err => {
-        console.log(err)
-      }
-    )
+window.user = user
+window.store = store
+window.crews = crews
 
-    watchEffect(() => {
-      watchEffect(() => {
-        switch (userStore.config?.theme) {
-          case 'light':
-            document.body.classList.add('light')
-            document.body.classList.remove('dark')
-            break
-          case 'dark':
-            document.body.classList.add('dark')
-            document.body.classList.remove('light')
-            break
-        }
-      })
-    })
-    
-    return {}
-  }
+watchEffect(() => {
+  document.firstElementChild.setAttribute('data-theme', store.config.theme)
 })
 </script>

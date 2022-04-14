@@ -29,12 +29,25 @@
     >
       Test Importation
     </loading-button>
+
+    <loading-button
+      v-if="connect.unsignedActivities?.length"
+      @click="signRoster()"
+      :loading="state.isLoading"
+      class="full-width"
+      shape="round"
+    >
+      Signer Planning
+      &nbsp;
+      <ion-badge color="secondary">{{ connect.unsignedActivities.length }}</ion-badge>
+    </loading-button>
   </div>
 </template>
 
 <script setup>
+import { IonBadge } from '@ionic/vue'
 import { ref, reactive } from 'vue'
-import { useUserStore, useConnect } from '@/store'
+import { useUser, useConnect } from '@/store'
 import LoadingButton from './LoadingButton.vue'
 
 import { importCrewConnectPlanning } from '@/lib/CrewConnect/importPlanning.js'
@@ -51,7 +64,7 @@ import RosterData202202 from '@/data/2022-02-roster-calendars.json'
 import RosterData202203 from '@/data/2022-03-roster-calendars.json'
 import RosterData202204 from '@/data/2022-04-roster-calendars.json'
 
-const store = useUserStore()
+const user = useUser()
 const loading = ref(false)
 const state = reactive({
   isLoading: false,
@@ -84,12 +97,24 @@ const signIn = async () => {
   }
 }
 
+const signRoster = async () => {
+  try {
+    state.isLoading = true
+    const resp = await connect.signRoster()
+    console.log('signRoster', resp)
+  } catch (e) {
+    console.log(e, e.errorCode)
+  } finally {
+    state.isLoading = false
+  }
+}
+
 const fetchEvents = async () => {
   try {
     state.isLoading = true
     const data = await connect.getRosterCalendars({
-      dateFrom: '2022-03-01T00:00:00Z',
-      dateTo: '2022-04-16T23:59:59Z'
+      dateFrom: '2022-04-01T00:00:00Z',
+      dateTo: '2022-05-09T23:59:59Z'
     })
     console.log(data)
   } catch (e) {
@@ -98,6 +123,7 @@ const fetchEvents = async () => {
   } finally {
     state.isLoading = false
   }
+  console.log(connect.unsignedActivities)  
 }
 
 const testImport = async () => {

@@ -17,7 +17,7 @@ import { defineComponent, computed } from 'vue'
 import { IonIcon } from '@ionic/vue'
 import { sunnyOutline, moonOutline } from 'ionicons/icons'
 
-import { useUserStore } from '@/store'
+import { useMainStore } from '@/store'
 
 export default defineComponent({
   name: 'ThemeSwitcher',
@@ -25,7 +25,7 @@ export default defineComponent({
     IonIcon
   },
   setup() {
-    const store = useUserStore()
+    const store = useMainStore()
 
     return {
       theme: computed(() => store.config?.theme || 'auto'),

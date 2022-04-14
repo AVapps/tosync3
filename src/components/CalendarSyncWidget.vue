@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import { computed, defineComponent, ref, toRaw } from 'vue'
+import { computed, defineComponent, ref, toRaw, watchEffect } from 'vue'
 import {
   IonLabel,
   IonList,
@@ -75,7 +75,7 @@ import {
 } from '@ionic/vue'
 
 import { difference, remove } from 'lodash'
-import { useUserStore } from '@/store'
+import { useUser } from '@/store'
 import {
   checkPermissions,
   listCalendars,
@@ -98,7 +98,8 @@ export default defineComponent({
     LoadingButton
   },
   setup(_, { emit }) {
-    const store = useUserStore()
+    const user = useUser()
+
     const loading = ref(false)
 
     const syncCategories = Object.keys(SYNC_CATEGORIES)
@@ -124,7 +125,7 @@ export default defineComponent({
     const selectedCalendarsMap = computed(
       () =>
         new Map(
-          store.config.syncCalendarsOptions.map((calendar) => [
+          user.config.syncCalendarsOptions.map((calendar) => [
             calendar.id,
             calendar
           ])
@@ -132,7 +133,7 @@ export default defineComponent({
     )
 
     const selectedCalendarIds = computed(() =>
-      store.config.syncCalendarsOptions.map((calendar) => calendar.id)
+      user.config.syncCalendarsOptions.map((calendar) => calendar.id)
     )
 
     function onCalendarsChange(calendarsId) {
@@ -141,7 +142,7 @@ export default defineComponent({
       const removed = difference(selectedCalendarIds.value, calendarsId)
       console.log(added, removed)
 
-      store.$patch((state) => {
+      user.$patch((state) => {
         remove(state.config.syncCalendarsOptions, ({ id }) =>
           removed.includes(id)
         )
@@ -175,11 +176,11 @@ export default defineComponent({
       const minDate = minSyncDate()
       const maxDate = maxSyncDate()
 
-      const calendars = toRaw(store.config.syncCalendarsOptions)
+      const calendars = toRaw(user.config.syncCalendarsOptions)
       console.log(calendars)
 
       try {
-        await syncEventsInRange(store.userId, minDate, maxDate, calendars, {})
+        await syncEventsInRange(user.userId, minDate, maxDate, calendars, {})
         toastController.create({
           message: 'Synchronisation terminée',
           duration: 2000
@@ -198,7 +199,7 @@ export default defineComponent({
       selectedCalendarsMap,
       onCalendarsChange,
       onTagsChange,
-      store,
+      user,
       loadCalendars,
       syncEvents,
       loading,

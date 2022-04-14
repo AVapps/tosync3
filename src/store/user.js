@@ -1,12 +1,24 @@
 import { defineStore } from 'pinia'
-import { watch } from 'vue'
+import { ref, reactive, readonly, watch, computed } from 'vue'
 import { Storage } from '@capacitor/storage'
+import { useCapacitorStorage } from '@/lib/useCapacitorStorage'
+import { useAsyncState, toReactive } from '@vueuse/core'
+import { checkUserId } from '@/helpers/check'
 
-const USER_ID_KEY = 'tosync.userId'
+const TOSYNC_PREFIX = 'TOSYNC'
+const USER_ID_KEY = `${TOSYNC_PREFIX}.userId`
 const USER_PREFIX = 'tosync.user'
 const CONFIG_KEY = 'tosync.config'
 
-const USER_DEFAULTS = {
+const USER_PROFILE_KEY = 'profile'
+const USER_CONFIG_KEY = 'config'
+
+const USER_PROFILE_DEFAULTS = {
+  _id: '',
+  title: '',
+  contractRoles: '',
+  firstName: '',
+  lastName: '',
   fonction: 'OPL',
   categorie: 'A',
   dateAnciennete: '2021-01-01',
@@ -15,139 +27,64 @@ const USER_DEFAULTS = {
   eHS: 'AF'
 }
 
-export const useUserStore = defineStore('user', {
-  // a function that returns a fresh state
-  state: () => ({
-    userId: null,
-    user: null,
-    config: {
-      profile: {
-        fonction: 'OPL',
-        categorie: 'A',
-        dateAnciennete: '2021-01-01',
-        classe: 5,
-        atpl: false,
-        eHS: 'AF'
-      },
-      syncCalendarsOptions: [],
-      icalendarOptions: {
-        tags: ['vol', 'repos', 'conges', 'instruction', 'sol']
-      }
+const USER_CONFIG_DEFAULTS = {
+  syncCalendarsOptions: [],
+  icalendarOptions: {
+    tags: [ 'vol', 'repos', 'conges', 'instruction', 'sol' ]
+  }
+}
+
+function getUserProfileKey(userId) {
+  return `${TOSYNC_PREFIX}.${userId}.${USER_PROFILE_KEY}`
+}
+
+function getUserConfigKey(userId) {
+  return `${TOSYNC_PREFIX}.${userId}.${USER_CONFIG_KEY}`
+}
+
+export const useUser = defineStore('user', () => {
+
+  const { state: userId, isReady } = useAsyncState(async () => {
+    const { value } = await Storage.get({ key: USER_ID_KEY })
+    console.log('FOUND userID', value)
+    return /^[A-Z]{3}$/.test(value) ? value : ''
+  }, '')
+
+  const profile = computed(() => {
+    if (userId.value) {
+      return useCapacitorStorage(getUserProfileKey(userId.value), USER_PROFILE_DEFAULTS)
     }
-  }),
-  // optional getters
-  getters: {
-  },
-  // optional actions
-  actions: {
-    setUserId(userId) {
-      // `this` is the store instance
-      this.userId = userId
-    },
+    return USER_PROFILE_DEFAULTS
+  })
 
-    async loginUserId(userId, save = true) {
-      if (userId && userId !== this.userId) {
-        this.userId = userId
-
-        if (save) {
-          await Storage.set({
-            key: USER_ID_KEY,
-            value: userId
-          })
-        }
-        console.log('User logged in !', userId)
-
-        const userKey = [USER_PREFIX, userId].join('.')
-        const { value } = await Storage.get({ key: userKey })
-        this.user = JSON.parse(value) || USER_DEFAULTS
-        console.log('User loaded :', this.user)
-        return this.user
-      }
-    },
-
-    async logout() {
-      await Storage.set({
-        key: USER_ID_KEY,
-        value: null
-      })
-      this.userId = null
-      this.user = {}
-      console.log('User logged out !')
-    },
-
-    async init() {
-      try {
-        const { value } = await Storage.get({ key: USER_ID_KEY })
-        console.log('store.init userId', value)
-        if (value) {
-          console.log('Previous user session found !', value)
-          await this.loginUserId(value, false)
-        }
-      } catch (err) {
-        console.log('Couldn\'t retrieve userId.')
-      }
-
-      // Watch user for change to store
-      watch(
-        () => this.user,
-        async user => {
-          if (this.userId) {
-            try {
-              console.log('USER changed', this.userId, user)
-              const userKey = [USER_PREFIX, this.userId].join('.')
-              await Storage.set({
-                key: userKey,
-                value: JSON.stringify(user)
-              })
-            } catch (err) {
-              console.log('Couldn\'t save user.')
-            }
-          }
-        },
-        { deep: true }
-      )
-
-      try {
-        const { value } = await Storage.get({ key: CONFIG_KEY })
-        this.config = JSON.parse(value) || {}
-        console.log('CONFIG', this.config)
-      } catch (err) {
-        console.log('Couldn\'t retrieve config.')
-      }
-
-      if (!Object.prototype.hasOwnProperty.call(this.config, 'theme')) {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
-        this.config.theme = prefersDark.matches ? 'dark' : 'light'
-      }
-
-      if (!Object.prototype.hasOwnProperty.call(this.config, 'icalendarOptions')) {
-        this.config.icalendarOptions = { tags: ['vol', 'repos', 'conges', 'instruction', 'sol'] }
-      }
-
-      // Watch for config change
-      watch(
-        () => this.config,
-        async config => {
-          try {
-            console.log('CONFIG changed', this.config)
-            await Storage.set({
-              key: CONFIG_KEY,
-              value: JSON.stringify(config)
-            })
-          } catch (err) {
-            console.log('Couldn\'t save config.')
-          }
-        },
-        { deep: true }
-      )
-    },
-
-    toggleTheme() {
-      if (this.config.theme === 'light') {
-        this.config.theme = 'dark'
-      } else if (this.config.theme === 'dark') {
-        this.config.theme = 'light'
-      }
+  const config = computed(() => {
+    if (userId.value) {
+      return useCapacitorStorage(getUserConfigKey(userId.value), USER_CONFIG_DEFAULTS)
     }
+    return USER_CONFIG_DEFAULTS
+  })
+
+  function setUserId(crewCode) {
+    checkUserId(crewCode)
+    userId.value = crewCode
+    Storage.set({ key: USER_ID_KEY, value: crewCode }).catch(e => console.log(e))
+  }
+
+  const isPNT = computed(() => {
+    return /CDB|OPL/.test(profile.value.contractRoles)
+  })
+
+  function logout() {
+    setUserId('')
+  }
+
+  return {
+    isReady: readonly(isReady),
+    userId: readonly(userId),
+    profile: toReactive(profile),
+    config: toReactive(config),
+    isPNT,
+    setUserId,
+    logout
   }
 })

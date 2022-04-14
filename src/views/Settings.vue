@@ -13,7 +13,7 @@
       </ion-header>
       <br />
 
-      <User />
+      <user-settings />
 
       <ion-list>
         <ion-list-header>
@@ -26,14 +26,14 @@
       </ion-list>
 
       <profile-settings />
+      
     </ion-content>
   </ion-page>
 </template>
 
-<script>
-import { defineComponent } from 'vue'
+<script setup>
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
-import User from '@/components/Settings/User.vue'
+import UserSettings from '@/components/Settings/User.vue'
 import ProfileSettings from '@/components/Settings/Profile.vue'
 
 import {
@@ -47,24 +47,6 @@ import {
   IonToolbar,
   IonTitle
 } from '@ionic/vue'
-
-export default defineComponent({
-  name: 'SettingsTab',
-  components: {
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonContent,
-    IonHeader,
-    IonPage,
-    IonToolbar,
-    IonTitle,
-    ProfileSettings,
-    ThemeSwitcher,
-    User
-  }
-})
 </script>
 
 <style lang="scss">

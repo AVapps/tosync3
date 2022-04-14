@@ -1,10 +1,10 @@
 <template>
-  <template v-if="userId">
+  <template v-if="user.userId">
     <div id="userId">
       <div class="trigramme">
-        <h1>{{ userId }}</h1>
+        <h1>{{ user.userId }}</h1>
       </div>
-      <h4 class="nom">Adrien VERMEULEN</h4>
+      <h4 class="nom">{{ user.profile.name }}</h4>
       <ion-button fill="outline" shape="round" size="small" color="light">
         Déconnexion
       </ion-button>
@@ -12,28 +12,13 @@
   </template>
 </template>
 
-<script>
-import { defineComponent } from 'vue'
-import { useUserStore } from '@/store'
-
+<script setup>
+import { useUser } from '@/store'
 import {
   IonButton
 } from '@ionic/vue'
 
-export default defineComponent({
-  name: 'UserSettings',
-  components: {
-    IonButton
-  },
-  setup() {
-    const store = useUserStore()
-
-    return {
-      userId: 'IEN',
-      user: store.user
-    }
-  }
-})
+const user = useUser()
 </script>
 
 <style lang="scss" scoped>

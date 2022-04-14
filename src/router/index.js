@@ -1,18 +1,10 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import Tabs from '@/views/Tabs.vue'
-import { useUserStore } from '@/store'
 
 const routes = [
   {
     path: '/',
-    beforeEnter: (to, from, next) => {
-      const store = useUserStore()
-      // if (!store.userId) {
-      //   next('/welcome')
-      // } else {
-        next('/tabs')
-      // }
-    }
+    redirect: '/tabs/home'
   },
   {
     path: '/tabs/',
