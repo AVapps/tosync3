@@ -1,28 +1,43 @@
 <template>
-  <ion-button :disabled="loading">
-    <template v-if="loading">
-      <ion-spinner />
+  <component :is="props.componentType === 'chip' ? IonChip : IonButton" :disabled="props.loading" ref="button">
+    <template v-if="props.loading">
+      <ion-spinner
+        :color="$attrs.fill === 'outline' || props.componentType === 'chip' ? $attrs.color : undefined"
+        name="crescent"
+        />
     </template>
     <template v-else>
       <slot />
     </template>
-  </ion-button>
+  </component>
 </template>
 
-<script>
-import { defineComponent } from 'vue'
-import { IonButton, IonSpinner } from '@ionic/vue'
+<script setup>
+import { ref, watchEffect, onMounted } from 'vue'
+import { IonButton, IonSpinner, IonChip } from '@ionic/vue'
 
-export default defineComponent({
-  name: 'LoadingButton',
-  components: { IonButton, IonSpinner },
-  props: { loading: Boolean },
-  watch: {
-    loading(newState) {
-      if (this.$el && newState) {
-        this.$el.style.minWidth = this.$el.offsetWidth + 'px'
-      }
-    }
+// eslint-disable-next-line no-undef
+const props = defineProps({
+  loading: {
+    type: Boolean,
+    default: false 
+  },
+  componentType: {
+    type: String,
+    default: 'button'
+  }
+})
+
+const button = ref(null)
+let el = null
+
+onMounted(() => {
+  el = button.value?.$el
+})
+
+watchEffect(() => {
+  if (el?.style && props.loading) {
+    el.style.minWidth = el.offsetWidth + 'px'
   }
 })
 </script>

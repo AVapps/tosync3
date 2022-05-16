@@ -38,7 +38,7 @@ import { IonContent } from '@ionic/vue'
 
 import SwiperCore, { Virtual } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import 'swiper/swiper.scss'
+import 'swiper/css'
 
 import HsWidget from './HSWidget.vue'
 import MonthPicker from './MonthPicker.vue'
