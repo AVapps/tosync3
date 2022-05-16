@@ -80,6 +80,8 @@
   --tosync-color-instructionSimu: hsl(var(--cal-to-red-hsl));
   --tosync-color-instructionSol: hsl(var(--cal-to-red-hsl));
 
+  --tosync-color-hotel: hsl(var(--cal-grey-hsl));
+
   --tosync-color-blanc: hsl(var(--cal-light-grey-hsl));
   --tosync-color-autre: hsl(var(--cal-grey-hsl));
   --tosync-color-default: hsl(var(--cal-grey-hsl));
@@ -139,6 +141,8 @@
   --tosync-color-reserve: hsl(var(--cal-light-red-hsl));
   --tosync-color-instructionSimu: hsl(var(--cal-light-red-hsl));
   --tosync-color-instructionSol: hsl(var(--cal-light-red-hsl));
+
+  --tosync-color-hotel: hsl(var(--cal-grey-hsl));
 
   --tosync-color-blanc: hsl(var(--cal-light-grey-hsl));
   --tosync-color-autre: hsl(var(--cal-grey-hsl));
@@ -216,6 +220,9 @@
 .tosync-color-instructionSol {
   color: var(--tosync-color-instructionSol);
 }
+.tosync-color-hotel {
+  color: var(--tosync-color-hotel);
+}
 .tosync-color-autre {
   color: var(--tosync-color-autre);
 }
@@ -285,6 +292,9 @@
 }
 .tosync-bg-instructionSol {
   background-color: var(--tosync-color-instructionSol);
+}
+.tosync-bg-hotel {
+  background-color: var(--tosync-color-hotel);
 }
 .tosync-bg-autre {
   background-color: var(--tosync-color-autre);
