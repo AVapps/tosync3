@@ -1,15 +1,10 @@
 import { OktaCapacitor } from 'okta-capacitor'
 
 const CONFIG = {
-  // discoveryUri: process.env.VUE_APP_CREWCONNECT_ISSUER,
-  // clientId: process.env.VUE_APP_CREWCONNECT_CLIENT_ID,
-  redirectUri: process.env.VUE_APP_CREWCONNECT_REDIRECT_URI + 'callback',
-  logoutRedirectUri: process.env.VUE_APP_CREWCONNECT_REDIRECT_URI,
+  redirectUri: 'com.apm.crewconnect:/callback',
+  logoutRedirectUri: 'com.apm.crewconnect:/',
   scopes: ['openid', 'profile', 'offline_access']
 }
-
-
-const API_CONFIG_URL = 'https://crewmobile.to.aero/api/config'
 
 export class Okta {
   constructor () {
@@ -35,16 +30,19 @@ export class Okta {
     return this._configured
   }
 
-  async signIn() {
+  async signIn({ silent = false }) {
     if (!this._configured) {
       await this.createConfig()
     }
+
+    console.log('[Okta] signIn initiated', silent)
 
     const authenticated = await this.isAuthenticated()
     console.log('[Okta] isAuthenticated', authenticated)
 
     if (authenticated) {
       console.log('[Okta] User is already authenticated.')
+      await this.autoRenewTokens()
       const { active } = await this.introspectAccessToken()
       if (active) {
         console.log('[Okta] User has an active access token.')
@@ -53,14 +51,9 @@ export class Okta {
         return this._user
       }
     }
-    
-    const { active } = await this.introspectRefreshToken()
-    if (active) {
-      console.log('[Okta] User has an active refresh token : refreshing tokens...')
-      const { access_token } = await this.refreshTokens()
-      this._accessToken = access_token
-      this._user = await this.getUser()
-      return this._user
+
+    if (silent) {
+      return
     }
 
     console.log('[Okta] User has no session : starting sign in...')
@@ -74,11 +67,17 @@ export class Okta {
     if (!this._user) return
     await OktaCapacitor.revokeAccessToken()
     await OktaCapacitor.revokeRefreshToken()
-    await OktaCapacitor.signOut()
+    const result = await OktaCapacitor.signOut()
+    await OktaCapacitor.clearTokens()
     this._user = null
+    return result
   }
 
   async isAuthenticated() {
+    if (!this._configured) {
+      await this.createConfig()
+    }
+
     const { authenticated } = await OktaCapacitor.isAuthenticated()
     return authenticated
   }
@@ -108,6 +107,14 @@ export class Okta {
     const result = await OktaCapacitor.refreshTokens()
     console.log('refreshTokens', result)
     return result
+  }
+
+  async autoRenewTokens() {
+    const { exp } = await this.introspectRefreshToken()
+    if ((exp * 1000) - Date.now() < 7 * 24 * 60 * 60 * 1000) { // Expires in less than 7 days
+      console.log('[Okta] Refreshing tokens...')
+      await this.refreshTokens()
+    }
   }
 
   async getUser() {
