@@ -32,6 +32,9 @@ export const CATEGORIES = {
   CAPA: 'sanssolde',
   CPE: 'sanssolde', // Congé parental d'éducation
   FATIG: 'sanssolde', // Clause fatigue PN
+  TA: 'sanssolde', // Temps alterné
+  TAF: 'sanssolde', // Temps alterné fractionné
+
 
   BURC: 'sol', // Bureau  PNC
   BURT: 'sol', // Bureau  PNT
@@ -53,6 +56,8 @@ export const CATEGORIES = {
   SUR_ELEARN: 'sol', // e-learning Sûreté
   ELEARSE: 'sol', // e-learning Secourisme
   APRS: 'sol', // Cours APRS
+  E_ETECHLOG: 'sol', // e-learning E-techlog
+  E_: 'sol', // e-learning
 
   MD: 'sol', // Cours marchandises dangereuses [ MD_C, MD_T ]
   MDC: 'sol', // Cours MDC [ MDC_C, MDC_T ]
