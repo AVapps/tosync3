@@ -1,23 +1,14 @@
 import { Okta } from './Okta.js'
-import { Http } from '@capacitor-community/http'
+// import { Http } from '@capacitor-community/http'
+import { Http } from './CancelableHttp.js'
 import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin'
 import { DateTime } from 'luxon'
-import EventEmitter from 'eventemitter3'
-
-// SecureStoragePlugin.set({ key, value })
-// SecureStoragePlugin.get({ key })
-
-const SERVER_URL = 'https://crewmobile.to.aero'
-const LOGIN_URL = `${SERVER_URL}/login`
-const API_BASE_URL = `${SERVER_URL}/api`
-const CREWS_API_URL = `${API_BASE_URL}/crews`
-const TOKEN_INTROSPECT_URL = `${API_BASE_URL}/token/introspect`
+import { blobToBase64 } from '@/helpers/utils.js'
 
 const USER_AGENT = 'APMConnect/1 CFNetwork/1329 Darwin/21.3.0'
 const STORE_PREFIX = 'tosync_cctoken'
-
-const READ_TIMEOUT = 10000
-const CONNECT_TIMEOUT = 10000
+const READ_TIMEOUT = 15 * 1000
+const CONNECT_TIMEOUT = 15 * 1000
 
 const defaultOptions = {
   connectTimeout: CONNECT_TIMEOUT,
@@ -29,29 +20,12 @@ const headers = {
   'Content-Type': 'application/json'
 }
 
-export class CrewConnect extends EventEmitter {
-  constructor () {
-    super()
+export class CrewConnect {
+  constructor (serverUrl = '') {
+    this._serverUrl = serverUrl
     this._userId = null
     this._token = null
     this.okta = new Okta()
-  }
-
-  get userId() {
-    return this._userId
-  }
-
-  set userId(userId) {
-    throw new Error('You cannot set the userId')
-  }
-
-  _setUserId(userId) {
-    this._userId = userId
-    this.emit('login', userId)
-  }
-
-  get user() {
-    return this.okta.user
   }
 
   async configureOkta() {
@@ -60,7 +34,8 @@ export class CrewConnect extends EventEmitter {
     return configured
   }
 
-  async signIn(userId) {
+  async signIn(userId, { silent = false }) {
+    console.log(silent)
     if (userId) {
       const result = await this.tryTokenLogin(userId)
       if (result?.success) {
@@ -72,18 +47,25 @@ export class CrewConnect extends EventEmitter {
       await this.configureOkta()
     }
 
-    const user = await this.okta.signIn()
+    const user = await this.okta.signIn({ silent })
     console.log('okta signIn', user)
 
-    return this.login(user.crewCode, this.okta.accessToken)
+    if (user) {
+      return this.login(user.crewCode, this.okta.accessToken)
+    }
+    return {
+      success: false,
+      userId: null
+    }
   }
 
   async login(userId, accessToken) {
+    this._checkServerURL()
     if (!userId || !accessToken) throw new Error('Invalid userId or accessToken')
 
     const { status, data } = await Http.post({
       ...defaultOptions,
-      url: LOGIN_URL,
+      url: this.loginUrl,
       headers,
       data: {
         userId,
@@ -103,6 +85,7 @@ export class CrewConnect extends EventEmitter {
       }
     }
 
+    console.log('Token login failed !', status, data)
     throw new Error('Login failed')
   }
 
@@ -125,7 +108,6 @@ export class CrewConnect extends EventEmitter {
     await SecureStoragePlugin.remove({ key })
     this._token = null
     this._userId = null
-    this.emit('logout')
   }
 
   async saveToken() {
@@ -146,9 +128,10 @@ export class CrewConnect extends EventEmitter {
   }
 
   async checkToken(token) {
+    this._checkServerURL()
     let { data } = await Http.get({
       ...defaultOptions,
-      url: TOKEN_INTROSPECT_URL,
+      url: `${this.apiUrl}/token/introspect`,
       headers,
       params: {
         token,
@@ -164,9 +147,10 @@ export class CrewConnect extends EventEmitter {
   }
 
   async getApiConfig() {
+    this._checkServerURL()
     const { data } = await Http.get({
       ...defaultOptions,
-      url: API_BASE_URL + '/config',
+      url: this.apiUrl + '/config',
       headers
     })
     console.log('config', data)
@@ -174,9 +158,10 @@ export class CrewConnect extends EventEmitter {
   }
 
   async getCrewsIndex() {
+    this._checkServerURL()
     const { data } = await Http.get({
       ...defaultOptions,
-      url: CREWS_API_URL,
+      url: this.crewsUrl,
       params: {
         '_': Date.now().toString()
       },
@@ -186,11 +171,31 @@ export class CrewConnect extends EventEmitter {
     return data
   }
 
+  async getCrewPhoto(path, { format = 'dataUrl' } = {}) {
+    this._checkServerURL()
+    const { data } = await Http.get({
+      ...defaultOptions,
+      url: `${this.serverUrl}/${path}`,
+      responseType: 'blob',
+      headers: {
+        ...this._headersWithToken(),
+        'Content-Type': 'image/jpeg'
+      }
+    })
+    console.log('crew photo', data)
+    if (format === 'dataUrl') {
+      return blobToBase64(data)
+    } else {
+      return data
+    }
+  }
+
   async getRosterChanges() {
+    this._checkServerURL()
     if (!this.userId) throw new Error('You must be logged in to access this ressource.')
     const { data } = await Http.get({
       ...defaultOptions,
-      url: `${CREWS_API_URL}/${this.userId}/roster-changes`,
+      url: `${this.crewsUrl}/${this.userId}/roster-changes`,
       params: {
         '_': Date.now().toString()
       },
@@ -208,11 +213,12 @@ export class CrewConnect extends EventEmitter {
    * @returns {Promise<any>}
    */
   async getRosterCalendars({ dateFrom, dateTo }) {
+    this._checkServerURL()
     console.log('getRosterCalendars', this.userId)
     if (!this.userId) throw new Error('You must be logged in to access this ressource.')
     const { data } = await Http.get({
       ...defaultOptions,
-      url: `${CREWS_API_URL}/${this.userId}/roster-calendars`,
+      url: `${this.crewsUrl}/${this.userId}/roster-calendars`,
       params: {
         dateFrom,
         dateTo,
@@ -225,24 +231,28 @@ export class CrewConnect extends EventEmitter {
   }
 
   async signRoster(rosterState) {
+    this._checkServerURL()
     console.log('signRoster', this.userId, rosterState)
     const { status, data } = await Http.post({
       ...defaultOptions,
-      url: `${CREWS_API_URL}/${this.userId}/sign-roster`,
+      url: `${this.crewsUrl}/${this.userId}/sign-roster`,
       headers: this._headersWithToken(),
-      data: rosterState
+      data: rosterState,
+      responseType: 'text'
     })
     console.log('sign-roster', status, data)
     return status === 200 && data.includes('Roster signed')
   }
 
   async signRosterChanges(changes) {
+    this._checkServerURL()
     console.log('signRosterChanges', this.userId, changes)
     const { status } = await Http.post({
       ...defaultOptions,
-      url: `${CREWS_API_URL}/${this.userId}/sign-roster-changes`,
+      url: `${this.crewsUrl}/${this.userId}/sign-roster-changes`,
       headers: this._headersWithToken(),
-      data: changes
+      data: changes,
+      responseType: 'text'
     })
     console.log('sign-roster-changes', status)
     return status === 200
@@ -254,5 +264,47 @@ export class CrewConnect extends EventEmitter {
       ...headers,
       Authorization: `Bearer ${this._token}`
     }
+  }
+
+  _checkServerURL() {
+    if (!this.serverUrl) throw new Error('No server URL provided')
+  }
+
+  get userId() {
+    return this._userId
+  }
+
+  set userId(userId) {
+    throw new Error('You cannot set the userId')
+  }
+
+  get serverUrl() {
+    return this._serverUrl
+  }
+
+  set serverUrl(url) {
+    this._serverUrl = url
+    this._setUserId(null)
+    this._token = null
+  }
+
+  _setUserId(userId) {
+    this._userId = userId
+  }
+
+  get user() {
+    return this.okta.user
+  }
+
+  get loginUrl() {
+    return `${this.serverUrl}/login`
+  }
+
+  get apiUrl() {
+    return `${this.serverUrl}/api`
+  }
+
+  get crewsUrl() {
+    return `${this.apiUrl}/crews`
   }
 }
