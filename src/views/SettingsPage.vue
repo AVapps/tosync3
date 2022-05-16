@@ -33,8 +33,8 @@
 
 <script setup>
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
-import UserSettings from '@/components/Settings/User.vue'
-import ProfileSettings from '@/components/Settings/Profile.vue'
+import UserSettings from '@/components/Settings/UserSettings.vue'
+import ProfileSettings from '@/components/Settings/ProfileSettings.vue'
 
 import {
   IonItem,
