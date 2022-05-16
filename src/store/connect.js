@@ -3,86 +3,141 @@ import { reactive, computed, toRaw, toRefs } from 'vue'
 import { CrewConnect } from '@/lib/CrewConnect/CrewConnect'
 import { lastPublishedDay } from '@/helpers/planning'
 import { DateTime } from 'luxon'
-import { Storage } from '@capacitor/storage'
+import { useStorage } from '@vueuse/core'
+import { RegEx } from 'simpl-schema'
+import { IonRefresher } from '@ionic/vue'
+
+// TODO: use vue-concurrency to manage tasks
+
+const SERVER_URL_KEY = 'TOSYNC.CONNECT.serverUrl'
 
 export const useConnect = defineStore('connect', () => {
-  const crewConnect = new CrewConnect()
+  const _serverUrl = useStorage(SERVER_URL_KEY, '')
+  // _serverUrl.value = ''
+  const serverUrl = computed({
+    get: () => _serverUrl.value,
+    set: (url) => {
+      if (RegEx.Url.test(url)) {
+        _serverUrl.value = url
+        crewConnect.serverUrl = url
+      }
+    }
+  })
+  const crewConnect = new CrewConnect(serverUrl.value)
 
   const state = reactive({
     userId: null,
     changes: null,
     unsignedActivities: null,
-    rosterState: null
+    rosterState: null,
+    isLoading: false
   })
 
-  async function signIn(crewCode) {
-    const { userId } = await crewConnect.signIn(crewCode)
-    state.userId = userId
-    await getRosterChanges()
-    return userId
+  const hasChanges = computed(() => state.changes?.workSpaceRosterChangeDtos.length > 0)
+  const hasUnsignedActivities = computed(() => state?.unsignedActivities?.length > 0)
+
+  async function execTask(task) {
+    state.isLoading = true
+    try {
+      const result = await task()
+      state.isLoading = false
+      return result
+    } catch (error) {
+      state.isLoading = false
+      throw error
+    }
   }
 
-  async function tryAutoRelogin(crewCode) {
-    const { userId } = await crewConnect.tryAutoRelogin(crewCode)
-    state.userId = userId
-    await getRosterChanges()
-    return userId
+  async function signIn(crewCode, { silent = false }) {
+    return execTask(async () => {
+      const { success, userId } = await crewConnect.signIn(crewCode, { silent })
+      if (success) {
+        state.userId = userId
+        await getRosterChanges()
+        state.isLoading = false
+        return userId
+      }
+    })
   }
 
   async function signOut() {
-    await crewConnect.signOut()
-    state.userId = null
-    state.changes = null
-    state.unsignedActivities = null
-    state.rosterState = null
+    return execTask(async () => {
+      await crewConnect.signOut()
+      state.userId = null
+      state.changes = null
+      state.unsignedActivities = null
+      state.rosterState = null
+    })
   }
 
   async function getRosterChanges() {
-    state.changes = await crewConnect.getRosterChanges()
-    return state.changes
+    return execTask(async () => {
+      state.changes = await crewConnect.getRosterChanges()
+      return state.changes
+    })
   }
 
   async function getRosterCalendars({ dateFrom, dateTo }) {
-    const data = await crewConnect.getRosterCalendars({ dateFrom, dateTo })
-    console.log('getRosterCalendars', data, data?.rosterState?.activitiesInPState3 > 0)
-    state.rosterState = data.rosterState
-    if (data?.rosterState?.activitiesInPState3 > 0) {
-      state.unsignedActivities = getUnsignedActivities(data)
-    }
-    return data
+    return execTask(async () => {
+      const data = await crewConnect.getRosterCalendars({ dateFrom, dateTo })
+      console.log('getRosterCalendars', dateFrom, dateTo, data, data?.rosterState?.activitiesInPState3 > 0)
+      state.rosterState = data.rosterState
+      if (data?.rosterState?.activitiesInPState3 > 0) {
+        state.unsignedActivities = getUnsignedActivities(data)
+      } else {
+        state.unsignedActivities = null
+      }
+      return data
+    })
   }
 
-  async function getLatestRosterCalendars() {
-    const dateFrom = DateTime.local().startOf('month').toUTC().toISO()
+  async function getLatestRosterCalendars(lastPlanningSync) {
+    let dateFrom
+    if (lastPlanningSync) {
+      const oneDayBeforeLastSyncDate = DateTime.fromISO(lastPlanningSync).toUTC().startOf('day').minus({ days: 1 }).toISO()
+      const minimumSyncDate = DateTime.utc().startOf('month').minus({ months: 3 }).toISO()
+      dateFrom = oneDayBeforeLastSyncDate < minimumSyncDate ? minimumSyncDate : oneDayBeforeLastSyncDate
+    } else {
+      dateFrom = DateTime.local().startOf('month').toUTC().toISO()
+    }
     const dateTo = lastPublishedDay().toUTC().toISO()
     return getRosterCalendars({ dateFrom, dateTo })
   }
 
   async function signRoster() {
-    if (!state?.rosterState?.activitiesInPState3) throw new Error('No unsigned activities')
-    const signed = await crewConnect.signRoster(toRaw(state.rosterState))
-    const dateFrom = DateTime.utc().startOf('day').toISO()
-    const dateTo = lastPublishedDay().toUTC().toISO()
-    console.log(dateFrom, dateTo)
-    await getRosterCalendars({ dateFrom, dateTo })
-    return signed
+    if (!state?.rosterState?.activitiesInPState3) throw new Error('Aucune activité à signer !')
+    return execTask(async () => {
+      const signed = await crewConnect.signRoster(toRaw(state.rosterState))
+      const dateFrom = DateTime.utc().startOf('day').toISO()
+      const dateTo = lastPublishedDay().toUTC().toISO()
+      await getRosterCalendars({ dateFrom, dateTo })
+      return signed
+    })
   }
 
   async function signRosterChanges() {
-    if (!state?.changes?.workSpaceRosterChangeDtos?.length) throw new Error('No changes to sign')
-    await crewConnect.signRosterChanges(toRaw(state.changes.workSpaceRosterChangeDtos))
+    if (!state?.changes?.workSpaceRosterChangeDtos?.length) throw new Error('Aucune modification à signer !')
+    return execTask(async () => {
+      await crewConnect.signRosterChanges(toRaw(state.changes.workSpaceRosterChangeDtos))
+      state.changes = await crewConnect.getRosterChanges()
+    })
   }
   
   return {
     ...toRefs(state),
+    serverUrl,
+    hasChanges,
+    hasUnsignedActivities,
     isConnected: computed(() => state.userId !== null),
     signIn,
-    tryAutoRelogin,
     getRosterChanges,
     getRosterCalendars,
+    getLatestRosterCalendars,
     signRoster,
     signRosterChanges,
-    getCrewsIndex: () => crewConnect.getCrewsIndex(),
+    getCrewsIndex: () => execTask(() => crewConnect.getCrewsIndex()),
+    getCrewPhoto: (path, options) => execTask(() => crewConnect.getCrewPhoto(path, options)),
+    signOut: () => execTask(() => crewConnect.signOut())
   }
 })
 

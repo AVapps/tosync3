@@ -24,6 +24,10 @@ export const usePlanning = defineStore('planning', () => {
   }
 
   // Import functions
+  async function importCrewConnectData({ localCalendar, crewCode, rosterState }) {
+    return client.importCrewConnectData({ localCalendar, crewCode, rosterState })
+  }
+
   async function bulkUpdate(updateLog) {
     return client.bulkUpdate(updateLog)
   }
@@ -38,6 +42,7 @@ export const usePlanning = defineStore('planning', () => {
   }
 
   return {
+    importCrewConnectData,
     subscribeMonth,
     unsubscribeMonth,
     subscribeInterval,

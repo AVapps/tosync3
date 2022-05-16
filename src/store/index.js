@@ -1,4 +1,5 @@
 export { useMainStore } from './main'
 export { useConnect } from './connect'
 export { useCrews } from './crews'
+export { usePlanning } from './planning'
 export { useUser } from './user'
