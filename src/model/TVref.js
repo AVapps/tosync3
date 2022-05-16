@@ -40,20 +40,22 @@ export class TVrefCollection {
     if (!route && from && to) {
       route = [from, to].join('-')
     }
-    const datetime = DateTime.fromMillis(start)
-    const saison = SAISON[datetime.month]
-    const isoMonth = datetime.toISODate().substring(0, 7)
+    const dt = DateTime.fromMillis(start)
+    const saison = SAISON[dt.month]
+    const isoMonth = dt.toISODate().substring(0, 7)
 
     const key = [serie, saison, route, isoMonth].join('.')
 
     if (this.memo.has(key)) {
+      console.log('---  TVref trouvé dans le cache ---', key, this.memo.get(key))
       return this.memo.get(key)
     } else {
-      const tvref = this._find(serie, saison, route, isoMonth)
-      if (tvref) {
-        this.memo.set(key, tvref.tr)
+      const tr = this._find(serie, saison, route, isoMonth)
+      console.log('---  TVref trouvé ---', key, tr)
+      if (tr) {
+        this.memo.set(key, tr)
       }
-      return tvref
+      return tr
     }
   }
 
