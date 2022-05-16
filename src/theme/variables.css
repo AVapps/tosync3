@@ -29,6 +29,7 @@ http://ionicframework.com/docs/theming/ */
 	--ion-color-step-900: #191919;
 	--ion-color-step-950: #0d0d0d;
 
+  --ion-text-muted-color: var(--ion-color-step-600, #666666);
 
   --ion-color-primary: #00d66c;
   --ion-color-primary-rgb: 0,214,108;
@@ -273,6 +274,24 @@ http://ionicframework.com/docs/theming/ */
   --ion-tab-bar-background: #1f1f1f;
 
   --ion-card-background: #1e1e1e;
+}
+
+.ion-color-theme {
+  --ion-color-base: var(--ion-color-dark);
+  --ion-color-base-rgb: var(--ion-color-dark-rgb);
+  --ion-color-contrast: var(--ion-color-dark-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-dark-contrast-rgb);
+  --ion-color-shade: var(--ion-color-dark-shade);
+  --ion-color-tint: var(--ion-color-dark-tint);
+}
+
+.ios[data-theme=dark] .ion-color-theme {
+  --ion-color-base: var(--ion-color-light);
+  --ion-color-base-rgb: var(--ion-color-light-rgb);
+  --ion-color-contrast: var(--ion-color-light-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-light-contrast-rgb);
+  --ion-color-shade: var(--ion-color-light-shade);
+  --ion-color-tint: var(--ion-color-light-tint);
 }
 
 .ion-color-yellow {
