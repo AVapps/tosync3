@@ -84,7 +84,7 @@ export class CrewConnectPlanningParser {
     console.log(groupedPairings, countBy(rawEvents, 'activityType'))
     
     forEach(groupedPairings, (events, pairingId) => {
-      this.addPairing(parseInt(pairingId), events)
+      this.addPairing(pairingId, events)
     })
 
     this.buildPlanning()
@@ -109,7 +109,6 @@ export class CrewConnectPlanningParser {
             fin: endOfDay
           })
         } else {
-          console.log(date.toLocaleString(), endOfDay.toLocaleString())
           blanks.push({
             tag: 'blanc',
             category: 'BLANC',
@@ -134,10 +133,11 @@ export class CrewConnectPlanningParser {
 
       // Add hotel information to preceding duty
       if (dutyEvents.length === 1 && dutyEvents[ 0 ].tag === 'hotel') {
-        if (!duties.length) {
-          throw new Error("No duty found before hotel event !")
+        if (duties.length) {
+          last(duties).hotel = dutyEvents[ 0 ]
+        } else {
+          // throw new Error("No duty found before hotel event !")
         }
-        last(duties).hotel = dutyEvents[ 0 ]
         return
       }
 
@@ -145,7 +145,7 @@ export class CrewConnectPlanningParser {
       const tag = this.findDutyTag(dutyEvents)
       
       const duty = {
-        id: firstEvt.opsLegCrewId,
+        opsLegCrewId: firstEvt.opsLegCrewId.toString(),
         tag,
         start: firstEvt.checkIn,
         end: firstEvt.checkOut,
@@ -171,11 +171,10 @@ export class CrewConnectPlanningParser {
     
     if (some(duties, { tag: 'sv'})) {
       const rotation = {
-        id: pairingId,
+        crewPairingId: pairingId,
         tag: 'rotation',
         start: events[0].pairingCheckin,
         end: events[0].pairingCheckout,
-        crewPairingId: pairingId,
         sv: duties
       }
       this.rotations.push(rotation)
@@ -224,7 +223,7 @@ export class CrewConnectPlanningParser {
 
   transformFlight(evt) {
     const vol = {
-      id: evt.opsLegCrewId,
+      opsLegCrewId: evt.opsLegCrewId.toString(),
       tag: 'vol',
       start: evt.start,
       end: evt.end,
@@ -246,7 +245,7 @@ export class CrewConnectPlanningParser {
 
   transformMEP(evt) {
     const mep = {
-      id: evt.opsLegCrewId,
+      opsLegCrewId: evt.opsLegCrewId.toString(),
       tag: 'mep',
       start: evt.start,
       end: evt.end,
@@ -266,7 +265,7 @@ export class CrewConnectPlanningParser {
 
   transformGround(evt) {
     const ground = {
-      id: evt.opsLegCrewId,
+      opsLegCrewId: evt.opsLegCrewId.toString(),
       tag: findTag(evt.groundCode),
       start: evt.start,
       end: evt.end,
@@ -279,13 +278,14 @@ export class CrewConnectPlanningParser {
 
   transformHotel(evt) {
     return {
-      id: evt.opsLegCrewId,
+      opsLegCrewId: evt.opsLegCrewId.toString(),
       tag: 'hotel',
-      summary: evt.details,
-      name: evt.hotelName,
-      email: evt.hotelEmail,
-      phone: evt.hotelPhoneNumber,
-      room: evt.roomTypeDescription
+      summary: evt.details ?? '',
+      name: evt.hotelName ?? '',
+      address: evt.hotelAddress ?? '',
+      email: evt.hotelEmail ?? '',
+      phone: evt.hotelPhoneNumber ?? '',
+      room: evt.roomTypeDescription ?? ''
     }
   }
 
@@ -298,7 +298,7 @@ export class CrewConnectPlanningParser {
     const endDT = DateTime.fromISO(evt.end).setZone(TIMEZONE)
 
     const ground = {
-      id: evt.opsLegCrewId,
+      opsLegCrewId: evt.opsLegCrewId.toString(),
       tag: this.findGroundTag(evt),
       start: evt.start,
       end: evt.end,
