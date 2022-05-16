@@ -66,10 +66,10 @@ import {
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/css'
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useIonRouter } from '@ionic/vue'
 import { useMainStore } from '@/store'
 
-const router = useRouter()
+const router = useIonRouter()
 const slideOpts = {
   initialSlide: 0,
   speed: 400,
