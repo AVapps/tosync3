@@ -345,6 +345,7 @@ export function remuVol(vol) {
     remu.hv100AF = Big(CONFIG_AF.hcPogo)
     remu.hv100rAF = Big(CONFIG_AF.hcPogo)
   } else {
+    // console.log(`${vol.from}-${vol.to}`, TVref.find('TOA', vol), TVref.find('TOB', vol))
     remu.hv100TO = Big(TVref.find('TOA', vol) || remu.tvp)
     remu.tvrefAF = Big(TVref.find('TOB', vol) || remu.tvp)
     remu.hv100AF = Big.max(remu.tvrefAF, remu.tv)
