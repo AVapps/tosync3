@@ -17,6 +17,10 @@ export const dutySubEventSchema = new SimpleSchema({
   },
 
   // Optional fields
+  opsLegCrewId: {
+    type: String,
+    optional: true
+  },
   category: {
     type: String,
     optional: true

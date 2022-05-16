@@ -2,6 +2,7 @@ import SimpleSchema from 'simpl-schema'
 import { solSchema } from './sol.js'
 import { dutySubEventSchema } from './dutySubEvent.js'
 import { mepSchema } from './mep.js'
+import { hotelSchema } from './hotel.js'
 
 const dutySchema = new SimpleSchema({
   events: {
@@ -11,10 +12,13 @@ const dutySchema = new SimpleSchema({
     type: SimpleSchema.oneOf(mepSchema, dutySubEventSchema)
   },
   hotel: {
-    type: Object,
-    optional: true,
-    blackbox: true
-  }
+    type: hotelSchema,
+    optional: true
+  },
+  opsLegCrewId: {
+    type: String,
+    optional: true
+  },
 })
 
 dutySchema.extend(solSchema)

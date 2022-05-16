@@ -5,6 +5,10 @@ import { instructionSchema } from './instruction.js'
 import { TAGS } from '@/data/tags'
 
 export const solSchema = new SimpleSchema({
+  opsLegCrewId: {
+    type: String,
+    optional: true
+  },
   tag: {
     type: String,
     allowedValues: TAGS

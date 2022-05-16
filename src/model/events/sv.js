@@ -4,6 +4,7 @@ import { mepSchema } from './mep.js'
 import { volSchema } from './vol.js'
 import { peqSchema } from './peq.js'
 import { instructionSchema } from './instruction.js'
+import { hotelSchema } from './hotel.js'
 
 const svSchema = new SimpleSchema({
   rotationId: {
@@ -20,9 +21,8 @@ const svSchema = new SimpleSchema({
     type: SimpleSchema.oneOf(mepSchema, volSchema)
   },
   hotel: {
-    type: Object,
-    optional: true,
-    blackbox: true
+    type: hotelSchema,
+    optional: true
   }
 })
 

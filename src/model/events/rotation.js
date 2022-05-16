@@ -5,7 +5,11 @@ export const rotationSchema = new SimpleSchema({
   tag: {
     type: String,
     allowedValues: ['rotation']
-  }
+  },
+  crewPairingId: {
+    type: String,
+    optional: true
+  },
   // sv: []
 })
 

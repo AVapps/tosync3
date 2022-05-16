@@ -1,6 +1,10 @@
 import SimpleSchema from 'simpl-schema'
 
 export const mepSchema = new SimpleSchema({
+  opsLegCrewId: {
+    type: String,
+    optional: true
+  },
   tag: {
     type: String,
     allowedValues: ['mep']
