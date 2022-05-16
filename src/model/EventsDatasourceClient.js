@@ -7,7 +7,9 @@ import { toISOMonth } from '@/helpers/dates'
 export class EventsDatasourceClient {
   constructor () {
     const worker = new Worker(new URL('./EventsWorker.js', import.meta.url))
-    this.datasource = Comlink.wrap(worker)
+    const { datasource, importCrewConnectData } = Comlink.wrap(worker)
+    this.datasource = datasource
+    this.importCrewConnectData = importCrewConnectData
     this.daysMap = reactive(new Map())
     this.eventsIndex = reactive(new Map())
     this._watch = false
@@ -118,9 +120,7 @@ export class EventsDatasourceClient {
   }
 
   async bulkUpdate({ insert = [], update = [], remove = [] }) {
-    if (insert.length || update.length || remove.length) {
-      return this.datasource.bulkUpdate({ insert, update, remove })
-    }
+    return this.datasource.bulkUpdate({ insert, update, remove })
   }
 
   // Reactive data functions

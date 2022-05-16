@@ -9,7 +9,6 @@ import { compact, difference, has, remove, some } from 'lodash'
 import { remuForEvent, remuForDay, remuForMonth } from '@/lib/Remu/Remu'
 
 const TIMEZONE = 'Europe/Paris'
-
 Settings.defaultLocale = 'fr'
 Settings.defaultZoneName = TIMEZONE
 
@@ -568,12 +567,8 @@ export class EventsDatasource extends SimpleEventEmitter {
     return remu
   }
 
-  async bulkUpdate(updateLog) {
-    if (updateLog.insert.length ||
-      updateLog.update.length ||
-      updateLog.remove.length) {
-      return this.db.processBulkUpdate(updateLog)
-    }
+  async bulkUpdate({ insert, update, remove }) {
+    return this.db.processBulkUpdate({ insert, update, remove })
   }
 
   /**

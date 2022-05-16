@@ -79,6 +79,7 @@ export class PlanningDatasource extends EventsDatasource {
     }
   }
 
+  // Static helpers
   static getIntervalForMonth(month) {
     const start = month
       .startOf('month')

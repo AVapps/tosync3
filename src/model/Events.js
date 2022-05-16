@@ -106,7 +106,7 @@ export class EventsCollection extends PouchDBCollection {
     return result.rows.map(row => row.doc).sort(this.constructor.eventsComp)
   }
 
-  async processBulkUpdate({ userId, remove, insert, update }) {
+  async processBulkUpdate({ remove, insert, update }) {
     const now = Date.now()
     const result = { startedAt: now }
 
@@ -125,7 +125,6 @@ export class EventsCollection extends PouchDBCollection {
       // Insérer les rotations avant les SV
       const insertSorted = sortBy(insert, [doc => doc.rotationId ? 'sv' : doc.tag, 'start'])
       insertSorted.forEach(evt => {
-        evt.userId = userId
         evt.created = now
         if (!evt._id) {
           evt._id = this.getId(evt)
@@ -143,7 +142,7 @@ export class EventsCollection extends PouchDBCollection {
     }
 
     result.docs = docs
-    result.result = await this.collection.bulkDocs(docs)
+    result.result = docs.length ? await this.collection.bulkDocs(docs) : []
     result.completedAt = Date.now()
     return result
   }
