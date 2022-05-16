@@ -38,3 +38,11 @@ const app = createApp(App)
 router.isReady().then(() => {
   app.mount('#app')
 })
+
+import { DateTime } from 'luxon'
+window.DateTime = DateTime
+
+window.addEventListener('unhandledrejection', function (event) {
+  console.log('[ Unhandled Rejection ]', event.reason, event)
+  event.preventDefault()
+})
