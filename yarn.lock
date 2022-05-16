@@ -1076,27 +1076,6 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@ionic-native/core@^5.36.0":
-  version "5.36.0"
-  resolved "https://registry.yarnpkg.com/@ionic-native/core/-/core-5.36.0.tgz#712c40a530b119b0039e8d16cb577899f50541d4"
-  integrity sha512-lOrkktadlKYbYf1LrDyAtsu1JnQ0oCCdkOU7iHQ8oXnNOkMwobFfD2m62F1CoOr0u9LIkpYnZSPjng8lZbmbNw==
-  dependencies:
-    "@types/cordova" latest
-
-"@ionic-native/in-app-browser@^5.36.0":
-  version "5.36.0"
-  resolved "https://registry.yarnpkg.com/@ionic-native/in-app-browser/-/in-app-browser-5.36.0.tgz#b28b6e4306e12028735c0f9dbe7b66b279bb44db"
-  integrity sha512-tX/FBT0jpkgEefZ8iorv5eDKfgP/ExbYr1AWg6okORQ0dwLfXsD5KDJgKHN9GFZvyuLNeaLpC1mN7CvwvLvmgA==
-  dependencies:
-    "@types/cordova" latest
-
-"@ionic-native/keychain@^5.36.0":
-  version "5.36.0"
-  resolved "https://registry.yarnpkg.com/@ionic-native/keychain/-/keychain-5.36.0.tgz#72f16d2ef32c17488235d4614ce57c9b5ee78eb8"
-  integrity sha512-H5x9jDgxMOtBH6CHak9QyVTLgLVDYPX7fv+5OP5jWuQexPVuid/Fv4lPrY5bNyLaswdiLLJ9GbWBtfMTe6MKDw==
-  dependencies:
-    "@types/cordova" latest
-
 "@ionic/cli-framework-output@^2.2.1":
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/@ionic/cli-framework-output/-/cli-framework-output-2.2.3.tgz#61437c4ae1e301daba9fade5820d06552b2d5744"
@@ -2811,16 +2790,6 @@ cordova-plugin-file@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/cordova-plugin-file/-/cordova-plugin-file-7.0.0.tgz#40e72468e09439c402c81ff063d6ee74fffd763a"
   integrity sha512-mSwy9GE5pHq2ZHhu/wYk/VhrwR5VLk+XQsk3+IiiFmDgcPsrVIyELkM2FZKX09cC6i+bJVTFVKUlwteSStj3ow==
-
-cordova-plugin-inappbrowser@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/cordova-plugin-inappbrowser/-/cordova-plugin-inappbrowser-5.0.0.tgz#2f1cf3ebfecf43bdd175a74743ee426832054951"
-  integrity sha512-MqnpmUQ/iy6hxtIGDdlIhy8aNi1pNanLATpbnkk7uCqW9YQ4rH/dGK9zESbZ50pUi2A2D2QMjBXNV175TJK5OQ==
-
-cordova-plugin-ios-keychain@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/cordova-plugin-ios-keychain/-/cordova-plugin-ios-keychain-3.0.1.tgz#c5a06540fef7fec6cc513c3afb0e11a5ccbe2e6b"
-  integrity sha1-xaBlQP73/sbMUTw6+w4Rpcy+Lms=
 
 core-js-compat@^3.20.2, core-js-compat@^3.21.0, core-js-compat@^3.8.3:
   version "3.21.1"
@@ -6104,12 +6073,12 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
-rxjs@^6.5.0:
-  version "6.6.7"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-6.6.7.tgz#90ac018acabf491bf65044235d5863c4dab804c9"
-  integrity sha512-hTdwr+7yYNIT5n4AMYp85KA6yw2Va0FLa3Rguvbpa4W3I5xynaBZo41cM3XM+4Q6fRMj3sBYIR1VAmZMXYJvRQ==
+rxjs@^7.5.5:
+  version "7.5.5"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.5.5.tgz#2ebad89af0f560f460ad5cc4213219e1f7dd4e9f"
+  integrity sha512-sy+H0pQofO95VDmFLzyaw9xNJU4KTRSwQIGM6+iG3SypAtCiLDzpeG8sJrNCWn2Up9km+KhkvTdbkrdy+yzZdw==
   dependencies:
-    tslib "^1.9.0"
+    tslib "^2.1.0"
 
 safe-buffer@5.1.2, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   version "5.1.2"
@@ -6771,11 +6740,6 @@ tree-kill@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/tree-kill/-/tree-kill-1.2.2.tgz#4ca09a9092c88b73a7cdc5e8a01b507b0790a0cc"
   integrity sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==
-
-tslib@^1.9.0:
-  version "1.14.1"
-  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
-  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
 tslib@^2.0.1, tslib@^2.0.3, tslib@^2.1.0, tslib@^2.3.1:
   version "2.3.1"
