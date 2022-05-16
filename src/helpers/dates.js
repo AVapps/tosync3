@@ -16,7 +16,6 @@ export function toDateTime(date) {
     return DateTime.fromMillis(date, { zone: TIMEZONE })
   }
   if (typeof date === 'string') {
-    checkISODate(date)
     return DateTime.fromISO(date, { zone: TIMEZONE })
   }
   if (date instanceof Date) {
@@ -73,6 +72,20 @@ export function tsToTime(ts, tz = TIMEZONE) {
     locale: LOCALE,
     zone: tz
   }).toFormat('HH:mm')
+}
+
+export const DATETIME_SHORT_FORMAT = { weekday: 'short', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }
+
+export function toLocaleString(date, format = DATETIME_SHORT_FORMAT) {
+  const datetime = toDateTime(date)
+  return datetime.setLocale(LOCALE).toLocaleString(format)
+}
+
+export function isoDateToString(date, format = DateTime.DATE_MED_WITH_WEEKDAY) {
+  return DateTime.fromISO(date, {
+    locale: LOCALE,
+    zone: TIMEZONE
+  }).toLocaleString(format)
 }
 
 const formatter = Intl.NumberFormat(undefined, {

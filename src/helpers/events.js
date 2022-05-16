@@ -64,7 +64,9 @@ export function slug(event, username, index) {
       case 'mep':
         return svSlug(event, prefix, suffix)
       default:
-        return [prefix, _.first(event.events).summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
+        const first = _.first(event.events)
+        const description = first.category || first.summary.replace(/\W+/g, '_')
+        return [prefix, description, DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
     }
   } else {
     switch (event.tag) {
@@ -84,8 +86,50 @@ export function slug(event, username, index) {
       case 'mep':
         return [prefix, (event.num || event.summary || '').replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
       default:
-        return [prefix, event.summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
+        return [prefix, event.category || event.summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
     }
+  }
+}
+
+export function findActivityTag(activity) {
+  switch (activity.activityType) {
+    case 'F':
+      return 'vol'
+    case 'S':
+    case 'P':
+    case 'O':
+    case 'T':
+      return 'mep'
+    case 'H':
+      return 'hotel'
+    case 'G':
+    default:
+      if (activity.groundCode) {
+        return findTag(activity.groundCode)
+      } else {
+        return 'autre'
+      }
+  }
+}
+
+export function findChangeTag(change) {
+  switch (change.newType) {
+    case 'F':
+      return 'vol'
+    case 'S':
+    case 'P':
+    case 'O':
+    case 'T':
+      return 'mep'
+    case 'H':
+      return 'hotel'
+    case 'G':
+    default:
+      if (change.groundCode) {
+        return findTag(change.groundCode)
+      } else {
+        return 'autre'
+      }
   }
 }
 
