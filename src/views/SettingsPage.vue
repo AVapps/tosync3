@@ -11,9 +11,7 @@
           <ion-title size="large">Réglages</ion-title>
         </ion-toolbar>
       </ion-header>
-      <br />
-
-      <user-settings />
+      
 
       <ion-list>
         <ion-list-header>
@@ -25,6 +23,7 @@
         </ion-item>
       </ion-list>
 
+      <crew-connect-settings />
       <profile-settings />
       
     </ion-content>
@@ -35,6 +34,7 @@
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import UserSettings from '@/components/Settings/UserSettings.vue'
 import ProfileSettings from '@/components/Settings/ProfileSettings.vue'
+import CrewConnectSettings from '@/components/Settings/CrewConnectSettings.vue'
 
 import {
   IonItem,
