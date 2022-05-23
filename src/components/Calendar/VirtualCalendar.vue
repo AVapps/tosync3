@@ -70,7 +70,7 @@ export default {
     const today = DateTime.local()
     const presentMonth = today.startOf('month')
 
-    const MIN_MONTH = '2021-01'
+    const MIN_MONTH = '2010-01'
     const endOfCalendar = today.startOf('month').plus({ months: 3 })
     const MAX_MONTH = endOfCalendar.toISODate().substring(0, 7)
     const monthsList = []
