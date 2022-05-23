@@ -29,6 +29,11 @@ const routes = [
         component: () => import('@/views/PlanningPage.vue')
       },
       {
+        path: 'crews',
+        name: 'crews',
+        component: () => import('@/views/CrewsPage.vue')
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: () => import('@/views/SettingsPage.vue')
@@ -59,7 +64,7 @@ router.beforeEach(async (to) => {
 
   const main = useMainStore()
   await until(() => main.isReady).toBe(true)
-  if (main.firstUse) {
+  if (main.config.firstUse) {
     return '/welcome'
   }
 
