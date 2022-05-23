@@ -45,9 +45,43 @@
             <p>
               Vous pouvez synchroniser directement votre planning avec un ou plusieurs calendriers de votre tablette ou smartphone.
             </p>
-            <ion-button fill="clear" @click="lastSlideNextClicked">
+            <ion-button fill="clear" @click="swiper.slideNext()">
               Continuer
             </ion-button>
+          </div>
+        </SwiperSlide>
+        <SwiperSlide>
+          <div class="slide-content">
+            <div>
+              <ion-icon :icon="personAddOutline" />
+            </div>
+            <h1>Commencez par vous connecter</h1>
+            <ion-list inset>
+              <ion-item :class="errorMessage ? 'ion-invalid' : ''" :disabled="isLoading">
+                <ion-label position="stacked">Adresse du serveur</ion-label>
+                <ion-input
+                  ref="urlInput"
+                  type="url"
+                  clear-input
+                  v-model="serverUrl"
+                  inputmode="url"
+                  placeholder="https://adresse.du.serveur"/>
+              </ion-item>
+            </ion-list>
+            <ion-note v-if="errorMessage" color="danger">
+              {{ errorMessage }}
+            </ion-note>
+            <ion-note v-else>
+              Entrez l'adresse du serveur CrewConnect à utiliser.<br>
+              Une fois enregistrée, celle-ci peut être modifiée dans les réglages de l'application.
+            </ion-note>
+            <loading-button
+              fill="solid"
+              @click="lastSlideNextClicked()"
+              :loading="isLoading"
+              class="ion-margin-top">
+              Connexion
+            </loading-button>
           </div>
         </SwiperSlide>
       </Swiper>
@@ -66,8 +100,10 @@ import {
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/css'
 import { ref, onMounted } from 'vue'
+import LoadingButton from '@/components/LoadingButton.vue'
 import { useIonRouter } from '@ionic/vue'
-import { useMainStore } from '@/store'
+import { useConnect, useMainStore, useUser } from '@/store'
+import { validateURL } from '@/helpers/check'
 
 const router = useIonRouter()
 const slideOpts = {
@@ -76,22 +112,48 @@ const slideOpts = {
   centeredSlides: true
 }
 
-const store = useMainStore()
+const mainStore = useMainStore()
+const connect = useConnect()
+const user = useUser()
+const isLoading = ref(false)
+const serverUrl = ref('https://crewmobile.to.aero')
+const errorMessage = ref()
 
 const swiper = ref(null)
 const onSwiper = sw => {
   swiper.value = sw
 }
 
-function lastSlideNextClicked() {
-  store.firstUse = false
-  router.push({ name: 'login' })
+async function lastSlideNextClicked() {
+  errorMessage.value = ''
+  if (!serverUrl.value) {
+    errorMessage.value = "Vous devez entrer une adresse https valide"
+    return
+  }
+  const validatedUrl = validateURL(serverUrl.value)
+  if (!validatedUrl) {
+    errorMessage.value = "Vous devez entrer une adresse https valide"
+    return
+  }
+  connect.serverUrl = validatedUrl
+  isLoading.value = true
+  await mainStore.signIn({ silent: false })
+  if (mainStore.error) {
+    errorMessage.value = mainStore.error?.error ?? mainStore.error?.message
+  }
+  if (user.userId) {
+    mainStore.config.firstUse = false
+    mainStore.config.autoConnect = true
+    router.push({ name: 'home' })
+  }
+  isLoading.value = false
 }
 </script>
 
 <style scoped lang="scss">
 .slide-content {
   display: grid;
+  grid-template-columns: minmax(max-content, 600px);
   place-content: center;
   text-align: center;
   padding: 2rem;
@@ -101,6 +163,13 @@ function lastSlideNextClicked() {
     font-size: 128px;
     color: var(--ion-color-primary);
     place-self: center;
+  }
+}
+
+ion-item {
+  --background: var(--ion-color-light);
+  [data-theme=dark] & {
+    --background: var(--ion-color-dark);
   }
 }
 </style>
