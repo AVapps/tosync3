@@ -285,7 +285,7 @@ http://ionicframework.com/docs/theming/ */
   --ion-color-tint: var(--ion-color-dark-tint);
 }
 
-.ios[data-theme=dark] .ion-color-theme {
+[data-theme=dark] .ion-color-theme {
   --ion-color-base: var(--ion-color-light);
   --ion-color-base-rgb: var(--ion-color-light-rgb);
   --ion-color-contrast: var(--ion-color-light-contrast);
