@@ -63,7 +63,7 @@ import CalendarSyncWidget from '@/components/CalendarSyncWidget.vue'
 // import ICalendarExportWidget from '@/components/ICalendarExportWidget'
 import RosterChangesWidget from '@/components/RosterChangesWidget.vue'
 import { useConnect, useMainStore } from '@/store'
-import { toastError } from '@/helpers/toast'
+import { toastHttpError } from '@/helpers/toast'
 
 const isHybrid = isPlatform('hybrid')
 console.log('PLATFORMS',getPlatforms())
@@ -76,7 +76,7 @@ async function onRefresh(event) {
   try {
     await store.signIn({ silent: true })
   } catch (error) {
-    toastError(error)
+    toastHttpError(error)
   } finally {
     event.target.complete()
   }
