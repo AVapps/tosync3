@@ -111,7 +111,7 @@ export default defineComponent({
         hasPermission.value = state.calendar !== 'denied'
       })
       .catch(err => {
-        console.error(err)
+        console.log(err)
       })
 
     const availableCalendars = ref([])

@@ -197,7 +197,7 @@ export class CrewConnectPlanningParser {
       case 'H':
         return this.transformHotel(evt)
       default:
-        console.error('Unknown activity type', evt)
+        console.log('Unknown activity type', evt)
         return
     }
   }
