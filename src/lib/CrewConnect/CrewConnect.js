@@ -1,11 +1,13 @@
 import { Okta } from './Okta.js'
 // import { Http } from '@capacitor-community/http'
 import { Http } from './CancelableHttp.js'
+import urlJoin from 'url-join'
 import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin'
 import { DateTime } from 'luxon'
+import { isFunction } from 'lodash'
 import { blobToBase64 } from '@/helpers/utils.js'
 
-const USER_AGENT = 'APMConnect/1 CFNetwork/1329 Darwin/21.3.0'
+const USER_AGENT = 'APMConnect/1 CFNetwork/1331.0.7 Darwin/21.4.0'
 const STORE_PREFIX = 'tosync_cctoken'
 const READ_TIMEOUT = 15 * 1000
 const CONNECT_TIMEOUT = 15 * 1000
@@ -15,7 +17,7 @@ const defaultOptions = {
   readTimeout: READ_TIMEOUT
 }
 
-const headers = {
+const DEFAULT_HEADERS = {
   'User-Agent': USER_AGENT,
   'Content-Type': 'application/json'
 }
@@ -25,6 +27,7 @@ export class CrewConnect {
     this._serverUrl = serverUrl
     this._userId = null
     this._token = null
+    this._pendingRequests = new Map()
     this.okta = new Okta()
   }
 
@@ -35,7 +38,6 @@ export class CrewConnect {
   }
 
   async signIn(userId, { silent = false }) {
-    console.log(silent)
     if (userId) {
       const result = await this.tryTokenLogin(userId)
       if (result?.success) {
@@ -63,10 +65,8 @@ export class CrewConnect {
     this._checkServerURL()
     if (!userId || !accessToken) throw new Error('Invalid userId or accessToken')
 
-    const { status, data } = await Http.post({
-      ...defaultOptions,
+    const { status, data } = await this._httpPost({
       url: this.loginUrl,
-      headers,
       data: {
         userId,
         accessToken
@@ -129,10 +129,8 @@ export class CrewConnect {
 
   async checkToken(token) {
     this._checkServerURL()
-    let { data } = await Http.get({
-      ...defaultOptions,
-      url: `${this.apiUrl}/token/introspect`,
-      headers,
+    let { data } = await this._httpGet({
+      url: urlJoin(this.apiUrl, '/token/introspect'),
       params: {
         token,
         '_': Date.now().toString()
@@ -148,10 +146,8 @@ export class CrewConnect {
 
   async getApiConfig() {
     this._checkServerURL()
-    const { data } = await Http.get({
-      ...defaultOptions,
-      url: this.apiUrl + '/config',
-      headers
+    const { data } = await this._httpGet({
+      url: urlJoin(this.apiUrl, '/config')
     })
     console.log('config', data)
     return data
@@ -159,8 +155,7 @@ export class CrewConnect {
 
   async getCrewsIndex() {
     this._checkServerURL()
-    const { data } = await Http.get({
-      ...defaultOptions,
+    const { data } = await this._httpGet({
       url: this.crewsUrl,
       params: {
         '_': Date.now().toString()
@@ -173,9 +168,8 @@ export class CrewConnect {
 
   async getCrewPhoto(path, { format = 'dataUrl' } = {}) {
     this._checkServerURL()
-    const { data } = await Http.get({
-      ...defaultOptions,
-      url: `${this.serverUrl}/${path}`,
+    const { data } = await this._httpGet({
+      url: urlJoin(this.serverUrl, path),
       responseType: 'blob',
       headers: {
         ...this._headersWithToken(),
@@ -193,9 +187,8 @@ export class CrewConnect {
   async getRosterChanges() {
     this._checkServerURL()
     if (!this.userId) throw new Error('You must be logged in to access this ressource.')
-    const { data } = await Http.get({
-      ...defaultOptions,
-      url: `${this.crewsUrl}/${this.userId}/roster-changes`,
+    const { data } = await this._httpGet({
+      url: urlJoin(this.crewsUrl, this.userId, '/roster-changes'),
       params: {
         '_': Date.now().toString()
       },
@@ -216,9 +209,8 @@ export class CrewConnect {
     this._checkServerURL()
     console.log('getRosterCalendars', this.userId)
     if (!this.userId) throw new Error('You must be logged in to access this ressource.')
-    const { data } = await Http.get({
-      ...defaultOptions,
-      url: `${this.crewsUrl}/${this.userId}/roster-calendars`,
+    const { data } = await this._httpGet({
+      url: urlJoin(this.crewsUrl, this.userId, '/roster-calendars'),
       params: {
         dateFrom,
         dateTo,
@@ -233,9 +225,8 @@ export class CrewConnect {
   async signRoster(rosterState) {
     this._checkServerURL()
     console.log('signRoster', this.userId, rosterState)
-    const { status, data } = await Http.post({
-      ...defaultOptions,
-      url: `${this.crewsUrl}/${this.userId}/sign-roster`,
+    const { status, data } = await this._httpPost({
+      url: urlJoin(this.crewsUrl, this.userId, '/sign-roster'),
       headers: this._headersWithToken(),
       data: rosterState,
       responseType: 'text'
@@ -247,9 +238,8 @@ export class CrewConnect {
   async signRosterChanges(changes) {
     this._checkServerURL()
     console.log('signRosterChanges', this.userId, changes)
-    const { status } = await Http.post({
-      ...defaultOptions,
-      url: `${this.crewsUrl}/${this.userId}/sign-roster-changes`,
+    const { status } = await this._httpPost({
+      url: urlJoin(this.crewsUrl, this.userId, '/sign-roster-changes'),
       headers: this._headersWithToken(),
       data: changes,
       responseType: 'text'
@@ -258,16 +248,60 @@ export class CrewConnect {
     return status === 200
   }
 
+  cancel() {
+    for (const request of this._pendingRequests.values()) {
+      if (isFunction(request?.cancel)) {
+        request.cancel()
+      }
+    }
+  }
+
   _headersWithToken() {
     if (!this._token) throw new Error('No token defined')
     return {
-      ...headers,
+      ...DEFAULT_HEADERS,
       Authorization: `Bearer ${this._token}`
     }
   }
 
   _checkServerURL() {
     if (!this.serverUrl) throw new Error('No server URL provided')
+  }
+
+  _httpGet(options) {
+    return this._request({
+      method: 'get',
+      ...options
+    })
+  }
+
+  _httpPost(options) {
+    return this._request({
+      method: 'post',
+      ...options
+    })
+  }
+
+  async _request(options) {
+    const requestOptions = {
+      headers: DEFAULT_HEADERS,
+      ...defaultOptions,
+      ...options
+    }
+    console.log('[CrewConnect._request]', requestOptions.method, requestOptions.url, requestOptions)
+    
+    let result
+    const requestKey = Symbol(options.method)
+    try {
+      const request = Http.request(requestOptions)
+      this._pendingRequests.set(requestKey, request)
+      result = await request
+    } catch (error) {
+      throw error
+    } finally {
+      this._pendingRequests.delete(requestKey)
+    }
+    return result
   }
 
   get userId() {
@@ -297,14 +331,14 @@ export class CrewConnect {
   }
 
   get loginUrl() {
-    return `${this.serverUrl}/login`
+    return urlJoin(this.serverUrl, 'login')
   }
 
   get apiUrl() {
-    return `${this.serverUrl}/api`
+    return urlJoin(this.serverUrl, 'api')
   }
 
   get crewsUrl() {
-    return `${this.apiUrl}/crews`
+    return urlJoin(this.apiUrl, 'crews')
   }
 }
