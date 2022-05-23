@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
-import { reactive, computed, toRaw, toRefs } from 'vue'
+import { reactive, computed, toRaw, toRefs, watch } from 'vue'
 import { CrewConnect } from '@/lib/CrewConnect/CrewConnect'
 import { lastPublishedDay } from '@/helpers/planning'
 import { DateTime } from 'luxon'
-import { useStorage } from '@vueuse/core'
+import { useCapacitorStorage } from '@/lib/useCapacitorStorage'
 import { RegEx } from 'simpl-schema'
 import { IonRefresher } from '@ionic/vue'
 
@@ -12,18 +12,13 @@ import { IonRefresher } from '@ionic/vue'
 const SERVER_URL_KEY = 'TOSYNC.CONNECT.serverUrl'
 
 export const useConnect = defineStore('connect', () => {
-  const _serverUrl = useStorage(SERVER_URL_KEY, '')
-  // _serverUrl.value = ''
-  const serverUrl = computed({
-    get: () => _serverUrl.value,
-    set: (url) => {
-      if (RegEx.Url.test(url)) {
-        _serverUrl.value = url
-        crewConnect.serverUrl = url
-      }
-    }
-  })
+  const serverUrl = useCapacitorStorage(SERVER_URL_KEY, '')
   const crewConnect = new CrewConnect(serverUrl.value)
+
+  watch(
+    serverUrl,
+    url => crewConnect.serverUrl = url
+  )
 
   const state = reactive({
     userId: null,
@@ -137,7 +132,8 @@ export const useConnect = defineStore('connect', () => {
     signRosterChanges,
     getCrewsIndex: () => execTask(() => crewConnect.getCrewsIndex()),
     getCrewPhoto: (path, options) => execTask(() => crewConnect.getCrewPhoto(path, options)),
-    signOut: () => execTask(() => crewConnect.signOut())
+    signOut: () => execTask(() => crewConnect.signOut()),
+    cancel: () => crewConnect.cancel()
   }
 })
 
