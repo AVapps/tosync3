@@ -4,7 +4,7 @@
       <ion-label>Profil</ion-label>
     </ion-list-header>
 
-    <ion-item>
+    <ion-item lines="none">
       <ion-note> Options par défaut pour le calcul de rémunération </ion-note>
     </ion-item>
 
