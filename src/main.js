@@ -5,6 +5,9 @@ import router from './router'
 import { IonicVue, isPlatform } from '@ionic/vue'
 import { createPinia } from 'pinia'
 
+import { RecycleScroller } from 'vue-virtual-scroller'
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/vue/css/core.css'
 
@@ -34,6 +37,8 @@ const app = createApp(App)
   })
   .use(createPinia())
   .use(router)
+
+app.component('RecycleScroller', RecycleScroller)
 
 router.isReady().then(() => {
   app.mount('#app')
