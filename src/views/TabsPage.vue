@@ -11,6 +11,10 @@
           <ion-icon :icon="calendarOutline" />
         </ion-tab-button>
 
+        <ion-tab-button tab="crews" href="/tabs/crews">
+          <ion-icon :icon="peopleOutline" />
+        </ion-tab-button>
+
         <ion-tab-button tab="settings" href="/tabs/settings">
           <ion-icon :icon="cogOutline" />
         </ion-tab-button>
@@ -19,19 +23,7 @@
   </ion-page>
 </template>
 
-<script>
+<script setup>
 import { IonTabBar, IonTabButton, IonTabs, IonIcon, IonPage, IonRouterOutlet } from '@ionic/vue'
-import { homeOutline, calendarOutline, cogOutline } from 'ionicons/icons'
-
-export default {
-  name: 'TabsView',
-  components: { IonTabs, IonTabBar, IonTabButton, IonIcon, IonPage, IonRouterOutlet },
-  setup() {
-    return {
-      homeOutline,
-      calendarOutline,
-      cogOutline
-    }
-  }
-}
+import { homeOutline, calendarOutline, cogOutline, peopleOutline } from 'ionicons/icons'
 </script>
