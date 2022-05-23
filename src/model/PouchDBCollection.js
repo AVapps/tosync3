@@ -6,10 +6,7 @@ PouchDB.plugin(PouchDBFind)
 
 export class PouchDBCollection {
   constructor(name, options = {}) {
-    this.collection = new PouchDB(`CrewSync.${name}`, {
-      adapter: 'idb',
-      auto_compaction: true
-    })
+    this.initDb()
     let { generateIds = true, idKey = '_id', idFunction = null } = options
     if (isArray(idFunction)) {
       const paths = idFunction
@@ -20,6 +17,20 @@ export class PouchDBCollection {
       }
     }
     this.options = { generateIds, idKey, idFunction }
+  }
+
+  initDb() {
+    this.collection = new PouchDB(`CrewSync.${name}`, {
+      adapter: 'idb',
+      auto_compaction: true
+    })
+  }
+
+  async clear() {
+    const docs = await this.collection.allDocs({ include_docs: true })
+    const toDelete = docs.rows.map(row => ({ _id: row.id, _rev: row.doc._rev, _deleted: true }))
+    await this.collection.bulkDocs(toDelete)
+    return this.collection.compact()
   }
 
   async insert(doc) {

@@ -123,6 +123,10 @@ export class EventsDatasourceClient {
     return this.datasource.bulkUpdate({ insert, update, remove })
   }
 
+  async clearDb() {
+    return this.datasource.clearDb()
+  }
+
   // Reactive data functions
   getDay(userId, date) {
     return this.daysMap.get(this.constructor.getKey(userId, date))

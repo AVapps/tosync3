@@ -1,5 +1,5 @@
 <template>
-  <ion-list>
+  <ion-list inset>
     <ion-list-header>
       <ion-label>CrewConnect</ion-label>
     </ion-list-header>

@@ -3,7 +3,7 @@ import { DateTime, Interval } from 'luxon'
 import { checkUserId, checkISOMonth } from '@/helpers/check'
 import { remuForMonth } from '@/lib/Remu/Remu'
 import { calculSalaireAF } from '@/lib/Remu/calculSalairePNT'
-import { EventsDatasource } from './EventsDatasource2'
+import { EventsDatasource } from './EventsDatasource'
 
 const TIMEZONE = 'Europe/Paris'
 

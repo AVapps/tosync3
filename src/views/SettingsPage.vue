@@ -13,7 +13,7 @@
       </ion-header>
       
 
-      <ion-list>
+      <ion-list inset>
         <ion-list-header>
           <ion-label>Affichage</ion-label>
         </ion-list-header>
@@ -25,6 +25,12 @@
 
       <crew-connect-settings />
       <profile-settings />
+
+      <ion-list inset>
+        <ion-item button @click="() => router.push({ name: 'settings.data' })">
+          <ion-label>Données personnelles</ion-label>
+        </ion-item>
+      </ion-list>
       
     </ion-content>
   </ion-page>
@@ -35,18 +41,8 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import UserSettings from '@/components/Settings/UserSettings.vue'
 import ProfileSettings from '@/components/Settings/ProfileSettings.vue'
 import CrewConnectSettings from '@/components/Settings/CrewConnectSettings.vue'
-
-import {
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonContent,
-  IonHeader,
-  IonPage,
-  IonToolbar,
-  IonTitle
-} from '@ionic/vue'
+import { useIonRouter } from '@ionic/vue'
+const router = useIonRouter()
 </script>
 
 <style lang="scss">

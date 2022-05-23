@@ -7,138 +7,42 @@ import { checkUserId, checkISODate} from '@/helpers/check'
 import { getDayParams } from '@/helpers/calendar'
 import { compact, difference, has, remove, some } from 'lodash'
 import { remuForEvent, remuForDay, remuForMonth } from '@/lib/Remu/Remu'
-import { calculSalaireAF } from '@/lib/Remu/calculSalairePNT'
 
 const TIMEZONE = 'Europe/Paris'
-
 Settings.defaultLocale = 'fr'
 Settings.defaultZoneName = TIMEZONE
-
-function checkDate(isoDate) {
-  if (!/^\d{4}-\d\d-\d\d$/.test(isoDate)) {
-    throw new Error('You must provide a valid ISO string date !')
-  }
-}
 
 export class EventsDatasource extends SimpleEventEmitter {
   constructor() {
     super()
     this._events = new Map()
     this._days = new Map()
-    this._months = new Map()
     this._subs = new Map()
-
+    this._userIsPNT = new Map()
     this._tasksQueue = new AsyncTasksQueue()
-
     this.db = Events
     this.watchHandle = null
-  }
-
-  async subscribeMonth(userId, month, isPNT = false) {
-    checkUserId(userId)
-    let isoMonth
-    if (/^\d{4}-\d\d$/.test(month)) {
-      isoMonth = month
-      month = DateTime.fromISO(isoMonth)
-    } else if (DateTime.isDateTime(month)) {
-      isoMonth = month.toISODate.substring(0, 7)
-    }
-
-    const start = month
-      .startOf('month')
-      .startOf('week')
-    const end = month
-      .endOf('month')
-      .endOf('week')
-
-    console.log(`%cEventsDatasource.subscribeMonth%c : ${isoMonth}`, 'color:green', 'color:inherit')
-
-    if (!this._months.has(userId)) {
-      this._months.set(userId, new Map())
-    }
-
-    return this._tasksQueue.enqueue(
-      async () => {
-        const userMonths = this._months.get(userId)
-        if (!userMonths.has(isoMonth)) {
-          const { events, days, sub } = await this._subscribeInterval(userId, start, end, isPNT)
-          const monthSub = {
-            month: isoMonth,
-            interval: Interval.fromDateTimes(start, end),
-            isPNT,
-            data: {
-              stats: {},
-              salaire: {},
-            },
-            handle: {
-              stop: async () => {
-                return this._tasksQueue.enqueue(
-                  async () => {
-                    await this._unsubscribe(userId, sub.iso)
-                    userMonths.delete(isoMonth)
-                  }
-                )
-              }
-            }
-          }
-          if (events && days) {
-            monthSub.data.stats = remuForMonth(month, events, days, isPNT)
-            monthSub.data.salaire = calculSalaireAF(monthSub.data.stats)
-            console.log(`%cremuMois ${isoMonth}`, 'color:pink', monthSub.data.stats, monthSub.data.salaire)
-          }
-          userMonths.set(isoMonth, monthSub)
-        }
-        return isoMonth
-      }
-    )
-  }
-
-  async unsubscribeMonth(userId, month) {
-    checkUserId(userId)
-    let isoMonth
-    if (/^\d{4}-\d\d$/.test(month)) {
-      isoMonth = month
-      month = DateTime.fromISO(isoMonth)
-    } else if (DateTime.isDateTime(month)) {
-      isoMonth = month.toISODate.substring(0, 7)
-    }
-    return this._tasksQueue.enqueue(
-      async () => {
-        if (!this._months.has(userId)) {
-          throw new Error('User has no months subscriptions !')
-        }
-        const userMonths = this._months.get(userId)
-
-        if (!userMonths.has(isoMonth)) {
-          throw new Error(`Passed month (${isoMonth}) has not been already subscribed to !`)
-        }
-        const monthSub = userMonths.get(isoMonth)
-        const intervalKey = monthSub.interval.toISODate()
-        this._unsubscribe(userId, intervalKey)
-        userMonths.delete(isoMonth)
-      }
-    )
   }
 
   /**
    * start: millis or isoString or DateTime
    * end: millis or isoString or DateTime
    */
-  async subscribeInterval(userId, start, end, isPNT = false) {
+  async subscribeInterval({ userId, isPNT = false }, start, end) {
     checkUserId(userId)
-
-    start = toDateTime(start).setZone(TIMEZONE).startOf('day')
-    end = toDateTime(end).setZone(TIMEZONE).endOf('day')
+    start = toDateTime(start).startOf('day')
+    end = toDateTime(end).endOf('day')
+    const interval = Interval.fromDateTimes(start, end)
 
     return this._tasksQueue.enqueue(
       async () => {
-        const { sub } = await this._subscribeInterval(userId, start, end, isPNT)
+        const { sub } = await this._subscribeInterval({ userId, isPNT }, interval)
         return sub.iso
       }
     )
   }
 
-  unsubscribe(userId, subKey) {
+  async unsubscribe(userId, subKey) {
     checkUserId(userId)
 
     return this._tasksQueue.enqueue(
@@ -160,19 +64,21 @@ export class EventsDatasource extends SimpleEventEmitter {
 
   /**
    * Subscribe to events for a given interval and user
-   * @param {String} userId 
-   * @param {DateTime} start 
-   * @param {DateTime} end 
-   * @param {Bool} isPNT 
+   * @param {Object} user
+   * @param {String} user.userId 
+   * @param {Bool} user.isPNT 
+   * @param {Interval} interval
    * @returns Object
    */
-  async _subscribeInterval(userId, start, end, isPNT = false) {
-    const interval = Interval.fromDateTimes(start, end)
+  async _subscribeInterval({ userId, isPNT = false }, interval) {
     const iso = interval.toISODate()
+    console.log(`%cEventsDatasource._subscribeInterval%c : ${userId}-${iso}`, 'color:green', 'color:inherit')
 
     if (!this._subs.has(userId)) {
       this._subs.set(userId, new Map())
     }
+
+    this._userIsPNT.set(userId, isPNT)
 
     const userSubs = this._subs.get(userId)
     if (!userSubs.has(iso)) {
@@ -181,32 +87,17 @@ export class EventsDatasource extends SimpleEventEmitter {
         isPNT,
         iso,
         interval,
-        dates: getIntervalDates(start, end),
-        handle: {
-          stop: () => {
-            return this._tasksQueue.enqueue(
-              async () => {
-                return this._unsubscribe(userId, subscription.iso)
-              }
-            )
-          }
-        }
+        dates: getIntervalDates(interval.start, interval.end),
+        count: 1
       }
-      const result = await this._subscribe(subscription)
+      const events = await this._fetchEvents(subscription)
+      const result = this._loadEvents({ events, ...subscription}) // { events, days }
+      userSubs.set(iso, subscription)
       return { ...result, sub: subscription }
     } else {
-      return { sub: userSubs.get(iso) }
-    }
-  }
-
-  async _subscribe(sub) {
-    console.log(`%cEventsDatasource._subscribe%c : ${sub.interval.toISODate()}`, 'color:green', 'color:inherit')
-    const userSubs = this._subs.get(sub.userId)
-    if (!userSubs.has(sub.iso)) {
-      const events = await this._fetchEvents(sub)
-      const result = this._loadEvents({ userId: sub.userId, dates: sub.dates, events, isPNT: sub.isPNT })
-      userSubs.set(sub.iso, sub)
-      return result
+      const sub = userSubs.get(iso)
+      sub.count++
+      return { sub }
     }
   }
 
@@ -227,14 +118,19 @@ export class EventsDatasource extends SimpleEventEmitter {
       return
     }
 
-    // Delete subscription
-    userSubs.delete(key)
+    const sub = userSubs.get(key)
+    if (sub.count > 1) {
+      sub.count--
+    } else {
+      // Delete subscription
+      userSubs.delete(key)
 
-    // Clean user's days Map
-    this._cleanDays(userId)
+      // Clean user's days Map
+      this._cleanDays(userId)
 
-    // Clean user's unsubscribed events
-    this._cleanEvents(userId)
+      // Clean user's unsubscribed events
+      this._cleanEvents(userId)
+    }
   }
 
   _cleanDays(userId) {
@@ -275,11 +171,11 @@ export class EventsDatasource extends SimpleEventEmitter {
     console.timeEnd('EventsDatasource._cleanEvents')
   }
 
-  async refreshInterval(userId, start, end, isPNT = false) {
+  async refreshInterval({userId, isPNT = false }, start, end) {
     checkUserId(userId)
 
-    start = toDateTime(start).setZone(TIMEZONE).startOf('day')
-    end = toDateTime(end).setZone(TIMEZONE).endOf('day')
+    start = toDateTime(start).startOf('day')
+    end = toDateTime(end).endOf('day')
 
     const interval = Interval.fromDateTimes(start, end)
 
@@ -326,6 +222,7 @@ export class EventsDatasource extends SimpleEventEmitter {
   }
 
   /**
+   * Load events into the events Map and days Map
    * @param {String} userId
    * @param {[Event, ...]} Events
    * @param {[isoDate, ...]} dates
@@ -352,12 +249,7 @@ export class EventsDatasource extends SimpleEventEmitter {
       }
       evt._dates = _dates
 
-      // TODO : calculer / mettre à jour la remu si nécessaire
-      const remu = remuForEvent(evt, isPNT)
-      if (remu) {
-        evt.remu = remu
-        console.log('remuForEvent', evt, remu)
-      }
+      // this.setRemuOfEvent(evt, isPNT)
 
       if (evt.tag === 'rotation') {
         evt.sv.forEach(sv => {
@@ -399,7 +291,7 @@ export class EventsDatasource extends SimpleEventEmitter {
 
   setDay(userId, date, day) {
     checkUserId(userId)
-    checkDate(date)
+    checkISODate(date)
     if (!this._days.has(userId)) {
       this._days.set(userId, new Map())
     }
@@ -421,7 +313,7 @@ export class EventsDatasource extends SimpleEventEmitter {
 
   removeDay(userId, date) {
     checkUserId(userId)
-    checkDate(date)
+    checkISODate(date)
     if (this._days.has(userId)) {
       this._days.get(userId).delete(date)
     }
@@ -500,6 +392,7 @@ export class EventsDatasource extends SimpleEventEmitter {
     if (doc.tag === 'rotation' && !has(doc, 'sv')) {
       doc.sv = []
     }
+    // this.setRemuOfEvent(doc)
     this._events.set(doc._id, doc)
     this.emit('events.set', { events: [doc] })
 
@@ -522,6 +415,7 @@ export class EventsDatasource extends SimpleEventEmitter {
   }
 
   updateEvent(doc) {
+    // this.setRemuOfEvent(doc)
     // save event in index
     this._events.set(doc._id, doc)
     this.emit('events.set', { events: [doc] })
@@ -588,6 +482,7 @@ export class EventsDatasource extends SimpleEventEmitter {
       } else {
         rotation.sv.splice(position, 0, doc)
       }
+      // this.setRemuOfEvent(rotation)
       this.emit('events.set', { events: [rotation] })
       // update days
       if (!this._days.has(doc.userId)) return // User has no subscriptions yet : skip
@@ -619,6 +514,7 @@ export class EventsDatasource extends SimpleEventEmitter {
           rotation.sv.splice(position, 0, doc)
         }
       }
+      // this.setRemuOfEvent(rotation)
       this.emit('events.set', { events: [rotation] })
       // update days
       if (!this._days.has(doc.userId)) return // User has no subscriptions yet : skip
@@ -639,6 +535,7 @@ export class EventsDatasource extends SimpleEventEmitter {
     // update rotation if it exists
     if (rotation) {
       remove(rotation.sv, { _id: doc._id })
+      // this.setRemuOfEvent(rotation)
       this.emit('events.set', { events: [rotation] })
       // update days
       if (!this._days.has(doc.userId)) return // User has no subscriptions yet : skip
@@ -651,12 +548,27 @@ export class EventsDatasource extends SimpleEventEmitter {
     }
   }
 
-  async bulkUpdate(updateLog) {
-    if (updateLog.insert.length ||
-      updateLog.update.length ||
-      updateLog.remove.length) {
-      return this.db.processBulkUpdate(updateLog)
+  updateDay(userId, day) {
+    Object.assign(day, getDayParams(day))
+    const remu = remuForDay(day, this._userIsPNT(userId))
+    if (remu) {
+      day.remu = remu
+      console.log('remuForDay', day, remu)
     }
+    this.emit('days.set', { userId, days: [day] })
+  }
+
+  setRemuOfEvent(evt, isPNT) {
+    const remu = remuForEvent(evt, isPNT ?? this._userIsPNT.get(evt.userId))
+    if (remu) {
+      evt.remu = remu
+      console.log('remuForEvent', evt, remu)
+    }
+    return remu
+  }
+
+  async bulkUpdate({ insert, update, remove }) {
+    return this.db.processBulkUpdate({ insert, update, remove })
   }
 
   /**
@@ -669,13 +581,7 @@ export class EventsDatasource extends SimpleEventEmitter {
     return this._days.has(userId) ? this._days.get(userId).get(date) : undefined
   }
 
-  updateDay(userId, day) {
-    Object.assign(day, getDayParams(day))
-    this.emit('days.set', { userId, days: [day] })
-  }
-
-  getKey(userId, date) {
-    if (!userId) throw new Error('No userId passed !')
-    return [userId, date].join('.')
+  async clearDb() {
+    return this.db.clear()
   }
 }
