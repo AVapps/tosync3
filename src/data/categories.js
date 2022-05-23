@@ -56,6 +56,7 @@ export const CATEGORIES = {
   SUR_ELEARN: 'sol', // e-learning Sûreté
   ELEARSE: 'sol', // e-learning Secourisme
   APRS: 'sol', // Cours APRS
+  E_APRS: 'sol', // Cours APRS
   E_ETECHLOG: 'sol', // e-learning E-techlog
   E_: 'sol', // e-learning
 
