@@ -47,6 +47,7 @@
     "url-join": "^5.0.0",
     "vue": "^3.2.31",
     "vue-concurrency": "^2.3.0",
+    "vue-router": "^4.0.15",
     "vue-virtual-scroller": "^2.0.0-alpha.1"
   },
   "devDependencies": {
