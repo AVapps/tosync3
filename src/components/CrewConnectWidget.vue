@@ -13,76 +13,69 @@
       <template v-if="user.userId">Dernière synchro. : {{ toLocaleString(main.lastPlanningSync, DATETIME_SHORT_FORMAT) }}</template>
       <ion-skeleton-text v-else animated style="width: 80%" />
     </ion-card-subtitle>
-    <ion-button class="cc-logout"
-      @click="signOut"
-      color="theme"
-      fill="clear"
-      size="small">
-      <ion-icon :icon="powerOutline" slot="icon-only"/>
-    </ion-button>
+    <ion-buttons class="header-buttons">
+      <ion-button
+        @click="signOut"
+        color="theme"
+        fill="clear"
+        size="small">
+        <ion-icon :icon="powerOutline" slot="icon-only"/>
+      </ion-button>
+    </ion-buttons>
   </ion-card-header>
 
-  <ion-item lines="none">
-    <ion-spinner v-if="loading" slot="start" />
+  <ion-item lines="none" >
+    <ion-spinner v-if="connect.isLoading" slot="start" />
     <ion-icon v-else
       class="connect-icon"
       :class="connect.isConnected && main.network.connected ? 'connected' : 'offline'"
       slot="start"
       :icon="ellipse" />
+    
     <ion-text color="warning" v-if="!main.network.connected">Hors ligne</ion-text>
     <ion-text color="danger" v-else-if="!connect.isConnected">Déconnecté</ion-text>
     <ion-text color="success" v-else>Connecté</ion-text>
+    
     <ion-buttons slot="end">
-      <ion-button @click="silentSignIn" fill="clear">
-        <ion-icon :icon="refreshOutline" slot="icon-only"/>
+      <ion-button v-if="connect.isLoading" @click="connect.cancel()" fill="clear">
+        <ion-icon :icon="stopCircleOutline" slot="icon-only"/>
       </ion-button>
-      <ion-button fill="clear">
-        <ion-icon :icon="ellipsisHorizontalOutline" slot="icon-only"/>
+
+      <ion-button v-if="connect.isConnected" id="modal-button" fill="clear">
+        <ion-icon :icon="ellipsisHorizontalCircleOutline" slot="icon-only"/>
       </ion-button>
     </ion-buttons>
   </ion-item>
 
-  <ion-list v-if="!connect.isConnected && !connect.serverUrl" inset>
-    <ion-item lines="none">
-      <ion-input ref="serverUrlInput" type="url" placeholder="Adresse du serveur APM CrewConnect" :value="connect.serverUrl" />
-    </ion-item>
-  </ion-list>
-  <ion-card-content v-if="!connect.isConnected" class="pt-0">
-    <loading-button
-      @click="onConnect()"
-      :loading="loading"
-      :color="main.config.theme"
-      expand="block">
-      Connexion
-    </loading-button>
-  </ion-card-content>
+  <loading-button
+    v-if="!connect.isConnected"
+    @click="main.signIn({ silent: false })"
+    :loading="connect.isLoading"
+    :color="main.config.theme"
+    fill="solid"
+    class="connect-button"
+  >
+    <ion-text color="primary">Connexion</ion-text>
+  </loading-button>
+
+  <crew-connect-modal trigger="modal-button"/>
 </ion-card>
 </template>
 
 <script setup>
-import { refreshOutline, ellipse, ellipsisHorizontalOutline, powerOutline } from 'ionicons/icons'
 import { ref, reactive, computed } from 'vue'
-import { useUser, useConnect, useMainStore, useCrews } from '@/store'
-import LoadingButton from './LoadingButton.vue'
-import { toLocaleString, DATETIME_SHORT_FORMAT } from '@/helpers/dates'
-import { toastError } from '@/helpers/toast'
-import { asyncComputed } from '@vueuse/core'
-import { useRouter } from 'vue-router'
 import { useIonRouter } from '@ionic/vue'
+import CrewConnectModal from './CrewConnectModal.vue'
+import LoadingButton from './LoadingButton.vue'
+import { ellipse, powerOutline, stopCircleOutline, ellipsisHorizontalCircleOutline } from 'ionicons/icons'
+import { useUser, useConnect, useMainStore } from '@/store'
+import { toLocaleString, DATETIME_SHORT_FORMAT } from '@/helpers/dates'
 
 const router = useIonRouter()
-
 const main = useMainStore()
-const user = useUser()
-const state = reactive({
-  isLoading: false,
-})
-
 const connect = useConnect()
-window.connect = connect
-const crews = useCrews()
+const user = useUser()
 
-const currentUser = computed(() => user.currentUser)
 const currentUserPhotoDataUrl = computed(() => {
   if (user.currentUser?._attachments['photo.jpg']) {
     const photo = user.currentUser?._attachments['photo.jpg']
@@ -90,67 +83,10 @@ const currentUserPhotoDataUrl = computed(() => {
   }
   return ''
 })
-const loading = computed(() => state.isLoading || connect.isLoading)
 
-const serverUrlInput = ref(null)
-const onConnect = async () => {
-  try {
-    if (serverUrlInput?.value) {
-      const input = await serverUrlInput?.value.$el.getInputElement()
-      if (input.value && input.reportValidity()) {
-        console.log('Setting server url', input.value)
-        connect.serverUrl = input.value
-      }
-    }
-    if (!user.userId) {
-      console.log('No user id, fetching user')
-      await main.signIn({ silent: false })
-    }
-  } catch (e) {
-    toastError(e)
-    console.log(e)
-  }
-}
-
-const silentSignIn = async () => {
-  try {
-    state.isLoading = true
-    await main.signIn({ silent: true })
-  } catch (e) {
-    toastError(e)
-    console.log(e, e.errorCode)
-  } finally {
-    state.isLoading = false
-  }
-}
-
-const signOut = async () => {
-  try {
-    state.isLoading = true
-    router.push({ name: 'login' })
-    await main.signOut()
-  } catch (e) {
-    toastError(e)
-    console.log(e, e.errorCode)
-  } finally {
-    state.isLoading = false
-  }
-}
-
-const fetchEvents = async () => {
-  try {
-    state.isLoading = true
-    const data = await connect.getRosterCalendars({
-      dateFrom: '2022-04-01T00:00:00Z',
-      dateTo: '2022-05-09T23:59:59Z'
-    })
-    console.log(data)
-  } catch (e) {
-    console.log(e, e.errorCode)
-  } finally {
-    state.isLoading = false
-  }
-  console.log(connect.unsignedActivities)  
+const signOut = () => {
+  router.push({ name: 'login' })
+  main.signOut()
 }
 </script>
 
@@ -183,7 +119,7 @@ ion-card {
 
   ion-card-header {
     display: grid;
-    grid-template: auto auto / auto 1fr;
+    grid-template: auto auto / auto 1fr auto;
     align-items: center;
     grid-gap: 0 20px;
 
@@ -196,18 +132,21 @@ ion-card {
     }
 
     ion-card-subtitle {
-      grid-area: 2 / 2 / 3 / 3;
+      grid-area: 2 / 2 / 3 / 4;
+    }
+
+    ion-buttons.header-buttons {
+      grid-area: 1 / 3 / 2 / 4;
+      justify-content: end;
     }
   }
 
   ion-toolbar {
     --background: transparent;
   }
+}
 
-  ion-button.cc-logout {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-  }
+.connect-button {
+  margin: 0 16px 16px;
 }
 </style>
