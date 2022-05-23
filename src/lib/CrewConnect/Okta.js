@@ -52,6 +52,23 @@ export class Okta {
       }
     }
 
+    // Try refreshToken
+    try {
+      const { active } = await this.introspectRefreshToken()
+      if (active) {
+        console.log('[Okta] User has an active refresh token : renewing tokens...')
+        const { access_token } = await this.refreshTokens()
+        if (access_token) {
+          console.log('[Okta] Tokens have been succesfully refreshed !')
+          this._accessToken = access_token
+          this._user = await this.getUser()
+          return this._user
+        }
+      }
+    } catch (err) {
+      console.log('[Okta] Refreshing tokens failed')
+    }
+
     if (silent) {
       return
     }
