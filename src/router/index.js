@@ -41,6 +41,11 @@ const routes = [
     ]
   },
   {
+    path: '/settings/data',
+    name: 'settings.data',
+    component: () => import('@/components/Settings/PersonnalDataSettings.vue')
+  },
+  {
     path: '/welcome',
     name: 'welcome',
     component: () => import('@/views/WelcomePage.vue')
