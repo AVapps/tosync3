@@ -53,8 +53,8 @@ const SYNC_TAG_CATEGORIES = {
   autre: 'sol'
 }
 
-function toUTCISOString(ts) {
-  return DateTime.fromMillis(ts, { zone: 'utc' })
+function toUTCISOString(dt) {
+  return DateTime.fromISO(dt, { zone: 'utc' })
     .set({ milliseconds: 0 })
     .toISO({ suppressMilliseconds: true })
 }

@@ -6,7 +6,7 @@
       class="sv"
       :class="['events-count-' + sv?.events?.length, ...eventClass(sv, props.date)]"
     >
-      <span class="d-start">{{ tsToTime(sv.start) }}</span>
+      <span class="d-start">{{ toTimeString(sv.start) }}</span>
       <div
         class="sv-event"
         v-for="etape in filterEventsByDate(sv.events, props.date)"
@@ -19,17 +19,17 @@
           <span class="v-divider">-</span>
           <span class="v-to">{{ etape.to }}</span>
         </span>
-        <span class="v-start">{{ tsToTime(etape.std ?? etape.start) }}</span>
-        <span class="v-end">{{ tsToTime(etape.sta ?? etape.end) }}</span>
+        <span class="v-start">{{ toTimeString(etape.std ?? etape.start) }}</span>
+        <span class="v-end">{{ toTimeString(etape.sta ?? etape.end) }}</span>
       </div>
-      <span class="d-end">{{ tsToTime(sv.end) }}</span>
+      <span class="d-end">{{ toTimeString(sv.end) }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { tsToTime } from '@/helpers/dates'
+import { toTimeString } from '@/helpers/dates'
 import { DateTime } from 'luxon'
 import { eventClass, filterEventsByDate } from '@/helpers/calendar'
 

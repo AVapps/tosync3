@@ -3,26 +3,19 @@
     <span class="v-title" :class="'tosync-color-' + event.tag">
       {{ event.summary }}
     </span>
-    <span class="v-start">{{ tsToTime(event.start) }}</span>
-    <span class="v-end">{{ tsToTime(event.end) }}</span>
+    <span class="v-start">{{ toTimeString(event.start) }}</span>
+    <span class="v-end">{{ toTimeString(event.end) }}</span>
   </div>
 </template>
 
-<script>
-import { defineComponent } from 'vue'
-import { tsToTime } from '@/helpers/dates'
+<script setup>
+import { toRefs } from 'vue'
+import { toTimeString } from '@/helpers/dates'
 import { tagLabel } from '@/helpers/events'
 
-export default defineComponent({
-  name: 'DefaultEvent',
-  props: ['event', 'date'],
-  setup() {
-    return {
-      tsToTime,
-      tagLabel
-    }
-  }
-})
+// eslint-disable-next-line no-undef
+const props = defineProps(['event', 'date'])
+const { event } = toRefs(props)
 </script>
 
 <style lang="scss" scoped>

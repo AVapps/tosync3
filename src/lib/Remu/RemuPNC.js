@@ -18,12 +18,8 @@ Settings.defaultZoneName = TIMEZONE
 //   classe: 5
 // }
 
-moment.fn.toDateTime = function() {
-  return DateTime.fromMillis(this.valueOf(), { zone: TIMEZONE })
-}
-
-function toDateTime(millis) {
-  return DateTime.fromMillis(millis, { zone: TIMEZONE })
+function toDateTime(dt) {
+  return DateTime.fromISO(dt, { zone: TIMEZONE })
 }
 
 function sumBy(collection, key) {
@@ -433,7 +429,7 @@ export default class RemuPNC {
 
     if (sv.type === 'vol' || sv.tag === 'sv') {
       sv.debut = toDateTime((first.tag === 'vol' ? first.real : first).start)
-      sv.debutTR = DateTime.fromMillis(first.tag === 'vol' ? Math.min(first.start, first.real.start) : first.start, { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
+      sv.debutTR = DateTime.fromISO(first.tag === 'vol' ? Math.min(first.start, first.real.start) : first.start, { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
       sv.finTRprog = toDateTime(lastVol.end).plus({ hours: CONFIG_TO.postTR })
       sv.finTR = toDateTime(lastVol.real.end).plus({ hours: CONFIG_TO.postTR })
       sv.HctTO = Math.max(sv.finTR.diff(sv.debutTR).as('hours'), CONFIG_TO.TRMini) * CONFIG_TO.coefTR
@@ -471,7 +467,7 @@ export default class RemuPNC {
       s.tvp = s.fin.diff(s.debut).as('hours')
       s.tv = s.finR.diff(s.debutR).as('hours')
 
-      const debutNuit = DateTime.fromMillis(Math.min(s.start, s.real.start), { zone: TIMEZONE })
+      const debutNuit = DateTime.fromISO(Math.min(s.start, s.real.start), { zone: TIMEZONE })
       const finNuit = debutNuit.plus({ hours: s.tv })
       s.HVnuit = this._hdn(debutNuit, finNuit, CONFIG_TO.hdn)
       // console.log(s, debutNuit.toString(), finNuit.toString(), s.HVnuit)

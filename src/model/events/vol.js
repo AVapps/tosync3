@@ -11,10 +11,10 @@ export const volSchema = new SimpleSchema({
     optional: true
   },
   std: {
-    type: SimpleSchema.Integer // Datetime timestamp
+    type: String // Datetime ISO
   },
   sta: {
-    type: SimpleSchema.Integer // Datetime timestamp
+    type: String // Datetime ISO
   }
 })
 

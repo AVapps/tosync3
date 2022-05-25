@@ -1,19 +1,19 @@
 <template>
   <div class="duty">
-    <div class="d-start">{{ tsToTime(event.start) }}</div>
+    <div class="d-start">{{ toTimeString(event.start) }}</div>
     <div v-for="evt in event.events" :key="evt.slug" class="duty-event" :class="eventClass(evt, date)">
       <span class="v-title">
         {{ evt.summary }}
       </span>
-      <span class="v-start">{{ tsToTime(evt.start) }}</span>
-      <span class="v-end">{{ tsToTime(evt.end) }}</span>
+      <span class="v-start">{{ toTimeString(evt.start) }}</span>
+      <span class="v-end">{{ toTimeString(evt.end) }}</span>
     </div>
-    <div class="d-end">{{ tsToTime(event.end) }}</div>
+    <div class="d-end">{{ toTimeString(event.end) }}</div>
   </div>
 </template>
 
 <script setup>
-import { tsToTime } from '@/helpers/dates'
+import { toTimeString } from '@/helpers/dates'
 import { DateTime } from 'luxon'
 import { eventClass } from '@/helpers/calendar'
 
@@ -28,6 +28,8 @@ const props = defineProps({
     required: true
   }
 })
+
+const { date, event } = toRefs(props)
 </script>
 
 <style lang="scss" scoped>

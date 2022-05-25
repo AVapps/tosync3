@@ -47,10 +47,10 @@ export const mepSchema = new SimpleSchema({
     optional: true
   },
   start: {
-    type: SimpleSchema.Integer // Datetime timestamp
+    type: String // Datetime ISO
   },
   end: {
-    type: SimpleSchema.Integer // Datetime timestamp
+    type: String // Datetime ISO
   },
   remu: {
     type: Object,

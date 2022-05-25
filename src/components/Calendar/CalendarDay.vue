@@ -23,75 +23,55 @@
   </div>
 </template>
 
-<script>
-import { defineComponent, inject, ref, computed } from 'vue'
+<script setup>
+import { ref, computed } from 'vue'
 import { DateTime, Settings } from 'luxon'
 import { eventClass, isAlldayTag } from '@/helpers/calendar'
-
 import AlldayEvent from './Events/AlldayEvent'
 import DefaultEvent from './Events/DefaultEvent'
 import DutyEvent from './Events/DutyEvent'
 import RotationEvent from './Events/RotationEvent'
+import { usePlanning } from '@/store'
 
 const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
 Settings.defaultZoneName = TIMEZONE
 
-export default defineComponent({
-  name: 'CalendarDay',
-  props: ['day'],
-  setup(props) {
-    const zone = ref('Europe/Paris')
-    const locale = ref('fr')
-    const datasource = inject('datasource')
+// eslint-disable-next-line no-undef
+const props = defineProps(['day'])
 
-    // TODO : implement global state
-    const globalState = {
-      userId: 'IEN'
+const zone = ref(TIMEZONE)
+const locale = ref('fr')
+
+const planning = usePlanning()
+
+
+const state = computed(() => {
+  const dayState = planning.getDay(props.day.iso)
+  return (
+    dayState || {
+      date: props.day.iso,
+      tags: [],
+      hints: [],
+      allday: false,
+      label: '',
+      events: []
     }
-
-    const state = computed(() => {
-      const dayState = datasource.getDay(globalState.userId, props.day.iso)
-      return (
-        dayState || {
-          date: props.day.iso,
-          tags: [],
-          hints: [],
-          allday: false,
-          label: '',
-          events: []
-        }
-      )
-    })
-
-    function getTime(ts) {
-      return DateTime.fromMillis(ts, {
-        zone: zone.value,
-        locale: locale.value
-      }).toFormat('HH:mm')
-    }
-
-    function eventComponent(evt) {
-      if (isAlldayTag(evt.tag)) {
-        return AlldayEvent
-      }
-      if (evt.tag === 'rotation') {
-        return RotationEvent
-      }
-      if (evt.events) {
-        return DutyEvent
-      }
-      return DefaultEvent
-    }
-
-    return {
-      state,
-      eventComponent,
-      eventClass,
-      getTime
-    }
-  }
+  )
 })
+
+function eventComponent(evt) {
+  if (isAlldayTag(evt.tag)) {
+    return AlldayEvent
+  }
+  if (evt.tag === 'rotation') {
+    return RotationEvent
+  }
+  if (evt.events) {
+    return DutyEvent
+  }
+  return DefaultEvent
+}
 </script>
 
 <style lang="scss">

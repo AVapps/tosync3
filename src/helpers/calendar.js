@@ -163,8 +163,8 @@ export function eventClass(evt, date) {
  * @return {Array}
  */
 export function filterEventsByDate(events, date) {
-  const startOfDay = date.startOf('day')
-  const endOfDay = date.endOf('day')
+  const startOfDay = date.startOf('day').toISO()
+  const endOfDay = date.endOf('day').toISO()
   return filter(events, evt => {
     return evt.start < endOfDay && evt.end > startOfDay
   })
@@ -183,10 +183,10 @@ export function getDayParams({ events, date }) {
     const tag = evt.tag
     const tags = [tag]
 
-    if (evt.start < day) {
+    if (evt.start < day.toISO()) {
       tags.push('sp-l')
     }
-    if (evt.end > day.endOf('day')) {
+    if (evt.end > day.endOf('day').toISO()) {
       tags.push('sp-r')
     }
 
@@ -202,8 +202,8 @@ export function getDayParams({ events, date }) {
   const pmInterval = Interval.fromDateTimes(day.set({ hour: 12, minute: 0 }), day.endOf('day'))
 
   const { am: amEvents, pm: pmEvents } = reduce(events, ({ am, pm }, evt) => {
-    const debut = DateTime.fromMillis(evt.start)
-    const fin = DateTime.fromMillis(evt.end)
+    const debut = DateTime.fromISO(evt.start)
+    const fin = DateTime.fromISO(evt.end)
     const interval = Interval.fromDateTimes(debut, fin)
     if (interval.overlaps(amInterval)) {
       am.push(evt)
@@ -219,11 +219,11 @@ export function getDayParams({ events, date }) {
     const tags = [evt.tag]
     const label = tagLabel(evt.tag)
 
-    if (evt.start < day.toMillis()) {
+    if (evt.start < day.toISO()) {
       tags.push('sp-l')
     }
 
-    if (evt.end > pmInterval.end.toMillis()) {
+    if (evt.end > pmInterval.end.toISO()) {
       tags.push('sp-r')
     }
 
@@ -244,11 +244,11 @@ export function getDayParams({ events, date }) {
   const label = allday ? tagLabel(hints.am) : `${tagLabel(hints.am)} / ${tagLabel(hints.pm)}`
   const tags = getTags(events)
 
-  if (amEvents.length && first(amEvents).start < day.toMillis()) {
+  if (amEvents.length && first(amEvents).start < day.toISO()) {
     tags.push('sp-l')
   }
 
-  if (pmEvents.length && last(pmEvents).end > pmInterval.end.toMillis()) {
+  if (pmEvents.length && last(pmEvents).end > pmInterval.end.toISO()) {
     tags.push('sp-r')
   }
 

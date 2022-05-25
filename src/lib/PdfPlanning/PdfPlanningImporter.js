@@ -10,8 +10,9 @@ import {
 
 import { Events } from '@/model/Events.js'
 
+const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
-Settings.defaultZoneName = 'Europe/Paris'
+Settings.defaultZoneName = TIMEZONE
 
 const DT_TRANSLATION = {
   debut: 'start',
@@ -59,7 +60,7 @@ export class PdfPlanningImporter {
     const first = _.first(planning)
     const last = _.last(planning)
 
-    this.savedEvents = await Events.getInterval(this.userId, first.debut.toMillis(), last.fin.toMillis())
+    this.savedEvents = await Events.getInterval(this.userId, first.debut, last.fin)
 
     this.savedEventsByTag = _.groupBy(this.savedEvents, 'tag')
     console.log('PdfPlanningImport.importPlanning savedEvents', this.savedEvents, this.savedEventsByTag)
@@ -167,7 +168,7 @@ export class PdfPlanningImporter {
             this.foundIds.add(savedSV._id)
             continue
           }
-          if (DateTime.fromMillis(savedSV.start).hasSame(firstSV.start, 'day') &&
+          if (DateTime.fromISO(savedSV.start).hasSame(firstSV.start, 'day') &&
             _.first(savedSV.events).from === firstSV.from) {
             match = true
           }
@@ -381,10 +382,10 @@ export class PdfPlanningImporter {
     _.forEach(['debut', 'fin'], field => {
       if (_.has(evt, field)) {
         const dt = _.get(evt, field)
-        if (dt.isLuxonDateTime) {
-          _.set(evt, DT_TRANSLATION[field], dt.toMillis())
+        if (DateTime.isDateTime(dt)) {
+          _.set(evt, DT_TRANSLATION[field], dt.setZone(TIMEZONE).toISO())
           if (evt.realise) {
-            _.set(evt, ['real', DT_TRANSLATION[field]], dt.toMillis())
+            _.set(evt, ['real', DT_TRANSLATION[field]], dt.setZone(TIMEZONE).toISO())
           }
         }
       }

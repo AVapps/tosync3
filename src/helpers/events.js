@@ -54,7 +54,7 @@ export function tagLabel(tag) {
 
 export function slug(event, username, index) {
   username = username || event.userId
-  const prefix = username + DateTime.fromMillis(event.start).toISODate({ format: 'basic' })
+  const prefix = username + DateTime.fromISO(event.start).toISODate({ format: 'basic' })
   const suffix = event.tag + (index || '')
 
   if (_.has(event, 'events') && !_.isEmpty(event.events)) {
@@ -66,7 +66,7 @@ export function slug(event, username, index) {
       default:
         const first = _.first(event.events)
         const description = first.category || first.summary.replace(/\W+/g, '_')
-        return [prefix, description, DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
+        return [prefix, description, DateTime.fromISO(event.start).toFormat('HHmm'), suffix].join('-')
     }
   } else {
     switch (event.tag) {
@@ -86,7 +86,7 @@ export function slug(event, username, index) {
       case 'mep':
         return [prefix, (event.num || event.summary || '').replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
       default:
-        return [prefix, event.category || event.summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
+        return [prefix, event.category || event.summary.replace(/\W+/g, '_'), DateTime.fromISO(event.start).toFormat('HHmm'), suffix].join('-')
     }
   }
 }
@@ -171,7 +171,7 @@ function findInObject(object, code) {
     const subCode = code.split('_')[0]
     if (_.has(object, subCode)) {
       const tag = _.get(object, subCode)
-      console.log(`---  Tag attribué (méthode sub) : ${tag} ---`)
+      console.log(`---  Tag attribué (méthode sub) : ${tag} [${code}] ---`)
       return tag
     }
   }
@@ -181,7 +181,7 @@ function findInObject(object, code) {
   })
 
   if (found) {
-    console.log(`---  Tag attribué (méthode recherche) : ${found} ---`)
+    console.log(`---  Tag attribué (méthode recherche) : ${found} [${code}] ---`)
     return found
   }
   console.log('!!! IMPOSSIBLE DE DETERMINER TAG !!!', code)
@@ -194,7 +194,7 @@ function svSlug(event, prefix, suffix) {
 }
 
 function alldayEventSlug(event, prefix, suffix) {
-  const endDate = DateTime.fromMillis(event.end)
+  const endDate = DateTime.fromISO(event.end)
   if (endDate.hasSame(event.start, 'day')) {
     return [prefix, suffix].join('-')
   } else {

@@ -31,7 +31,7 @@ export class TVrefCollection {
    * @param {String} serie - 'TOA' ou 'TOB'
    * @param {Object} params - Must contain 'route' or ('from' and 'to')
    * @param {String} params.route - IATA codes route (ex: 'LHR-CDG')
-   * @param {Number} params.start - Timestamp of the start of the flight
+   * @param {String} params.start - ISO string of the start of the flight
    * @param {Number} [params.from] - IATA code of the departure airport
    * @param {Number} [params.to] - IATA code of the destination airport
    * @returns 
@@ -40,7 +40,7 @@ export class TVrefCollection {
     if (!route && from && to) {
       route = [from, to].join('-')
     }
-    const dt = DateTime.fromMillis(start)
+    const dt = DateTime.fromISO(start)
     const saison = SAISON[dt.month]
     const isoMonth = dt.toISODate().substring(0, 7)
 

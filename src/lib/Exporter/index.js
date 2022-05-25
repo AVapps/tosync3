@@ -69,7 +69,7 @@ export function renderEventDescription(event, options) {
 }
 
 const titleTemplatesLegacy = {
-  rotation: rot => `Rotation ${nbjours(rot)}ON du ${DateTime.fromMillis(rot.start).toFormat('D MMMM')}`,
+  rotation: rot => `Rotation ${nbjours(rot)}ON du ${DateTime.fromISO(rot.start).toFormat('D MMMM')}`,
   vol: vol => `${vol.num} | ${vol.from} - ${vol.to} | ${vol.type}`,
   mep: mep => `${mep.num || mep.summary} | ${mep.from} - ${mep.to} | MEP`
 }

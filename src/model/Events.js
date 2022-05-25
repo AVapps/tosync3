@@ -1,35 +1,21 @@
 import { PouchDBCollection } from './PouchDBCollection.js'
 import { findLast, sortBy } from 'lodash'
 import { DateTime } from 'luxon'
+import { toDateTime } from '@/helpers/dates.js'
 
 const JOUR = 24 * 60 * 60 * 1000
 const MAX = '\ufff0'
 
-function toBasicIsoZ(ts) {
-  ts = toTimestamp(ts)
-  return DateTime.fromMillis(ts, { zone: 'utc' })
+function toBasicIsoZ(date) {
+  return toDateTime(date)
+    .toUTC()
     .toISO({ format: 'basic' })
     .substring(0, 13)
 }
 
-function toTimestamp(date) {
-  if (typeof date === 'number') {
-    return date
-  }
-  if (date instanceof Date) {
-    return date.getTime()
-  }
-  if (DateTime.isDateTime(date)) {
-    return date.toMillis()
-  }
-  if (typeof date === 'string') {
-    return DateTime.fromISO(date).toMillis()
-  }
-}
-
 export class EventsCollection extends PouchDBCollection {
   constructor() {
-    super('events', {
+    super('Events', {
       idFunction: ({ userId, tag, start, end, events }) => {
         const params = [userId, toBasicIsoZ(start), toBasicIsoZ(end)]
         if (tag === 'rotation') {
@@ -49,23 +35,26 @@ export class EventsCollection extends PouchDBCollection {
    * @param {any} end
    */
   async getInterval(userId, start, end) {
-    start = toTimestamp(start)
-    end = toTimestamp(end)
-    let events = await this.findUserEvents(userId, start - (7 * JOUR), end)
+    start = toDateTime(start)
+    end = toDateTime(end)
+    let events = await this.findUserEvents(userId, start.minus({ days: 7 }), end)
 
     if (!events.length) {
       return []
     }
 
+    const startISO = start.toISO()
+    const endISO = end.toISO()
+
     // possibilité d'optimiser en utilisant une boucle s'arrêtant dès que evt.start >= start
     let hasOverlap
     events = events.filter(evt => {
-      if (evt.tag === 'rotation' && evt.start < start && evt.end >= start) {
+      if (evt.tag === 'rotation' && evt.start < startISO && evt.end >= startISO) {
         hasOverlap = evt
         // console.log('isRotation before')
         return true
       }
-      if (evt.end >= start) {
+      if (evt.end >= startISO) {
         // console.log('end after start')
         return true
       }
@@ -76,7 +65,7 @@ export class EventsCollection extends PouchDBCollection {
       return false
     })
 
-    const hasOverlapEnd = findLast(events, evt => evt.tag === 'rotation' && evt.end > end)
+    const hasOverlapEnd = findLast(events, evt => evt.tag === 'rotation' && evt.end > endISO)
     if (hasOverlapEnd) { // Ajouter les SV manquants
       const lastSvs = await this.findUserEvents(userId, end, hasOverlapEnd.end, { inclusive_start: false })
         .filter(evt => {
@@ -103,6 +92,7 @@ export class EventsCollection extends PouchDBCollection {
       inclusive_end: inclusiveEnd,
       include_docs: true
     })
+    console.log('[Events.findUserEvents]', userId, start, end, options, result)
     return result.rows.map(row => row.doc).sort(this.constructor.eventsComp)
   }
 

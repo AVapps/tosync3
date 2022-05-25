@@ -1,5 +1,6 @@
-import { tsToDateTimeString } from './helpers'
+import { toLocaleString } from '@/helpers/dates'
+import { DateTime } from 'luxon'
 
 export default function (evt) {
-  return `Début : ${tsToDateTimeString(evt.start)}\nFin : ${tsToDateTimeString(evt.end)}`
+  return `Début : ${toLocaleString(evt.start, DateTime.DATETIME_FULL)}\nFin : ${toLocaleString(evt.end, DateTime.DATETIME_FULL)}`
 }

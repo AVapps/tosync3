@@ -145,6 +145,7 @@ async function importRosterCalendars(dateFrom, dateTo) {
   try {
     await mainStore.syncPlanningInterval({ dateFrom, dateTo })
   } catch (error) {
+    console.log(error)
     state.error = error?.message || error?.error || "Une erreur s'est produite lors de l'importation"
   } finally {
     state.isLoading = false

@@ -27,8 +27,8 @@ export class IcsFile {
         case 'rotation': {
           const vevent = this.startVEvent(event)
           vevent.push(
-            'DTSTART;VALUE=DATE:' + DateTime.fromMillis(event.start).startOf('day').toISODate(ISO_DATE_FORMAT),
-            'DTEND;VALUE=DATE:' + DateTime.fromMillis(event.end).startOf('day').plus({ day: 1 }).toISODate(ISO_DATE_FORMAT),
+            'DTSTART;VALUE=DATE:' + DateTime.fromISO(event.start).startOf('day').toISODate(ISO_DATE_FORMAT),
+            'DTEND;VALUE=DATE:' + DateTime.fromISO(event.end).startOf('day').plus({ day: 1 }).toISODate(ISO_DATE_FORMAT),
             'CATEGORIES:' + event.tag.toUpperCase(),
             'SUMMARY:' + event.summary,
             'DESCRIPTION:' + event.description.replace(/\n/g, '\\n')
@@ -84,7 +84,7 @@ export class IcsFile {
   }
 
   skip(evt) {
-    const date = DateTime.fromMillis(evt.start).toISODate()
+    const date = DateTime.fromISO(evt.start).toISODate()
     const _skip = _.includes(this.daysMap, date)
     if (!_skip) this.daysMap.push(date)
     return _skip
@@ -95,16 +95,16 @@ export class IcsFile {
   }
 
   addDates(evt, vevt) {
-    const startDate = DateTime.fromMillis(evt.start, { zone: 'Europe/Paris' }).startOf('day')
+    const startDate = DateTime.fromISO(evt.start, { zone: 'Europe/Paris' }).startOf('day')
     vevt.push('DTSTART;VALUE=DATE:' + startDate.toISODate(ISO_DATE_FORMAT))
-    const endDate = DateTime.fromMillis(evt.end, { zone: 'Europe/Paris' }).startOf('day').plus({ day: 1 })
+    const endDate = DateTime.fromISO(evt.end, { zone: 'Europe/Paris' }).startOf('day').plus({ day: 1 })
     vevt.push('DTEND;VALUE=DATE:' + endDate.toISODate(ISO_DATE_FORMAT))
     return vevt
   }
 
   addDateTimes(evt, vevt) {
-    vevt.push('DTSTART;VALUE=DATE-TIME:' + DateTime.fromMillis(evt.start).toUTC().toISO(ISO_DATETIME_FORMAT))
-    vevt.push('DTEND;VALUE=DATE-TIME:' + DateTime.fromMillis(evt.end).toUTC().toISO(ISO_DATETIME_FORMAT))
+    vevt.push('DTSTART;VALUE=DATE-TIME:' + DateTime.fromISO(evt.start).toUTC().toISO(ISO_DATETIME_FORMAT))
+    vevt.push('DTEND;VALUE=DATE-TIME:' + DateTime.fromISO(evt.end).toUTC().toISO(ISO_DATETIME_FORMAT))
     return vevt
   }
 

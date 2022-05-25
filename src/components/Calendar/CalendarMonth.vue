@@ -2,14 +2,14 @@
   <div class="av-calendar-month">
     <div class="av-calendar-weekdays">
       <div
-        v-for="weekday in weekdays"
+        v-for="weekday in WEEKDAYS"
         :key="weekday.short"
         class="av-calendar-weekday-long"
       >
         {{ weekday.long }}
       </div>
       <div
-        v-for="weekday in weekdays"
+        v-for="weekday in WEEKDAYS"
         :key="weekday.short"
         class="av-calendar-weekday-short"
       >
@@ -26,39 +26,22 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref } from 'vue'
 import CalendarDay from './CalendarDay'
 import { getDaysForMonth, WEEKDAYS } from '@/helpers/calendar'
 
-export default {
-  name: 'CalendarMonth',
-  components: {
-    CalendarDay
-  },
-  props: ['month'],
-  setup(props) {
-    console.time(`setup CalendarMonth ${props.month?.toISODate()}`)
-    const days = ref([])
+// eslint-disable-next-line no-undef
+const props = defineProps(['month'])
+console.time(`setup CalendarMonth ${props.month?.toISODate()}`)
+const days = ref([])
 
-    // TODO : implement global state
-    const state = {
-      userId: 'IEN',
-      isPNT: true
-    }
+// TODO: est-ce mieux avec requestAnimationFrame ?
+requestAnimationFrame(() => {
+  days.value = getDaysForMonth(props.month)
+  console.timeEnd(`setup CalendarMonth ${props.month?.toISODate()}`)
+})
 
-    // TODO: est-ce mieux avec requestAnimationFrame ?
-    requestAnimationFrame(() => {
-      days.value = getDaysForMonth(props.month, state)
-      console.timeEnd(`setup CalendarMonth ${props.month?.toISODate()}`)
-    })
-
-    return {
-      days,
-      weekdays: WEEKDAYS
-    }
-  }
-}
 </script>
 
 <style lang="scss">

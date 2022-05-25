@@ -1,20 +1,9 @@
 import { DateTime } from 'luxon'
-
-function tsToDateTime(ts) {
-  return DateTime.fromMillis(ts)
-}
-
-export function tsToDateTimeString(ts) {
-  return tsToDateTime(ts).toLocaleString(DateTime.DATETIME_FULL)
-}
-
-export function tsToDateString(ts) {
-  return tsToDateTime(ts).toLocaleString(DateTime.DATE_FULL)
-}
+import { toDateTime } from '@/helpers/dates'
 
 export function nbjours(evt) {
-  const start = tsToDateTime(evt.start)
-  const end = tsToDateTime(evt.end)
+  const start = toDateTime(evt.start)
+  const end = toDateTime(evt.end)
   return end.startOf('day').diff(start.startOf('day'), 'days').as('days') + 1
 }
 
@@ -24,8 +13,8 @@ export function decouchers(rotation) {
 }
 
 export function duree(evt) {
-  const start = tsToDateTime(evt.start)
-  const end = tsToDateTime(evt.end)
+  const start = toDateTime(evt.start)
+  const end = toDateTime(evt.end)
   const duration = end.diff(start, ['hours', 'minutes'])
   return duration.toFormat('hh:mm')
 }

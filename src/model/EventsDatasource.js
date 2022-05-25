@@ -235,9 +235,9 @@ export class EventsDatasource extends SimpleEventEmitter {
     const eventsByDate = new Map()
 
     events.forEach(evt => {
-      let cursor = DateTime.fromMillis(evt.start).startOf('day')
+      let cursor = DateTime.fromISO(evt.start).startOf('day')
       const _dates = []
-      while (cursor <= evt.end) {
+      while (cursor.toISO() <= evt.end) {
         const iso = cursor.toISODate()
         _dates.push(iso)
         if (eventsByDate.has(iso)) {
@@ -248,8 +248,6 @@ export class EventsDatasource extends SimpleEventEmitter {
         cursor = cursor.plus({ day: 1 })
       }
       evt._dates = _dates
-
-      // this.setRemuOfEvent(evt, isPNT)
 
       if (evt.tag === 'rotation') {
         evt.sv.forEach(sv => {
@@ -358,8 +356,8 @@ export class EventsDatasource extends SimpleEventEmitter {
         if (!this._subs.has(doc.userId) || !this._days.has(doc.userId)) return // User has no subscriptions yet : skip
 
         const userSubs = this._subs.get(doc.userId)
-        const start = DateTime.fromMillis(doc.start)
-        const end = DateTime.fromMillis(doc.end)
+        const start = DateTime.fromISO(doc.start)
+        const end = DateTime.fromISO(doc.end)
         const shouldUpdateDoc = some([...userSubs.values()], sub => {
           return sub.interval.contains(start) || sub.interval.contains(end)
         })

@@ -10,10 +10,10 @@ export const dutySubEventSchema = new SimpleSchema({
     type: String
   },
   start: {
-    type: SimpleSchema.Integer // Datetime timestamp
+    type: String // Datetime ISO
   },
   end: {
-    type: SimpleSchema.Integer // Datetime timestamp
+    type: String // Datetime ISO
   },
 
   // Optional fields

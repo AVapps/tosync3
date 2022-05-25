@@ -12,6 +12,7 @@ export async function toast(options = {}) {
 }
 
 export function toastError(error, options = {}) {
+  console.log(error)
   return toast({
     message: error.message ?? error.error ?? "Une erreur s'est produite",
     color: 'danger',

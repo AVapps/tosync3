@@ -2,7 +2,7 @@ import * as Comlink from 'comlink'
 import { DateTime } from 'luxon'
 import { reactive } from 'vue'
 import { checkUserId } from '@/helpers/check'
-import { toISOMonth } from '@/helpers/dates'
+import { toISOMonth, toISO } from '@/helpers/dates'
 
 export class EventsDatasourceClient {
   constructor () {
@@ -88,14 +88,7 @@ export class EventsDatasourceClient {
 
   async subscribeInterval({ userId, isPNT = false }, start, end) {
     checkUserId(userId)
-    if (DateTime.isDateTime(start)) {
-      start = start.toMillis()
-    }
-    if (DateTime.isDateTime(end)) {
-      end = end.toMillis()
-    }
-
-    const subKey = await this.datasource.subscribeInterval({ userId, isPNT }, start, end)
+    const subKey = await this.datasource.subscribeInterval({ userId, isPNT }, toISO(start), toISO(end))
     return {
       stop: async () => {
         return this.datasource.unsubscribe(userId, subKey)
@@ -105,13 +98,7 @@ export class EventsDatasourceClient {
 
   async refreshInterval({ userId, isPNT = false }, start, end) {
     checkUserId(userId)
-    if (DateTime.isDateTime(start)) {
-      start = start.toMillis()
-    }
-    if (DateTime.isDateTime(end)) {
-      end = end.toMillis()
-    }
-    return this.datasource.refreshInterval({ userId, isPNT }, start, end)
+    return this.datasource.refreshInterval({ userId, isPNT }, toISO(start), toISO(end))
   }
 
   async unsubscribe(userId, subKey) {

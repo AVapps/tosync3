@@ -12,8 +12,9 @@ import { remuForEvent } from '@/lib/Remu/Remu.js'
 
 import { Events } from '@/model/Events.js'
 
+const TIMEZONE = 'Europe/Paris'
 Settings.defaultLocale = 'fr'
-Settings.defaultZoneName = 'Europe/Paris'
+Settings.defaultZoneName = TIMEZONE
 
 function isRotation(evt) {
   return evt.tag === 'rotation'
@@ -94,7 +95,7 @@ export class CrewConnectPlanningImporter {
       throw new Error('ID utilisateur non défini !')
     }
 
-    this.requestedAt = DateTime.fromISO(requestDate).toMillis()
+    this.requestedAt = DateTime.fromISO(requestDate).setZone(TIMEZONE).toISO()
     this.initIndexes()
 
     const first = _.first(planning)
@@ -107,7 +108,6 @@ export class CrewConnectPlanningImporter {
     this.buildIndexes()
 
     _.forEach(planning, evt => {
-      this.mapDateStringsToTimestamps(evt)
       if (isRotation(evt)) {
         this.importRotation(evt)
       } else if (_.has(evt, 'events')) {
@@ -216,7 +216,7 @@ export class CrewConnectPlanningImporter {
         evt.slug = getSlug(evt, this.userId)
         const savedVol = this.findSavedFlight(evt)
         if (savedVol) {
-          if (evt.fin < this.requestedAt) { // Utiliser les heures programmmées du vol enregistré
+          if (evt.end < this.requestedAt) { // Utiliser les heures programmmées du vol enregistré
             evt.std = savedVol.std
             evt.sta = savedVol.sta
           } else { // Utiliser les heures réalisées du vol enregistré
@@ -347,21 +347,6 @@ export class CrewConnectPlanningImporter {
       return found
     } else {
       console.log('%c>! Flight NOT FOUND !<', 'color: red', vol, slug)
-    }
-  }
-
-  mapDateStringsToTimestamps(evt) {
-    _.forEach(['start', 'end', 'std', 'sta'], field => {
-      if (_.has(evt, field)) {
-        const date = _.get(evt, field)
-        _.set(evt, field, DateTime.fromISO(date).toMillis())
-      }
-    })
-    if (_.isArray(evt.events)) {
-      _.forEach(evt.events, sub => this.mapDateStringsToTimestamps(sub))
-    }
-    if (_.isArray(evt.sv)) {
-      _.forEach(evt.sv, sv => this.mapDateStringsToTimestamps(sv))
     }
   }
 }
