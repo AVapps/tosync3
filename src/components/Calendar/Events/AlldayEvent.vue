@@ -1,24 +1,16 @@
 <template>
-  <div :class="['tosync-color-' + event.tag]">
+  <div :class="['tosync-color-' + props.event.tag]">
     <div class="allday-title">
-      {{ tagLabel(event.tag) }}
+      {{ tagLabel(props.event.tag) }}
     </div>
   </div>
 </template>
 
-<script>
-import { defineComponent } from 'vue'
+<script setup>
 import { tagLabel } from '@/helpers/events'
 
-export default defineComponent({
-  name: 'AlldayEvent',
-  props: ['event', 'date'],
-  setup() {
-    return {
-      tagLabel
-    }
-  }
-})
+// eslint-disable-next-line no-undef
+const props = defineProps(['event', 'date'])
 </script>
 
 <style lang="scss" scoped>
@@ -34,7 +26,7 @@ export default defineComponent({
     white-space: nowrap;
   }
 
-  &.sp-l {
+  .av-calendar-day.sp-l &{
     .allday-title {
       opacity: 0;
     }
