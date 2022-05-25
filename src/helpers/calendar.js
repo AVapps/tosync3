@@ -183,10 +183,11 @@ export function getDayParams({ events, date }) {
     const tag = evt.tag
     const tags = [tag]
 
-    if (evt.start < day.toISO()) {
+    if (DateTime.fromISO(evt.start).startOf('day') < day.startOf('day')) {
       tags.push('sp-l')
     }
-    if (evt.end > day.endOf('day').toISO()) {
+
+    if (DateTime.fromISO(evt.end).endOf('day') > day.endOf('day')) {
       tags.push('sp-r')
     }
 
