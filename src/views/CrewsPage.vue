@@ -24,6 +24,7 @@
 
     <ion-content class="crews-content" fullscreen :scroll-y="false">
       <RecycleScroller
+        v-if="crews.list.length"
         class="ion-content-scroll-host scroller"
         :buffer="400"
         :items="filteredCrews"
@@ -58,12 +59,30 @@
             <ion-label>
               <span class="ion-text-uppercase">{{ item.lastName }}</span>
               &nbsp;
-              <span class="ion-text-capitalize">{{ item.firstName }}</span>
+              <span class="ion-text-capitalize">{{ item.firstName.toLowerCase() }}</span>
             </ion-label>
             <ion-chip :color="roleColor(item.title)" outline class="role-chip" slot="end">{{ item.title }}</ion-chip>
           </ion-item>
         </template>
       </RecycleScroller>
+
+      <div v-else data-empty-content>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon :icon="sadOutline" />
+            </ion-card-title>
+            <ion-card-subtitle>Annuaire vide</ion-card-subtitle>
+          </ion-card-header>
+          <loading-button
+            @click="loadCrewsIndex()"
+            :loading="isLoading"
+            fill="outline"
+            expand="block">
+            Charger l'annuaire
+          </loading-button>
+        </ion-card>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -74,9 +93,11 @@ import { toastHttpError } from '@/helpers/toast'
 import { computed, reactive } from 'vue'
 import { filter, sortBy, some } from 'lodash'
 
+import LoadingButton from '@/components/LoadingButton.vue'
+
 import { toLocaleString, DATETIME_SHORT_FORMAT } from '@/helpers/dates'
 
-import { filterCircleOutline, people } from 'ionicons/icons'
+import { filterCircleOutline, people, sadOutline } from 'ionicons/icons'
 import CrewsFiltersModal from '@/components/CrewsFiltersModal.vue'
 
 const store = useMainStore()
@@ -128,6 +149,13 @@ async function onRefresh(event) {
   event.target.complete()
 }
 
+const isLoading = ref(false)
+async function loadCrewsIndex() {
+  isLoading.value = true
+  await store.syncCrewsIndex(true)
+  isLoading.value = false
+}
+
 function roleColor(role) {
   switch (role.split(' ')[0]) {
     case 'CDB':
@@ -159,5 +187,27 @@ ion-refresher {
 .crew-code-chip {
   min-width: 6.5ch;
   justify-content: center;
+}
+
+[data-empty-content] {
+  display: grid;
+  place-content: center center;
+  height: calc( 100vh - 166px );
+
+  ion-card {
+    --background: tranparent;
+  }
+
+  :deep(ion-card-header) {
+    text-align: center;
+  }
+
+  :deep(ion-icon) {
+    font-size: 64px;
+  }
+
+  :deep(ion-button) {
+    margin: 16px;
+  }
 }
 </style>
