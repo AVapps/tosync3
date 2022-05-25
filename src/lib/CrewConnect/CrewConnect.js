@@ -45,16 +45,21 @@ export class CrewConnect {
       }
     }
 
+    return this.renewToken({ silent })
+  }
+
+  async renewToken({ silent = false }) {
     if (!this.okta.configured) {
       await this.configureOkta()
     }
 
     const user = await this.okta.signIn({ silent })
-    console.log('okta signIn', user)
+    console.log('[CrewConnect] Okta signIn', user)
 
     if (user) {
       return this.login(user.crewCode, this.okta.accessToken)
     }
+
     return {
       success: false,
       userId: null
@@ -89,6 +94,16 @@ export class CrewConnect {
     throw new Error('Login failed')
   }
 
+  async checkCurrentToken() {
+    if (!this._token) return false
+    const isActive = this.checkToken(this._token)
+    if (!isActive) {
+      await this.deleteToken()
+      this._token = null
+    }
+    return isActive
+  }
+
   async tryTokenLogin(userId) {
     const token = await this.getTokenForUser(userId)
     if (!token) return
@@ -114,6 +129,12 @@ export class CrewConnect {
     if (!this._token || !this.userId) return
     const key = `${STORE_PREFIX}_${this.userId}`
     return SecureStoragePlugin.set({ key, value: this._token })
+  }
+
+  async deleteToken() {
+    if (!this.userId) return
+    const key = `${STORE_PREFIX}_${this.userId}`
+    return SecureStoragePlugin.remove({ key })
   }
 
   async getTokenForUser(userId) {
