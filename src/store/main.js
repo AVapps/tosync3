@@ -48,6 +48,7 @@ export const useMainStore = defineStore('main', () => {
     pauseAutoLogin()
     console.log('main.signIn', silent)
 
+    // Ensure serverUrl has been defined
     if (!connect.serverUrl) {
       if (silent) {
         resumeAutoLogin()
@@ -66,11 +67,19 @@ export const useMainStore = defineStore('main', () => {
         return
       }
     }
-    
+
     try {
       const userId = await connect.signIn(user.userId, { silent })
       if (userId) {
-        if (userId !== user.userId) {
+        // Import crews index if needed
+        await until(() => crews.isReady).toBe(true)
+        const oneWeekAgo = DateTime.utc().minus({ weeks: 1 }).toISO()
+        if (!crews.list.length || lastCrewsIndexSync.value <= oneWeekAgo) {
+          console.log('[mainStore] Importing latest crews index...',)
+          await syncCrewsIndex(false)
+        }
+        // Load user profile
+        if (userId !== user.userId || !user.currentUser) {
           await until(() => crews.isReady).toBe(true)
           const userProfile = crews.get(userId)
           if (!userProfile) {
@@ -88,6 +97,7 @@ export const useMainStore = defineStore('main', () => {
           await user.addUser(userProfile)
           user.setUser(userProfile)
         }
+        // Trigger after connect actions
         await onCrewConnectLogin()
       }
     } catch (error) {
@@ -107,20 +117,6 @@ export const useMainStore = defineStore('main', () => {
     console.log('main.toggleTheme', config.value)
   }
 
-  // Update crews index when needed
-  invoke(async () => {
-    await until(() => crews.isReady && connect.isConnected && networkStatus.value.connected).toBe(true)
-    console.log('Connected and ready : loading crews')
- 
-    const oneWeekAgo = DateTime.utc().minus({ weeks: 1 }).toISO()
-
-    console.log('crews.lastCrewIndexSync', lastCrewsIndexSync.value, oneWeekAgo)
-
-    if (lastCrewsIndexSync.value <= oneWeekAgo) {
-      await syncCrewsIndex(false)
-    }
-  })
-
   // Watchers
   const { pause: pauseAutoLogin, resume: resumeAutoLogin } = pausableWatch(
     () => configIsReady.value && networkStatus.value.connected && user.userId && connect.serverUrl,
@@ -134,16 +130,16 @@ export const useMainStore = defineStore('main', () => {
   // helpers
   async function onCrewConnectLogin() {
     console.log('main.onCrewConnectLogin')
-    const fiveMinutesAgo = DateTime.utc().minus({ minutes: 5 }).toISO()
     await until(() => user.isReady).toBe(true)
+    const fiveMinutesAgo = DateTime.utc().minus({ minutes: 5 }).toISO()
     if (user.config.lastPlanningSync <= fiveMinutesAgo) {
-      const { success, results } = await syncPlanning()
-      if (success) {
-        console.log('main.syncPlanning success', results)
-        user.config.lastPlanningSync = DateTime.utc().toISO()
-      } else {
-        console.log('main.syncPlanning error', results)
-      }
+      // const { success, results } = await syncPlanning()
+      // if (success) {
+      //   console.log('main.syncPlanning success', results)
+      //   user.config.lastPlanningSync = DateTime.utc().toISO()
+      // } else {
+      //   console.log('main.syncPlanning error', results)
+      // }
     }
   }
 

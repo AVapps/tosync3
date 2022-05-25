@@ -16,9 +16,11 @@ export const useCrews = defineStore('crews', () => {
     inserted.forEach(crew => crewsMap.value.set(crew._id, crew))
     updated.forEach(crew => crewsMap.value.set(crew._id, crew))
     removed.forEach(crew => crewsMap.value.delete(crew._id))
+    crewsList.value = [...crewsMap.value.values()]
   }
 
   return {
+    db,
     error,
     isReady,
     map: crewsMap,
