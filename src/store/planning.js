@@ -11,7 +11,7 @@ export const usePlanning = defineStore('planning', () => {
     return client.subscribeMonth({ userId: user.userId }, month)
   }
 
-  async function unsubscribeMonth({ userId, month }) {
+  async function unsubscribeMonth(month) {
     return client.unsubscribeMonth(user.userId, month)
   }
 
@@ -32,6 +32,10 @@ export const usePlanning = defineStore('planning', () => {
     return client.bulkUpdate(updateLog)
   }
 
+  async function clearDb() {
+    return client.clearDb()
+  }
+
   // Reactive data functions
   function getDay(date) {
     return client.getDay(user.userId, date)
@@ -48,6 +52,7 @@ export const usePlanning = defineStore('planning', () => {
     subscribeInterval,
     unsubscribe,
     bulkUpdate,
+    clearDb,
     getDay,
     getEvent
   }
