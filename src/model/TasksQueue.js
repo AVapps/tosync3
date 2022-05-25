@@ -6,6 +6,7 @@ export class AsyncTask {
 }
 
 const tasksKey = Symbol('tasks')
+
 export class Queue {
   constructor() {
     this[tasksKey] = []

@@ -2,7 +2,6 @@ import * as Comlink from 'comlink'
 import { PlanningDatasource } from './PlanningDatasource'
 import { CrewConnectPlanningParser } from '@/lib/CrewConnect/CCPlanningParser.js'
 import { CrewConnectPlanningImporter } from '@/lib/CrewConnect/CCPlanningImporter.js'
-import { DateTime } from 'luxon'
 
 const datasource = new PlanningDatasource()
 datasource.watchDb()

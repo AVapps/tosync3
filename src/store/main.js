@@ -6,7 +6,6 @@ import { DateTime } from 'luxon'
 import { Storage } from '@capacitor/storage'
 import { useCapacitorStorageState } from '@/lib/useCapacitorStorage'
 import { useConnect, useUser, useCrews, usePlanning } from './index.js'
-import { importCrewConnectPlanning } from '@/lib/CrewConnect/importCCPlanning.js'
 import { toastHttpError } from '@/helpers/toast.js'
 import { useServerUrlPrompt } from '@/helpers/alert.js'
 
@@ -133,13 +132,13 @@ export const useMainStore = defineStore('main', () => {
     await until(() => user.isReady).toBe(true)
     const fiveMinutesAgo = DateTime.utc().minus({ minutes: 5 }).toISO()
     if (user.config.lastPlanningSync <= fiveMinutesAgo) {
-      // const { success, results } = await syncPlanning()
-      // if (success) {
-      //   console.log('main.syncPlanning success', results)
-      //   user.config.lastPlanningSync = DateTime.utc().toISO()
-      // } else {
-      //   console.log('main.syncPlanning error', results)
-      // }
+      const { success, results } = await syncPlanning()
+      if (success) {
+        console.log('main.syncPlanning success', results)
+        user.config.lastPlanningSync = DateTime.utc().toISO()
+      } else {
+        console.log('main.syncPlanning error', results)
+      }
     }
   }
 

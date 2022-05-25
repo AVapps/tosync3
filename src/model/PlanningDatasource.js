@@ -1,4 +1,3 @@
-import { SimpleEventEmitter } from '@/lib/EventEmitter'
 import { DateTime, Interval } from 'luxon'
 import { checkUserId, checkISOMonth } from '@/helpers/check'
 import { remuForMonth } from '@/lib/Remu/Remu'

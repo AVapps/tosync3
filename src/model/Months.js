@@ -5,7 +5,7 @@ import { isUndefined, keys } from 'lodash'
 
 export class MonthsCollection extends PouchDBCollection {
   constructor() {
-    super('months', {
+    super('Months', {
       idFunction: ['userId', 'month']
     })
   }

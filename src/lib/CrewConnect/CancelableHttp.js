@@ -49,9 +49,9 @@ function request(options) {
       HTTP.abort(requestId,
         ({ aborted }) => {
           if (aborted) {
-            console.log('A request has been aborted')
+            console.log('A request has been canceled by user')
           } else {
-            console.log('A request has been aborted')
+            console.log('A request couldn\'t be aborted')
           }
         },
         (response) => {
