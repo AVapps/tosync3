@@ -32,7 +32,7 @@ export class Okta {
 
   async signIn({ silent = false }) {
     if (!this._configured) {
-      await this.createConfig()
+      throw new Error('[Okta] Not yet configured !')
     }
 
     console.log('[Okta] signIn initiated', silent)
@@ -81,7 +81,7 @@ export class Okta {
   }
 
   async signOut() {
-    if (!this._user) return
+    if (!this.access_token || !this._user) return
     await OktaCapacitor.revokeAccessToken()
     await OktaCapacitor.revokeRefreshToken()
     const result = await OktaCapacitor.signOut()
@@ -92,7 +92,7 @@ export class Okta {
 
   async isAuthenticated() {
     if (!this._configured) {
-      await this.createConfig()
+      throw new Error('[Okta] Not yet configured !')
     }
 
     const { authenticated } = await OktaCapacitor.isAuthenticated()
@@ -101,7 +101,7 @@ export class Okta {
 
   async introspectAccessToken() {
     if (!this._configured) {
-      await this.createConfig()
+      throw new Error('[Okta] Not yet configured !')
     }
     const result = await OktaCapacitor.introspectAccessToken()
     console.log('introspectAccessToken', result)
@@ -110,7 +110,7 @@ export class Okta {
 
   async introspectRefreshToken() {
     if (!this._configured) {
-      await this.createConfig()
+      throw new Error('[Okta] Not yet configured !')
     }
     const result = await OktaCapacitor.introspectRefreshToken()
     console.log('introspectRefreshToken', result)
@@ -119,7 +119,7 @@ export class Okta {
 
   async refreshTokens() {
     if (!this._configured) {
-      await this.createConfig()
+      throw new Error('[Okta] Not yet configured !')
     }
     const result = await OktaCapacitor.refreshTokens()
     console.log('refreshTokens', result)
