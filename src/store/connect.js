@@ -43,13 +43,12 @@ export const useConnect = defineStore('connect', () => {
     }
   }
 
-  async function signIn(crewCode, { silent = false }) {
+  async function signIn(crewCode, { silent = false } = { silent: false }) {
     return execTask(async () => {
       const { success, userId } = await crewConnect.signIn(crewCode, { silent })
       if (success) {
         state.userId = userId
-        await getRosterChanges()
-        state.isLoading = false
+        state.changes = await crewConnect.getRosterChanges()
         return userId
       }
     })
@@ -62,6 +61,28 @@ export const useConnect = defineStore('connect', () => {
       state.changes = null
       state.unsignedActivities = null
       state.rosterState = null
+    })
+  }
+
+  async function checkConnection() {
+    return execTask(async () => {
+      const isActive = await crewConnect.checkCurrentToken()
+      console.log('connect.checkConnection', isActive)
+
+      if (isActive) return true
+      
+      const { success, userId } = await crewConnect.renewToken({ silent: true })
+      if (success) {
+        state.userId = userId
+        state.changes = await crewConnect.getRosterChanges()
+        return true
+      }
+
+      state.userId = null
+      state.changes = null
+      state.unsignedActivities = null
+      state.rosterState = null
+      return false
     })
   }
 
@@ -125,6 +146,7 @@ export const useConnect = defineStore('connect', () => {
     hasUnsignedActivities,
     isConnected: computed(() => state.userId !== null),
     signIn,
+    checkConnection,
     getRosterChanges,
     getRosterCalendars,
     getLatestRosterCalendars,
