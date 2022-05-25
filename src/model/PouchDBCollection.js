@@ -5,7 +5,8 @@ import { get, has, isUndefined, isString, isArray } from 'lodash'
 PouchDB.plugin(PouchDBFind)
 
 export class PouchDBCollection {
-  constructor(name, options = {}) {
+  constructor (name, options = {}) {
+    this.name = name
     this.initDb()
     let { generateIds = true, idKey = '_id', idFunction = null } = options
     if (isArray(idFunction)) {
@@ -20,7 +21,7 @@ export class PouchDBCollection {
   }
 
   initDb() {
-    this.collection = new PouchDB(`CrewSync.${name}`, {
+    this.collection = new PouchDB(`CrewSync.${this.name}`, {
       adapter: 'idb',
       auto_compaction: true
     })
