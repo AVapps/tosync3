@@ -29,3 +29,5 @@ export class MonthsCollection extends PouchDBCollection {
     return super.update(key, changes)
   }
 }
+
+export const Months = new MonthsCollection()
