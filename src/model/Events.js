@@ -1,5 +1,5 @@
 import { PouchDBCollection } from './PouchDBCollection.js'
-import { findLast, sortBy } from 'lodash'
+import { findLast, sortBy, dropWhile } from 'lodash'
 import { DateTime } from 'luxon'
 import { toDateTime } from '@/helpers/dates.js'
 
@@ -34,53 +34,34 @@ export class EventsCollection extends PouchDBCollection {
    * @param {any} start
    * @param {any} end
    */
-  async getInterval(userId, start, end) {
+  async getInterval(userId, start, end, { groupEvents = true } = {}) {
     start = toDateTime(start)
     end = toDateTime(end)
+
+    // Charge les évènements jusqu'à 7 jours avant le début de la plage
     let events = await this.findUserEvents(userId, start.minus({ days: 7 }), end)
 
     if (!events.length) {
       return []
     }
 
-    const startISO = start.toISO()
-    const endISO = end.toISO()
+    // Les évènements sont triés par date croissante avec les rotations avant les SV
+    events = dropWhile(events, evt => toDateTime(evt.end) < start)
 
-    // possibilité d'optimiser en utilisant une boucle s'arrêtant dès que evt.start >= start
-    let hasOverlap
-    events = events.filter(evt => {
-      if (evt.tag === 'rotation' && evt.start < startISO && evt.end >= startISO) {
-        hasOverlap = evt
-        // console.log('isRotation before')
-        return true
-      }
-      if (evt.end >= startISO) {
-        // console.log('end after start')
-        return true
-      }
-      if (hasOverlap) {
-        // console.log('is duty in before start')
-        return evt?.rotationId === hasOverlap._id
-      }
-      return false
-    })
-
-    const hasOverlapEnd = findLast(events, evt => evt.tag === 'rotation' && evt.end > endISO)
-    if (hasOverlapEnd) { // Ajouter les SV manquants
-      const lastSvs = await this.findUserEvents(userId, end, hasOverlapEnd.end, { inclusive_start: false })
-        .filter(evt => {
-          return evt.rotationId === hasOverlapEnd._id
-        })
+    const rotationOverlappingEnd = findLast(events, evt => evt.tag === 'rotation' && toDateTime(evt.end) > end)
+    if (rotationOverlappingEnd) { // Ajouter les SV manquants
+      const lastSvs = (await this.findUserEvents(userId, end, rotationOverlappingEnd.end, { inclusive_start: false }))
+        .filter(evt => evt.rotationId === rotationOverlappingEnd._id)
         .toArray()
-      if (lastSvs && lastSvs.length) {
+      if (lastSvs?.length) {
         events.push(...lastSvs)
       }
     }
 
-    const groupedEvents = this.constructor.groupEvents(events)
-    console.log(`%cEvents.getInterval%c : ${userId}`, 'color:teal', 'color:inherit', groupedEvents, hasOverlap, hasOverlapEnd)
+    events = groupEvents ? this.constructor.groupEvents(events) : events
+    console.log(`%cEvents.getInterval%c : ${userId}-${start.toISO()}-${end.toISO()}`, 'color:teal', 'color:inherit', events)
 
-    return groupedEvents
+    return events
   }
 
   // Liste les évènements dont le début est compris entre 'start' et 'end'
