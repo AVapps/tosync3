@@ -11,6 +11,10 @@ export class SimpleEventEmitter {
     this[EVENTS_KEY].get(name).push(listener)
   }
 
+  off(name, listenerToRemove) {
+    return this.removeListener(name, listenerToRemove)
+  }
+
   removeListener(name, listenerToRemove) {
     if (!this[EVENTS_KEY].has(name)) {
       throw new Error(`Can't remove a listener. Event "${name}" doesn't exits.`)
